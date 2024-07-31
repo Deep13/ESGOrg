@@ -1,0 +1,67 @@
+@media print {
+  .myDivToPrint {
+    background-color: white;
+    height: 100%;
+    width: 70%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    margin: 0 auto;
+    padding: 15px;
+    font-size: 14px;
+    line-height: 18px;
+  }
+}
+
+.border-top {
+  border-top: 1px solid black;
+}
+.higlight:hover {
+  background: #807e7e73;
+}
+.width70 {
+  width: 70% !important;
+  margin: 0 auto !important;
+}
+
+.p-10 {
+  padding-right: 10px;
+}
+
+.fs-1 {
+  font-size: 1rem;
+}
+.marginTopLabel label {
+  margin-top: 10px;
+}
+
+.table-footer-left span {
+  color: black;
+  font-weight: 600;
+}
+.table-footer-left td {
+  color: black;
+  font-weight: 600;
+}
+
+.bgBlack {
+  background-color: black;
+}
+
+.bgGrey {
+  background-color: #323232;
+}
+
+.font-black span {
+  color: white;
+}
+
+/* Full screen app */
+@media (min-width: 1280px) {
+  html.sap-desktop .sapMShellAppWidthLimited .sapMShellCentralBox {
+    width: 100%;
+    margin-left: 0px;
+    left: 0;
+    background-color: rgba(255, 255, 255, 0.3);
+  }
+}

@@ -1,0 +1,53 @@
+<mvc:View controllerName="ESGOrg.ESGOrg.controller.EmployeeLogin" xmlns:mvc="sap.ui.core.mvc"
+    xmlns:core="sap.ui.core" displayBlock="true"
+    xmlns="sap.m">
+    <Shell id="shell">
+        <App id="app">
+            <pages>
+                <Page id="page" title="{i18n>title}" titleAlignment="Center">
+                    <content>
+                        <FlexBox class="bgGrey" height="100%">
+                            <VBox justifyContent="Center" alignItems="Center">
+                                <Image src="./assets/company_logo.png" class="sapUiMediumMargin"
+                                    width="500px" />
+                                <layoutData>
+                                    <FlexItemData growFactor="1" />
+                                </layoutData>
+                            </VBox>
+                            <VBox width="400px" justifyContent="Center"
+                                class="font-black sapUiMediumMarginEnd">
+                                <VBox class="sapUiMediumMargin">
+                                    <Title titleStyle="H2" text="Welcome Employee," />
+                                    <Title titleStyle="H4" text="Login to continue " />
+                                    <VBox class="sapUiSmallMarginTop">
+                                        <Label text="Username" labelFor="passwordInput" />
+                                        <Input
+                                            id="userInput"
+                                            placeholder="Enter username" />
+                                    </VBox>
+                                    <VBox class="sapUiSmallMarginTopBottom">
+                                        <Label id='pass' text="Password" labelFor="passwordInput" />
+                                        <Input
+                                            id="passwordInput"
+                                            type="Password"
+                                            placeholder="Enter password" />
+                                    </VBox>
+                                    <Button type="Emphasized"
+                                        width="100%" text="Login" press="onLogin" />
+                                </VBox>
+                            </VBox>
+                        </FlexBox>
+                    </content>
+                    <!-- <footer>
+						<OverflowToolbar>
+							<HBox alignItems="Center" alignContent="Center" justifyContent="Center"
+								width="100%">
+								<Text text="" />
+							</HBox>
+						</OverflowToolbar>
+					</footer> -->
+                </Page>
+            </pages>
+        </App>
+    </Shell>
+</mvc:View>

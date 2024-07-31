@@ -1,0 +1,40 @@
+<mvc:View controllerName="ESGOrg.ESGOrg.controller.Main" xmlns:mvc="sap.ui.core.mvc"
+	xmlns:core="sap.ui.core" displayBlock="true"
+	xmlns="sap.m">
+	<Page id="page" title="{i18n>title}" titleAlignment="Center">
+		<headerContent>
+			<Text id="user" />
+			<Button icon="sap-icon://log" tooltip="Log Out" press="onLogOut" />
+		</headerContent>
+		<content>
+			<Panel width="auto" class="sapUiResponsiveMargin" accessibleRole="Region">
+				<headerToolbar>
+					<OverflowToolbar>
+						<Title text="Project Management" />
+					</OverflowToolbar>
+				</headerToolbar>
+				<content>
+
+					<GenericTile
+						class="sapUiTinyMarginBegin sapUiTinyMarginTop tileLayout"
+						header="Project Onboarding" subheader=""
+						press="onPressonboarding">
+						<TileContent>
+							<ImageContent src="sap-icon://project-definition-triangle-2" />
+						</TileContent>
+					</GenericTile>
+
+				</content>
+			</Panel>
+
+		</content>
+		<footer>
+			<OverflowToolbar>
+				<HBox alignItems="Center" alignContent="Center" justifyContent="Center"
+					width="100%">
+					<Text text=" A RuDe Labs Production © 2024" />
+				</HBox>
+			</OverflowToolbar>
+		</footer>
+	</Page>
+</mvc:View>
