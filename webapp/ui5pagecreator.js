@@ -22,35 +22,47 @@ if (!clientName) {
 }
 
 // XML content for the view file
-const viewContent = `<mvc:View controllerName="cms.cms.controller.${clientName}" xmlns:mvc="sap.ui.core.mvc"
+const viewContent = `<mvc:View controllerName="ESGOrg.ESGOrg.controller.${clientName}" xmlns:mvc="sap.ui.core.mvc"
     xmlns:core="sap.ui.core" displayBlock="true"
     xmlns="sap.m">
-    <Page id="page" title="{i18n>title}" titleAlignment="Center" showNavButton="true"
-    navButtonPress="onpressBack">
+    <Page id="page" titleAlignment="Center" >
+    <customHeader>
+			<OverflowToolbar>
+            <Button icon="sap-icon://navigation-left-arrow" tooltip="Back" press="onpressBack" />
+				<Image src="./assets/company_logo.png" class="sapUiMediumMargin"
+					width="60px" />
+				<ToolbarSpacer />
+				<Title text="${clientName}" />
+				<ToolbarSpacer />
+				<HBox alignItems="Center">
+					<Button icon="sap-icon://log" tooltip="Log Out" press="onLogOut" />
+					<Button icon="sap-icon://headset" tooltip="Support" press="" />
+				</HBox>
+			</OverflowToolbar>
+		</customHeader>
         <content>
         </content>
         <footer>
-            <OverflowToolbar>
-                <HBox alignItems="Center" alignContent="Center" justifyContent="Center"
-                    width="100%">
-                    <Text text=" A RuDe Labs Production © 2024" />
-                </HBox>
-            </OverflowToolbar>
-        </footer>
+        <OverflowToolbar>
+            <HBox alignItems="Center" alignContent="Center" justifyContent="Center"
+                width="100%">
+                <Text text="Koshish Sustainable Solutions Pvt.Ltd © 2024" />
+            </HBox>
+        </OverflowToolbar>
+    </footer>
     </Page>
 </mvc:View>`;
 
 // JavaScript content for the controller file
 const controllerContent = `sap.ui.define(
-    ["../controller/BaseController", "sap/ui/model/json/JSONModel", "sap/m/Dialog", "sap/m/Button", "sap/m/library",],
-    function (Controller, JSONModel, Dialog, Button, mobileLibrary) {
+    ["../controller/BaseController", "sap/ui/model/json/JSONModel"],
+    function (Controller, JSONModel) {
         "use strict";
-        var ButtonType = mobileLibrary.ButtonType;
-        return Controller.extend("cms.cms.controller.${clientName}", {
+        return Controller.extend("ESGOrg.ESGOrg.controller.${clientName}", {
             /**
              * Called when a controller is instantiated and its View controls (if available) are already created.
              * Can be used to modify the View before it is displayed, to bind event handlers and do other one-time initialization.
-             * @memberOf cms.cms.view.${clientName}
+             * @memberOf ESGOrg.ESGOrg.view.${clientName}
              */
             onInit: function () {
                 this.oRouter = sap.ui.core.UIComponent.getRouterFor(this);
@@ -59,14 +71,16 @@ const controllerContent = `sap.ui.define(
                     .attachPatternMatched(this._handleRouteMatched, this);
             },
             _handleRouteMatched: function () {
-                if (!localStorage.getItem("ESGOrglog")) {
-                    // Redirect to login page
-                    this.oRouter.navTo("")
-                  }
+                this.checkgetUserLog().then(user => {
+                    
+                  });
             },
             onpressBack: function (oEvent) {
                 this.oRouter.navTo("Main");
             },
+            onLogOut: function () {
+                this.logOut();
+              }
         });
     }
 );`;

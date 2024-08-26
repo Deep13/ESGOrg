@@ -90,6 +90,56 @@
           "name": "Main",
           "pattern": "Main",
           "target": "Main"
+        },
+        {
+          "name": "EnvironmentAnalytics",
+          "pattern": "EnvironmentAnalytics",
+          "target": "EnvironmentAnalytics"
+        },
+        {
+          "name": "EmmissionsReporting",
+          "pattern": "EmmissionsReporting",
+          "target": "EmmissionsReporting"
+        },
+        {
+          "name": "FuelBioRef",
+          "pattern": "FuelBioRef",
+          "target": "FuelBioRef"
+        },
+        {
+          "name": "SocialReporting",
+          "pattern": "SocialReporting",
+          "target": "SocialReporting"
+        },
+        {
+          "name": "GovernanceReporting",
+          "pattern": "GovernanceReporting",
+          "target": "GovernanceReporting"
+        },
+        {
+          "name": "ElecHeatCooling",
+          "pattern": "ElecHeatCooling",
+          "target": "ElecHeatCooling"
+        },
+        {
+          "name": "Employement",
+          "pattern": "Employement",
+          "target": "Employement"
+        },
+        {
+          "name": "Leave",
+          "pattern": "Leave",
+          "target": "Leave"
+        },
+        {
+          "name": "Entity",
+          "pattern": "Entity",
+          "target": "Entity"
+        },
+        {
+          "name": "EcoPerformance",
+          "pattern": "EcoPerformance",
+          "target": "EcoPerformance"
         }
       ],
       "targets": {
@@ -107,6 +157,56 @@
           "viewType": "XML",
           "transition": "slide",
           "viewName": "Main"
+        },
+        "EnvironmentAnalytics": {
+          "viewType": "XML",
+          "transition": "slide",
+          "viewName": "EnvironmentAnalytics"
+        },
+        "EmmissionsReporting": {
+          "viewType": "XML",
+          "transition": "slide",
+          "viewName": "EmmissionsReporting"
+        },
+        "FuelBioRef": {
+          "viewType": "XML",
+          "transition": "slide",
+          "viewName": "Emissions/FuelBioRef"
+        },
+        "SocialReporting": {
+          "viewType": "XML",
+          "transition": "slide",
+          "viewName": "SocialReporting"
+        },
+        "GovernanceReporting": {
+          "viewType": "XML",
+          "transition": "slide",
+          "viewName": "GovernanceReporting"
+        },
+        "ElecHeatCooling": {
+          "viewType": "XML",
+          "transition": "slide",
+          "viewName": "Emissions/ElecHeatCooling"
+        },
+        "Employement": {
+          "viewType": "XML",
+          "transition": "slide",
+          "viewName": "Social/Employement"
+        },
+        "Leave": {
+          "viewType": "XML",
+          "transition": "slide",
+          "viewName": "Social/Leave"
+        },
+        "Entity": {
+          "viewType": "XML",
+          "transition": "slide",
+          "viewName": "Governance/Entity"
+        },
+        "EcoPerformance": {
+          "viewType": "XML",
+          "transition": "slide",
+          "viewName": "Governance/EcoPerformance"
         }
       }
     }

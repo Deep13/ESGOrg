@@ -1,0 +1,182 @@
+<mvc:View controllerName="ESGOrg.ESGOrg.controller.EmmissionsReporting" xmlns:mvc="sap.ui.core.mvc"
+    xmlns:core="sap.ui.core" displayBlock="true"
+    xmlns:object="sap.uxap"
+    xmlns:layout="sap.ui.layout"
+    xmlns="sap.m">
+    <Page id="page" titleAlignment="Center" class="sapUiSizeCompact">
+        <customHeader>
+            <OverflowToolbar>
+                <Button icon="sap-icon://navigation-left-arrow" tooltip="Back" press="onpressBack" />
+                <Image src="./assets/company_logo.png" class="sapUiMediumMargin"
+                    width="60px" />
+                <ToolbarSpacer />
+                <Title text="Emmissionsn" />
+                <ToolbarSpacer />
+                <HBox alignItems="Center">
+                    <Button icon="sap-icon://log" tooltip="Log Out" press="onLogOut" />
+                    <Button icon="sap-icon://headset" tooltip="Support" press="" />
+                </HBox>
+            </OverflowToolbar>
+        </customHeader>
+        <content>
+            <Panel width="auto" class="sapUiResponsiveMargin" accessibleRole="Region">
+                <headerToolbar>
+                    <OverflowToolbar>
+                        <Title text="Reporting" />
+                    </OverflowToolbar>
+                </headerToolbar>
+                <content>
+                    <GenericTile
+                        class="sapUiSmallMargin tileLayout"
+                        header="Fuel Bio Ref"
+                        subheader=""
+                        press="onPressFuelBioRef">
+                        <TileContent>
+                            <ImageContent src="sap-icon://energy-saving-lightbulb" />
+                        </TileContent>
+                    </GenericTile>
+
+                    <GenericTile
+                        class="sapUiSmallMargin tileLayout"
+                        header="Elec Heat Cooling"
+                        subheader=""
+                        press="onPressElecHeatCooling">
+                        <TileContent>
+                            <ImageContent src="sap-icon://temperature" />
+                        </TileContent>
+                    </GenericTile>
+
+                    <GenericTile
+                        class="sapUiSmallMargin tileLayout"
+                        header="Owned Vehicles"
+                        subheader=""
+                        press="onPressOwnedVehicles">
+                        <TileContent>
+                            <ImageContent src="sap-icon://car-rental" />
+                        </TileContent>
+                    </GenericTile>
+
+                    <GenericTile
+                        class="sapUiSmallMargin tileLayout"
+                        header="Materials"
+                        subheader=""
+                        press="onPressMaterials">
+                        <TileContent>
+                            <ImageContent src="sap-icon://supplier" />
+                        </TileContent>
+                    </GenericTile>
+
+                    <GenericTile
+                        class="sapUiSmallMargin tileLayout"
+                        header="WTT - Fuels"
+                        subheader=""
+                        press="onPressWTTFuels">
+                        <TileContent>
+                            <ImageContent src="sap-icon://pipeline" />
+                        </TileContent>
+                    </GenericTile>
+
+                    <GenericTile
+                        class="sapUiSmallMargin tileLayout"
+                        header="Waste"
+                        subheader=""
+                        press="onPressWaste">
+                        <TileContent>
+                            <ImageContent src="sap-icon://delete" />
+                        </TileContent>
+                    </GenericTile>
+
+                    <GenericTile
+                        class="sapUiSmallMargin tileLayout"
+                        header="Flight"
+                        subheader=""
+                        press="onPressFlight">
+                        <TileContent>
+                            <ImageContent src="sap-icon://flight" />
+                        </TileContent>
+                    </GenericTile>
+
+                    <GenericTile
+                        class="sapUiSmallMargin tileLayout"
+                        header="Accommodation"
+                        subheader=""
+                        press="onPressAccommodation">
+                        <TileContent>
+                            <ImageContent src="sap-icon://home" />
+                        </TileContent>
+                    </GenericTile>
+
+                    <GenericTile
+                        class="sapUiSmallMargin tileLayout"
+                        header="Business Travel - Land and Sea"
+                        subheader=""
+                        press="onPressBusinessTravelLandSea">
+                        <TileContent>
+                            <ImageContent src="sap-icon://bus-public-transport" />
+                        </TileContent>
+                    </GenericTile>
+
+                    <GenericTile
+                        class="sapUiSmallMargin tileLayout"
+                        header="Freighting Goods"
+                        subheader=""
+                        press="onPressFreightingGoods">
+                        <TileContent>
+                            <ImageContent src="sap-icon://cargo-train" />
+                        </TileContent>
+                    </GenericTile>
+
+                    <GenericTile
+                        class="sapUiSmallMargin tileLayout"
+                        header="Employees Commuting"
+                        subheader=""
+                        press="onPressEmployeesCommuting">
+                        <TileContent>
+                            <ImageContent src="sap-icon://employee" />
+                        </TileContent>
+                    </GenericTile>
+
+                    <GenericTile
+                        class="sapUiSmallMargin tileLayout"
+                        header="Food"
+                        subheader=""
+                        press="onPressFood">
+                        <TileContent>
+                            <ImageContent src="sap-icon://meal" />
+                        </TileContent>
+                    </GenericTile>
+
+                    <GenericTile
+                        class="sapUiSmallMargin tileLayout"
+                        header="Home Office"
+                        subheader=""
+                        press="onPressHomeOffice">
+                        <TileContent>
+                            <ImageContent src="sap-icon://laptop" />
+                        </TileContent>
+                    </GenericTile>
+
+                    <GenericTile
+                        class="sapUiSmallMargin tileLayout"
+                        header="Water"
+                        subheader=""
+                        press="onPressWater">
+                        <TileContent>
+                            <ImageContent src="sap-icon://drop" />
+                        </TileContent>
+                    </GenericTile>
+
+                </content>
+            </Panel>
+        </content>
+        <footer>
+            <OverflowToolbar>
+                <ToolbarSpacer />
+                <Text text="Koshish Sustainable Solutions Pvt.Ltd © 2024" />
+                <ToolbarSpacer />
+
+                <Button text="Submit" press="onSubmit" />
+            </OverflowToolbar>
+        </footer>
+    </Page>
+</mvc:View>

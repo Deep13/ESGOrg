@@ -1,0 +1,138 @@
+<mvc:View controllerName="ESGOrg.ESGOrg.controller.SocialReporting" xmlns:mvc="sap.ui.core.mvc"
+    xmlns:core="sap.ui.core" displayBlock="true"
+    xmlns="sap.m">
+    <Page id="page" titleAlignment="Center">
+        <customHeader>
+            <OverflowToolbar>
+                <Button icon="sap-icon://navigation-left-arrow" tooltip="Back" press="onpressBack" />
+                <Image src="./assets/company_logo.png" class="sapUiMediumMargin"
+                    width="60px" />
+                <ToolbarSpacer />
+                <Title text="Social" />
+                <ToolbarSpacer />
+                <HBox alignItems="Center">
+                    <Button icon="sap-icon://log" tooltip="Log Out" press="onLogOut" />
+                    <Button icon="sap-icon://headset" tooltip="Support" press="" />
+                </HBox>
+            </OverflowToolbar>
+        </customHeader>
+        <content>
+            <Panel width="auto" class="sapUiResponsiveMargin" accessibleRole="Region">
+                <headerToolbar>
+                    <OverflowToolbar>
+                        <Title text="Reporting" />
+                    </OverflowToolbar>
+                </headerToolbar>
+                <content>
+                    <GenericTile
+                        class="sapUiSmallMargin tileLayout"
+                        header="Employment"
+                        subheader=""
+                        press="onPressEmployment">
+                        <TileContent>
+                            <ImageContent src="sap-icon://person-placeholder" />
+                        </TileContent>
+                    </GenericTile>
+
+                    <GenericTile
+                        class="sapUiSmallMargin tileLayout"
+                        header="Leave"
+                        subheader=""
+                        press="onPressLeave">
+                        <TileContent>
+                            <ImageContent src="sap-icon://calendar" />
+                        </TileContent>
+                    </GenericTile>
+
+                    <GenericTile
+                        class="sapUiSmallMargin tileLayout"
+                        header="Retention"
+                        subheader=""
+                        press="onPressRetention">
+                        <TileContent>
+                            <ImageContent src="sap-icon://attachment-photo" />
+                        </TileContent>
+                    </GenericTile>
+
+                    <GenericTile
+                        class="sapUiSmallMargin tileLayout"
+                        header="OH and S"
+                        subheader=""
+                        press="onPressOHS">
+                        <TileContent>
+                            <ImageContent src="sap-icon://health" />
+                        </TileContent>
+                    </GenericTile>
+
+                    <GenericTile
+                        class="sapUiSmallMargin tileLayout"
+                        header="Training and Edu"
+                        subheader=""
+                        press="onPressTrainingEdu">
+                        <TileContent>
+                            <ImageContent src="sap-icon://education" />
+                        </TileContent>
+                    </GenericTile>
+
+                    <GenericTile
+                        class="sapUiSmallMargin tileLayout"
+                        header="Child Labor"
+                        subheader=""
+                        press="onPressChildLabor">
+                        <TileContent>
+                            <ImageContent src="sap-icon://family-care" />
+                        </TileContent>
+                    </GenericTile>
+
+                    <GenericTile
+                        class="sapUiSmallMargin tileLayout"
+                        header="Customer Privacy"
+                        subheader=""
+                        press="onPressCustomerPrivacy">
+                        <TileContent>
+                            <ImageContent src="sap-icon://locked" />
+                        </TileContent>
+                    </GenericTile>
+
+                    <GenericTile
+                        class="sapUiSmallMargin tileLayout"
+                        header="Mktg and Labelling"
+                        subheader=""
+                        press="onPressMktgLabelling">
+                        <TileContent>
+                            <ImageContent src="sap-icon://tag" />
+                        </TileContent>
+                    </GenericTile>
+
+                    <GenericTile
+                        class="sapUiSmallMargin tileLayout"
+                        header="CHS"
+                        subheader=""
+                        press="onPressCHS">
+                        <TileContent>
+                            <ImageContent src="sap-icon://business-objects-experience" />
+                        </TileContent>
+                    </GenericTile>
+                    <GenericTile
+                        class="sapUiSmallMargin tileLayout"
+                        header="Social Benefits"
+                        subheader=""
+                        press="onPressSocialBenefits">
+                        <TileContent>
+                            <ImageContent src="sap-icon://group" />
+                        </TileContent>
+                    </GenericTile>
+
+                </content>
+            </Panel>
+        </content>
+        <footer>
+            <OverflowToolbar>
+                <HBox alignItems="Center" alignContent="Center" justifyContent="Center"
+                    width="100%">
+                    <Text text="Koshish Sustainable Solutions Pvt.Ltd © 2024" />
+                </HBox>
+            </OverflowToolbar>
+        </footer>
+    </Page>
+</mvc:View>

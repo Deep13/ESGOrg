@@ -21,26 +21,9 @@ sap.ui.define(
           sap.ui.core.BusyIndicator.show();
           firebase.auth().onAuthStateChanged((user) => {
             if (user) {
-              firebase.app("employee").auth().onAuthStateChanged((employee) => {
-                if (employee) {
-                  // employee is signed in, see docs for a list of available properties
-                  // https://firebase.google.com/docs/reference/js/firebase.employee
-                  if (employee) {
-                    resolve(employee);
-                    sap.ui.core.BusyIndicator.hide();
-                  }
-                  else {
-                    that.getRouter().navTo("EmployeeLogin");
-                    sap.ui.core.BusyIndicator.hide();
-                    reject();
-                  }
-                  // ...
-                } else {
-                  that.getRouter().navTo("EmployeeLogin");
-                  sap.ui.core.BusyIndicator.hide();
-                  reject();
-                }
-              });
+              resolve(user);
+              sap.ui.core.BusyIndicator.hide();
+
               // ...
             } else {
               that.getRouter().navTo("Login");
@@ -52,22 +35,10 @@ sap.ui.define(
 
       },
 
-      getUserLog: function () {
 
-        if (firebase.app("employee").auth().currentUser) {
-          return firebase.app("employee").auth().currentUser
-        }
-        else {
-          return null;
-        }
-      },
       logOut: function () {
         firebase.auth().signOut();
         this.getRouter().navTo("Login")
-      },
-      logOutEmployee: function () {
-        firebase.app("employee").auth().signOut();
-        this.getRouter().navTo("EmployeeLogin")
       }
 
     });

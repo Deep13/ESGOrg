@@ -2,37 +2,215 @@
 	xmlns:core="sap.ui.core" displayBlock="true"
 	xmlns="sap.m">
 	<Page id="page" title="{i18n>title}" titleAlignment="Center">
-		<headerContent>
-			<Text id="user" />
-			<Button icon="sap-icon://log" tooltip="Log Out" press="onLogOut" />
-		</headerContent>
+		<customHeader>
+			<OverflowToolbar>
+				<Image src="./assets/company_logo.png" class="sapUiMediumMargin"
+					width="60px" />
+				<ToolbarSpacer />
+				<Title text="{i18n>title}" />
+				<ToolbarSpacer />
+				<HBox alignItems="Center">
+					<Text id="user" />
+					<Button icon="sap-icon://log" tooltip="Log Out" press="onLogOut" />
+					<Button icon="sap-icon://headset" tooltip="Support" press="" />
+				</HBox>
+			</OverflowToolbar>
+		</customHeader>
+		<!-- <headerContent>
+			
+		</headerContent> -->
 		<content>
 			<Panel width="auto" class="sapUiResponsiveMargin" accessibleRole="Region">
 				<headerToolbar>
 					<OverflowToolbar>
-						<Title text="Project Management" />
+						<Title text="ESG Overview" />
 					</OverflowToolbar>
 				</headerToolbar>
 				<content>
+					<FlexBox height="350px">
+						<HBox>
+							<core:HTML afterRendering="onRenderPL"
+								content="&lt;div class=&quot;width-250&quot; &gt;&lt;canvas id=&quot;myPLChart&quot;   &gt;&lt;/canvas&gt;&lt;/div&gt;"> </core:HTML>
+							<core:HTML afterRendering="onRenderMF"
+								content="&lt;div class=&quot;width-250&quot; &gt;&lt;canvas id=&quot;myMFChart&quot;   &gt;&lt;/canvas&gt;&lt;/div&gt;"> </core:HTML>
+							<core:HTML afterRendering="onRenderScope"
+								content="&lt;div class=&quot;width-250&quot; &gt;&lt;canvas id=&quot;myScopeChart&quot;   &gt;&lt;/canvas&gt;&lt;/div&gt;"> </core:HTML>
+							<layoutData>
+								<FlexItemData
+									growFactor="1"
+									baseSize="0"
+									backgroundDesign="Solid" />
+							</layoutData>
+						</HBox>
+						<VBox class="sapUiMediumMarginBottom">
+							<HBox>
+								<GenericTile pressEnabled="false"
+									class="sapUiTinyMarginBegin sapUiTinyMarginTop tileLayout"
+									header="Total Emissions"
+									frameType="OneByHalf" subheader="Kgco2" press="onPress">
+									<TileContent unit="EUR" footer="Current Quarter">
+										<NumericContent scale="M" value="234" valueColor="Error"
+											indicator="" withMargin="false" />
+									</TileContent>
+								</GenericTile>
+								<GenericTile pressEnabled="false"
+									class="sapUiTinyMarginBegin sapUiTinyMarginTop tileLayout"
+									header="Water"
+									frameType="OneByHalf" subheader="Kgco2" press="onPress">
+									<TileContent unit="EUR" footer="Current Quarter">
+										<NumericContent scale="K" value="291" valueColor="Error"
+											indicator="" withMargin="false" />
+									</TileContent>
+								</GenericTile>
+								<GenericTile pressEnabled="false"
+									class="sapUiTinyMarginBegin sapUiTinyMarginTop tileLayout"
+									header="Waste"
+									frameType="OneByHalf" subheader="Kgco2" press="onPress">
+									<TileContent unit="EUR" footer="Current Quarter">
+										<NumericContent scale="K" value="0" valueColor="Error"
+											indicator="" withMargin="false" />
+									</TileContent>
+								</GenericTile>
+							</HBox>
+							<HBox>
+								<GenericTile pressEnabled="false"
+									class="sapUiTinyMarginBegin sapUiTinyMarginTop tileLayout"
+									header="Biodiversity"
+									frameType="OneByHalf" subheader="Trees Planted" press="onPress">
+									<TileContent unit="EUR" footer="Current Quarter">
+										<NumericContent scale="" value="60" valueColor="Error"
+											indicator="" withMargin="false" />
+									</TileContent>
+								</GenericTile>
+								<GenericTile pressEnabled="false"
+									class="sapUiTinyMarginBegin sapUiTinyMarginTop tileLayout"
+									header="Social Spend"
+									frameType="OneByHalf" subheader="Expenditure" press="onPress">
+									<TileContent unit="EUR" footer="Current Quarter">
+										<NumericContent scale="K" value="103" valueColor="Error"
+											indicator="" withMargin="false" />
+									</TileContent>
+								</GenericTile>
+								<GenericTile pressEnabled="false"
+									class="sapUiTinyMarginBegin sapUiTinyMarginTop tileLayout"
+									header="Beneficiaries"
+									frameType="OneByHalf" subheader="People" press="onPress">
+									<TileContent unit="EUR" footer="Current Quarter">
+										<NumericContent scale="K" value="103" valueColor="Error"
+											indicator="" withMargin="false" />
+									</TileContent>
+								</GenericTile>
+							</HBox>
+							<HBox>
+								<GenericTile pressEnabled="false"
+									class="sapUiTinyMarginBegin sapUiTinyMarginTop tileLayout"
+									header="Gender Split"
+									frameType="OneByHalf" subheader="Female:Male" press="onPress">
+									<TileContent unit="EUR" footer="Current Quarter">
+										<NumericContent scale="" value="1.31" valueColor="Error"
+											indicator="" withMargin="false" />
+									</TileContent>
+								</GenericTile>
+							</HBox>
+							<layoutData>
+								<FlexItemData
+									growFactor="1"
+									baseSize="0"
+									backgroundDesign="Solid" />
+							</layoutData>
+						</VBox>
 
-					<GenericTile
-						class="sapUiTinyMarginBegin sapUiTinyMarginTop tileLayout"
-						header="Project Onboarding" subheader=""
-						press="onPressonboarding">
-						<TileContent>
-							<ImageContent src="sap-icon://project-definition-triangle-2" />
-						</TileContent>
-					</GenericTile>
-
+					</FlexBox>
 				</content>
 			</Panel>
+			<HBox>
+				<Panel width="auto" class="sapUiResponsiveMargin" accessibleRole="Region">
+					<headerToolbar>
+						<OverflowToolbar>
+							<Title text="Analytics" />
+						</OverflowToolbar>
+					</headerToolbar>
+					<content>
 
+						<GenericTile
+							class="sapUiTinyMarginBegin sapUiTinyMarginTop tileLayout"
+							header="Environment" subheader=""
+							press="onPressEnvironment">
+							<TileContent>
+								<ImageContent src="sap-icon://vertical-bar-chart" />
+							</TileContent>
+						</GenericTile>
+						<GenericTile
+							class="sapUiTinyMarginBegin sapUiTinyMarginTop tileLayout"
+							header="Social" subheader=""
+							press="onPressonboarding">
+							<TileContent>
+								<ImageContent src="sap-icon://pie-chart" />
+							</TileContent>
+						</GenericTile>
+						<GenericTile
+							class="sapUiTinyMarginBegin sapUiTinyMarginTop tileLayout"
+							header="Governance" subheader=""
+							press="onPressonboarding">
+							<TileContent>
+								<ImageContent src="sap-icon://horizontal-bar-chart" />
+							</TileContent>
+						</GenericTile>
+						<GenericTile
+							class="sapUiTinyMarginBegin sapUiTinyMarginTop tileLayout"
+							header="Materiality Assessment" subheader=""
+							press="onPressonboarding">
+							<TileContent>
+								<ImageContent src="sap-icon://checklist-2" />
+							</TileContent>
+						</GenericTile>
+
+					</content>
+				</Panel>
+
+				<Panel width="auto" class="sapUiResponsiveMargin" accessibleRole="Region">
+					<headerToolbar>
+						<OverflowToolbar>
+							<Title text="Data Reporting" />
+						</OverflowToolbar>
+					</headerToolbar>
+					<content>
+
+						<GenericTile
+							class="sapUiTinyMarginBegin sapUiTinyMarginTop tileLayout"
+							header="Emissions" subheader=""
+							press="onPressEmissions">
+							<TileContent>
+								<ImageContent src="sap-icon://temperature" />
+							</TileContent>
+						</GenericTile>
+						<GenericTile
+							class="sapUiTinyMarginBegin sapUiTinyMarginTop tileLayout"
+							header="Social" subheader=""
+							press="onPressSocial">
+							<TileContent>
+								<ImageContent src="sap-icon://group" />
+							</TileContent>
+						</GenericTile>
+						<GenericTile
+							class="sapUiTinyMarginBegin sapUiTinyMarginTop tileLayout"
+							header="Governance" subheader=""
+							press="onPressGovernance">
+							<TileContent>
+								<ImageContent src="sap-icon://shield" />
+							</TileContent>
+						</GenericTile>
+
+
+					</content>
+				</Panel>
+			</HBox>
 		</content>
 		<footer>
 			<OverflowToolbar>
 				<HBox alignItems="Center" alignContent="Center" justifyContent="Center"
 					width="100%">
-					<Text text=" A RuDe Labs Production © 2024" />
+					<Text text="Koshish Sustainable Solutions Pvt.Ltd © 2024" />
 				</HBox>
 			</OverflowToolbar>
 		</footer>

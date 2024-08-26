@@ -17,25 +17,19 @@ sap.ui.define(
 
             },
             _handleRouteMatched: function () {
-                var data = this.getUserLog();
-                if (data) {
-                    // alert('user logged in');
-                    this.getRouter().navTo("EmployeeLogin");
-                }
+                var that = this;
+                this.checkgetUserLog().then(user => {
+                    that.getRouter().navTo("Main");
+                });
             },
             onLogin: function () {
                 var that = this;
                 var email = this.getView().byId('userInput').getValue();
                 var password = this.getView().byId('passwordInput').getValue();
                 firebase.auth().signInWithEmailAndPassword(email, password).then(async function (usersigned) {
-                    const userDoc = await firebase.firestore().collection('users').doc(usersigned.user.uid).get();
-                    if (userDoc.exists) {
-                        const organizationId = userDoc.data().db;
-                        const config = firebaseConfigs.getConfig(organizationId);
-                        const configModel = Firebase.initializeFirebaseApp(config);
-                        that.getOwnerComponent().setModel(configModel, "fbEmployeeModel");
-                        that.getRouter().navTo("EmployeeLogin");
-                    }
+                    // if (userDoc.exists) {
+                    that.getRouter().navTo("Main");
+                    // }
                     // that.getRouter().navTo("Main");
 
                 }).catch(function (error) {

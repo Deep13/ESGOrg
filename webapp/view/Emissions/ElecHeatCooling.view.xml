@@ -1,0 +1,85 @@
+<mvc:View controllerName="ESGOrg.ESGOrg.controller.Emissions.ElecHeatCooling"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns:core="sap.ui.core" displayBlock="true"
+    xmlns:object="sap.uxap"
+    xmlns:layout="sap.ui.layout"
+    xmlns="sap.m">
+    <Page id="page" titleAlignment="Center">
+        <customHeader>
+            <OverflowToolbar>
+                <Button icon="sap-icon://navigation-left-arrow" tooltip="Back" press="onpressBack" />
+                <Image src="./assets/company_logo.png" class="sapUiMediumMargin"
+                    width="60px" />
+                <ToolbarSpacer />
+                <Title text="ElecHeatCooling" />
+                <ToolbarSpacer />
+                <HBox alignItems="Center">
+                    <Button icon="sap-icon://log" tooltip="Log Out" press="onLogOut" />
+                    <Button icon="sap-icon://headset" tooltip="Support" press="" />
+                </HBox>
+            </OverflowToolbar>
+        </customHeader>
+        <content>
+            <object:ObjectPageHeaderContent>
+                <object:content>
+                    <layout:VerticalLayout class="sapUiMediumMarginTop">
+                        <ObjectStatus title="Organization" text="Rude Labs" />
+                        <ObjectStatus title="Country" text="India" />
+                        <ObjectStatus title="State/Circle/Zone/Office"
+                            text="Jharkhand" />
+                        <ObjectStatus title="Branch/Office" text="Corporate" />
+                    </layout:VerticalLayout>
+                    <layout:VerticalLayout class="sapUiMediumMarginTop">
+                        <ObjectStatus title="Period" text="August" />
+                        <ObjectStatus title="Year" text="2024" />
+                        <ObjectStatus title="Scope" text="1" />
+                    </layout:VerticalLayout>
+                    <layout:VerticalLayout class="sapUiMediumMarginTop">
+                        <ObjectStatus title="Reporting" text="In Progress" state="Warning" />
+                        <ProgressIndicator
+                            percentValue="30"
+                            displayValue="30%"
+                            showValue="true"
+                            state="Warning" />
+                    </layout:VerticalLayout>
+
+                </object:content>
+            </object:ObjectPageHeaderContent>
+
+            <VBox class="sapUiMediumMargin">
+                <Table id="editableTable" inset="false" mode="MultiSelect" items="{/rows}"
+                >
+                    <headerToolbar>
+                        <Toolbar>
+                            <Title text="Editable Table" />
+                            <ToolbarSpacer />
+                            <Button text="Add Row" press="onAddRow" />
+                            <Button text="Delete Selected" press="onDeleteRow" />
+
+                        </Toolbar>
+                    </headerToolbar>
+                    <columns>
+                        <!-- Columns will be added dynamically via the controller -->
+                    </columns>
+                    <items>
+                        <ColumnListItem>
+                            <cells>
+                                <!-- Cells will be added dynamically via the controller -->
+                            </cells>
+                        </ColumnListItem>
+                    </items>
+                </Table>
+
+            </VBox>
+        </content>
+        <footer>
+            <OverflowToolbar>
+                <ToolbarSpacer />
+                <Text text="Koshish Sustainable Solutions Pvt.Ltd © 2024" />
+                <ToolbarSpacer />
+
+                <Button text="Submit" press="onSubmit" />
+            </OverflowToolbar>
+        </footer>
+    </Page>
+</mvc:View>
