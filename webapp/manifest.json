@@ -33,6 +33,7 @@
   "sap.ui5": {
     "flexEnabled": false,
     "rootView": {
+      "viewLevel": 2,
       "viewName": "ESGOrg.ESGOrg.view.Login",
       "type": "XML",
       "async": true,
@@ -82,11 +83,6 @@
           "target": "Login"
         },
         {
-          "name": "EmployeeLogin",
-          "pattern": "EmployeeLogin",
-          "target": "EmployeeLogin"
-        },
-        {
           "name": "Main",
           "pattern": "Main",
           "target": "Main"
@@ -100,6 +96,11 @@
           "name": "EmmissionsReporting",
           "pattern": "EmmissionsReporting",
           "target": "EmmissionsReporting"
+        },
+        {
+          "name": "ReportingTiles",
+          "pattern": "ReportingTiles/{module}",
+          "target": "ReportingTiles"
         },
         {
           "name": "FuelBioRef",
@@ -140,73 +141,152 @@
           "name": "EcoPerformance",
           "pattern": "EcoPerformance",
           "target": "EcoPerformance"
+        },
+        {
+          "name": "ESGOverview",
+          "pattern": "ESGOverview",
+          "target": "ESGOverview"
+        },
+        {
+          "name": "AddManagers",
+          "pattern": "AddManagers",
+          "target": "AddManagers"
+        },
+        {
+          "name": "ManageFactors",
+          "pattern": "ManageFactors",
+          "target": "ManageFactors"
+        },
+        {
+          "name": "ReportingCycle",
+          "pattern": "ReportingCycle",
+          "target": "ReportingCycle"
+        },
+        {
+          "name": "ReportingSheet",
+          "pattern": "ReportingSheet/{module}",
+          "target": "ReportingSheet"
+        },
+        {
+          "name": "BranchWiseProgress",
+          "pattern": "BranchWiseProgress",
+          "target": "BranchWiseProgress"
         }
       ],
       "targets": {
         "Login": {
           "viewType": "XML",
           "transition": "slide",
+          "viewLevel": 1,
           "viewName": "Login"
         },
-        "EmployeeLogin": {
+        "BranchWiseProgress": {
           "viewType": "XML",
           "transition": "slide",
-          "viewName": "EmployeeLogin"
+          "viewLevel": 1,
+          "viewName": "BranchWiseProgress"
+        },
+        "ReportingSheet": {
+          "viewType": "XML",
+          "transition": "slide",
+          "viewLevel": 1,
+          "viewName": "ReportingSheet"
         },
         "Main": {
           "viewType": "XML",
           "transition": "slide",
+          "viewLevel": 1,
           "viewName": "Main"
+        },
+        "ReportingTiles": {
+          "viewType": "XML",
+          "transition": "slide",
+          "viewLevel": 1,
+          "viewName": "ReportingTiles"
         },
         "EnvironmentAnalytics": {
           "viewType": "XML",
           "transition": "slide",
+          "viewLevel": 2,
           "viewName": "EnvironmentAnalytics"
         },
         "EmmissionsReporting": {
           "viewType": "XML",
           "transition": "slide",
+          "viewLevel": 2,
           "viewName": "EmmissionsReporting"
         },
         "FuelBioRef": {
           "viewType": "XML",
           "transition": "slide",
+          "viewLevel": 2,
           "viewName": "Emissions/FuelBioRef"
         },
         "SocialReporting": {
           "viewType": "XML",
           "transition": "slide",
+          "viewLevel": 2,
           "viewName": "SocialReporting"
         },
         "GovernanceReporting": {
           "viewType": "XML",
           "transition": "slide",
+          "viewLevel": 2,
           "viewName": "GovernanceReporting"
         },
         "ElecHeatCooling": {
           "viewType": "XML",
           "transition": "slide",
+          "viewLevel": 2,
           "viewName": "Emissions/ElecHeatCooling"
         },
         "Employement": {
           "viewType": "XML",
           "transition": "slide",
+          "viewLevel": 2,
           "viewName": "Social/Employement"
         },
         "Leave": {
           "viewType": "XML",
           "transition": "slide",
+          "viewLevel": 2,
           "viewName": "Social/Leave"
         },
         "Entity": {
           "viewType": "XML",
           "transition": "slide",
+          "viewLevel": 2,
           "viewName": "Governance/Entity"
         },
         "EcoPerformance": {
           "viewType": "XML",
           "transition": "slide",
+          "viewLevel": 2,
           "viewName": "Governance/EcoPerformance"
+        },
+        "ESGOverview": {
+          "viewType": "XML",
+          "transition": "slide",
+          "viewLevel": 2,
+          "viewName": "ESGOverview"
+        },
+        "AddManagers": {
+          "viewType": "XML",
+          "transition": "slide",
+          "viewLevel": 2,
+          "viewName": "AddManagers"
+        },
+        "ManageFactors": {
+          "viewType": "XML",
+          "transition": "slide",
+          "viewLevel": 2,
+          "viewName": "ManageFactors"
+        },
+        "ReportingCycle": {
+          "viewType": "XML",
+          "transition": "slide",
+          "viewLevel": 2,
+          "viewName": "ReportingCycle"
         }
       }
     }

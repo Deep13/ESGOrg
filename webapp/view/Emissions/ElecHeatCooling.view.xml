@@ -78,7 +78,7 @@
                 <Text text="Koshish Sustainable Solutions Pvt.Ltd © 2024" />
                 <ToolbarSpacer />
 
-                <Button text="Submit" press="onSubmit" />
+                <Button text="Save as Draft" press="onSubmit" />
             </OverflowToolbar>
         </footer>
     </Page>

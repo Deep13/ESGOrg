@@ -47,6 +47,7 @@ sap.ui.define(
             },
             _initializeTable: function () {
                 var oTable = this.byId("editableTable");
+                oTable.removeAllColumns();
                 var oModel = new sap.ui.model.json.JSONModel({
                     rows: []
                 });

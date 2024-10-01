@@ -8,8 +8,12 @@
                     <content>
                         <FlexBox class="bgGrey" height="100%">
                             <VBox justifyContent="Center" alignItems="Center">
-                                <Image src="./assets/company_logo.png" class="sapUiMediumMargin"
-                                    width="500px" />
+                                <VBox alignItems="Center">
+                                    <Image src="./assets/company_logo.png" class="sapUiMediumMargin"
+                                        width="500px" />
+                                    <Image id="secondaryLogo" src="./assets/koshish logo.png"
+                                        class="sapUiMediumMargin" width="100px" />
+                                </VBox>
                                 <layoutData>
                                     <FlexItemData growFactor="1" />
                                 </layoutData>

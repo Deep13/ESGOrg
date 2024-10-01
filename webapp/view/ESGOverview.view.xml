@@ -1,16 +1,17 @@
-<mvc:View controllerName="ESGOrg.ESGOrg.controller.EmmissionsReporting" xmlns:mvc="sap.ui.core.mvc"
+<mvc:View controllerName="ESGOrg.ESGOrg.controller.ESGOverview" xmlns:mvc="sap.ui.core.mvc"
     xmlns:core="sap.ui.core" displayBlock="true"
     xmlns:object="sap.uxap"
     xmlns:layout="sap.ui.layout"
     xmlns="sap.m">
-    <Page id="page" titleAlignment="Center" class="sapUiSizeCompact">
+    <Page id="page" titleAlignment="Center" showNavButton="true"
+        navButtonPress="onpressBack">
         <customHeader>
             <OverflowToolbar>
                 <Button icon="sap-icon://navigation-left-arrow" tooltip="Back" press="onpressBack" />
                 <Image src="./assets/company_logo.png" class="sapUiMediumMargin"
                     width="60px" />
                 <ToolbarSpacer />
-                <Title text="Emissions" />
+                <Title text="ESG" />
                 <ToolbarSpacer />
                 <HBox alignItems="Center">
                     <Button icon="sap-icon://log" tooltip="Log Out" press="onLogOut" />
@@ -19,25 +20,16 @@
             </OverflowToolbar>
         </customHeader>
         <content>
-            <Panel id="tilePanel" width="auto" class="sapUiResponsiveMargin" accessibleRole="Region">
-                <headerToolbar>
-                    <OverflowToolbar>
-                        <Title text="Reporting" />
-                    </OverflowToolbar>
-                </headerToolbar>
-                <content>
+            <object:ObjectPageLayout id="objectPageLayout">
 
-
-                </content>
-            </Panel>
+            </object:ObjectPageLayout>
         </content>
         <footer>
             <OverflowToolbar>
-                <ToolbarSpacer />
-                <Text text="Koshish Sustainable Solutions Pvt.Ltd © 2024" />
-                <ToolbarSpacer />
-
-                <Button text="Save as Draft" press="onSubmit" />
+                <HBox alignItems="Center" alignContent="Center" justifyContent="Center"
+                    width="100%">
+                    <Text text="Koshish Sustainable Solutions Pvt.Ltd © 2024" />
+                </HBox>
             </OverflowToolbar>
         </footer>
     </Page>

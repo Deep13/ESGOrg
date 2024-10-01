@@ -1,4 +1,4 @@
-<mvc:View controllerName="ESGOrg.ESGOrg.controller.SocialReporting" xmlns:mvc="sap.ui.core.mvc"
+<mvc:View controllerName="ESGOrg.ESGOrg.controller.ManageFactors" xmlns:mvc="sap.ui.core.mvc"
     xmlns:core="sap.ui.core" displayBlock="true"
     xmlns="sap.m">
     <Page id="page" titleAlignment="Center">
@@ -8,7 +8,7 @@
                 <Image src="./assets/company_logo.png" class="sapUiMediumMargin"
                     width="60px" />
                 <ToolbarSpacer />
-                <Title text="Social" />
+                <Title text="Manage Factors" />
                 <ToolbarSpacer />
                 <HBox alignItems="Center">
                     <Button icon="sap-icon://log" tooltip="Log Out" press="onLogOut" />
@@ -17,10 +17,23 @@
             </OverflowToolbar>
         </customHeader>
         <content>
-            <Panel width="auto" class="sapUiResponsiveMargin" accessibleRole="Region">
+            <Panel id="EmissionsPanel" width="auto" class="sapUiResponsiveMargin"
+                accessibleRole="Region">
                 <headerToolbar>
                     <OverflowToolbar>
-                        <Title text="Reporting" />
+                        <Title text="Emissions" />
+                    </OverflowToolbar>
+                </headerToolbar>
+                <content>
+
+
+                </content>
+            </Panel>
+            <Panel id="SocialPanel" width="auto" class="sapUiResponsiveMargin"
+                accessibleRole="Region">
+                <headerToolbar>
+                    <OverflowToolbar>
+                        <Title text="Social" />
                     </OverflowToolbar>
                 </headerToolbar>
                 <content>
@@ -125,6 +138,51 @@
 
                 </content>
             </Panel>
+            <Panel id="GovernancePanel" width="auto" class="sapUiResponsiveMargin"
+                accessibleRole="Region">
+                <headerToolbar>
+                    <OverflowToolbar>
+                        <Title text="Governance" />
+                    </OverflowToolbar>
+                </headerToolbar>
+                <content>
+                    <GenericTile
+                        class="sapUiSmallMargin tileLayout"
+                        header="Entity"
+                        subheader=""
+                        press="onPressEntity">
+                        <TileContent>
+                            <ImageContent src="sap-icon://building" />
+                        </TileContent>
+                    </GenericTile>
+
+                    <GenericTile
+                        class="sapUiSmallMargin tileLayout"
+                        header="Eco. Performance"
+                        subheader=""
+                        press="onPressEcoPerformance">
+                        <TileContent>
+                            <ImageContent src="sap-icon://business-objects-experience" />
+                        </TileContent>
+                    </GenericTile>
+
+                    <GenericTile
+                        class="sapUiSmallMargin tileLayout"
+                        header="Market Presence"
+                        subheader=""
+                        press="onPressMarketPresence">
+                        <TileContent>
+                            <ImageContent src="sap-icon://marketing-campaign" />
+                        </TileContent>
+                    </GenericTile>
+
+                </content>
+            </Panel>
+            <!-- <Dialog id="dynamicDialog" title="Dynamic Form" stretchOnPhone="true">
+                <VBox id="formContainer" />
+                <Button text="Submit" press="onSubmitForm" />
+                <Button text="Close" press="onCloseDialog" />
+            </Dialog> -->
         </content>
         <footer>
             <OverflowToolbar>

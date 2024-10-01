@@ -1,0 +1,88 @@
+<mvc:View controllerName="ESGOrg.ESGOrg.controller.AddManagers" xmlns:mvc="sap.ui.core.mvc"
+    xmlns:core="sap.ui.core" displayBlock="true"
+    xmlns="sap.m">
+    <Page id="page" titleAlignment="Center">
+        <customHeader>
+            <OverflowToolbar>
+                <Button icon="sap-icon://navigation-left-arrow" tooltip="Back" press="onpressBack" />
+                <Image src="./assets/company_logo.png" class="sapUiMediumMargin"
+                    width="60px" />
+                <ToolbarSpacer />
+                <Title text="Add Managers" />
+                <ToolbarSpacer />
+                <HBox alignItems="Center">
+                    <Button icon="sap-icon://log" tooltip="Log Out" press="onLogOut" />
+                    <Button icon="sap-icon://headset" tooltip="Support" press="" />
+                </HBox>
+            </OverflowToolbar>
+        </customHeader>
+        <content>
+            <Table id="employeeTable" items="{employeeModel>/employees}">
+                <headerToolbar>
+                    <Toolbar>
+                        <Title text="Employees" />
+                        <ToolbarSpacer />
+                        <Button text="Add Employee" press="onAddEmployee" icon="sap-icon://add" />
+                    </Toolbar>
+                </headerToolbar>
+                <columns>
+                    <Column>
+                        <Text text="Name" />
+                    </Column>
+                    <Column>
+                        <Text text="Email" />
+                    </Column>
+                    <Column>
+                        <Text text="Contact" />
+                    </Column>
+                    <Column>
+                        <Text text="User ID" />
+                    </Column>
+                    <Column>
+                        <Text text="Username" />
+                    </Column>
+                    <Column>
+                        <Text text="Role" />
+                    </Column>
+                    <Column>
+                        <Text text="Branch" />
+                    </Column>
+                    <Column>
+                        <Text text="Actions" />
+                    </Column>
+                </columns>
+                <items>
+                    <ColumnListItem>
+                        <cells>
+                            <Text text="{employeeModel>name}" />
+                            <Text text="{employeeModel>email}" />
+                            <Text text="{employeeModel>phone}" />
+                            <Text text="{employeeModel>userId}" />
+                            <Text text="{employeeModel>username}" />
+                            <Text text="{employeeModel>role}" />
+                            <Text
+                                text="{
+                            path: 'employeeModel>branches',
+                            formatter: '.branchText'
+                        }" />
+                            <HBox>
+                                <Button text="Edit" press="onEditEmployee" icon="sap-icon://edit"
+                                    class="sapUiSmallMarginEnd" />
+                                <Button text="Delete" press="onDeleteEmployee"
+                                    icon="sap-icon://delete" />
+                            </HBox>
+                        </cells>
+                    </ColumnListItem>
+                </items>
+            </Table>
+        </content>
+        <footer>
+            <OverflowToolbar>
+                <HBox alignItems="Center" alignContent="Center" justifyContent="Center"
+                    width="100%">
+                    <Text text="Koshish Sustainable Solutions Pvt.Ltd © 2024" />
+                </HBox>
+            </OverflowToolbar>
+        </footer>
+    </Page>
+</mvc:View>

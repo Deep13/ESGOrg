@@ -101,7 +101,7 @@ const viewContent = `<mvc:View controllerName="ESGOrg.ESGOrg.controller.Governan
         <Text text="Koshish Sustainable Solutions Pvt.Ltd © 2024" />
         <ToolbarSpacer />
 
-        <Button text="Submit" press="onSubmit" />
+        <Button text="Save as Draft" press="onSubmit" />
     </OverflowToolbar>
 </footer>
     </Page>
@@ -171,6 +171,7 @@ const controllerContent = `sap.ui.define(
             },
             _initializeTable: function () {
                 var oTable = this.byId("editableTable");
+                oTable.removeAllColumns();
                 var oModel = new sap.ui.model.json.JSONModel({
                     rows: []
                 });

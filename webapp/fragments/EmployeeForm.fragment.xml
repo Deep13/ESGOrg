@@ -1,0 +1,35 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core">
+    <Dialog title="Employee Details" stretchOnPhone="true" contentWidth="600px">
+        <content>
+            <VBox class="sapUiMediumMargin">
+                <Label text="Name" />
+                <Input id="nameInput" />
+
+                <Label text="Email" />
+                <Input id="emailInput" type="Email" />
+
+                <Label text="Contact" />
+                <Input id="contactInput" />
+
+                <Label text="Role" />
+                <ComboBox id="roleInput">
+                    <items>
+                        <core:Item key="Admin" text="Admin" />
+                        <core:Item key="Manager" text="Manager" />
+                    </items>
+                </ComboBox>
+
+                <Label text="Branch" />
+                <MultiComboBox id="branchInput" items="{branchModel>/branches}">
+                    <core:Item key="{branchModel>branch}" text="{branchModel>branch}" />
+                </MultiComboBox>
+            </VBox>
+        </content>
+        <beginButton>
+            <Button text="Save" press="onSaveEmployee" />
+        </beginButton>
+        <endButton>
+            <Button text="Cancel" press="onCancelEmployee" />
+        </endButton>
+    </Dialog>
+</core:FragmentDefinition>

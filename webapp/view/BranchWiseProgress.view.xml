@@ -1,0 +1,27 @@
+<mvc:View
+    controllerName="ESGOrg.ESGOrg.controller.BranchWiseProgress"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns:object="sap.uxap"
+    xmlns="sap.m">
+    <Page id="page" titleAlignment="Center" showNavButton="true"
+        navButtonPress="onpressBack">
+        <customHeader>
+            <OverflowToolbar>
+                <Button icon="sap-icon://navigation-left-arrow" tooltip="Back" press="onpressBack" />
+                <Image src="./assets/company_logo.png" class="sapUiMediumMargin"
+                    width="60px" />
+                <ToolbarSpacer />
+                <Title text="Branchwise Analytics" />
+                <ToolbarSpacer />
+                <HBox alignItems="Center">
+                    <Button icon="sap-icon://log" tooltip="Log Out" press="onLogOut" />
+                    <Button icon="sap-icon://headset" tooltip="Support" press="" />
+                </HBox>
+            </OverflowToolbar>
+        </customHeader>
+        <content>
+            <object:ObjectPageLayout id="objectPageLayout">
+            </object:ObjectPageLayout>
+        </content>
+    </Page>
+</mvc:View>

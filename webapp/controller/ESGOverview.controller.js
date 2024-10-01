@@ -12,16 +12,16 @@ sap.ui.define(
         "sap/m/Label",],
     function (Controller, JSONModel, GenericTile, TileContent, NumericContent, HBox, VBox, ObjectPageSection, ObjectPageSubSection, HTML, Item, Select, Label) {
         "use strict";
-        return Controller.extend("ESGOrg.ESGOrg.controller.EnvironmentAnalytics", {
+        return Controller.extend("ESGOrg.ESGOrg.controller.ESGOverview", {
             /**
              * Called when a controller is instantiated and its View controls (if available) are already created.
              * Can be used to modify the View before it is displayed, to bind event handlers and do other one-time initialization.
-             * @memberOf ESGOrg.ESGOrg.view.EnvironmentAnalytics
+             * @memberOf ESGOrg.ESGOrg.view.ESGOverview
              */
             onInit: function () {
                 this.oRouter = sap.ui.core.UIComponent.getRouterFor(this);
                 this.oRouter
-                    .getRoute("EnvironmentAnalytics")
+                    .getRoute("ESGOverview")
                     .attachPatternMatched(this._handleRouteMatched, this);
             },
             _handleRouteMatched: function () {
@@ -46,264 +46,61 @@ sap.ui.define(
                                         scale: "M"
                                     },
                                     {
-                                        header: "Scope 1",
+                                        header: "Water",
                                         subheader: "Kgco2",
                                         value: "206",
                                         scale: "M"
-                                    },
-                                    {
-                                        header: "Scope 2",
-                                        subheader: "Kgco2",
-                                        value: "33",
-                                        scale: "K"
-                                    },
-                                    {
-                                        header: "Scope 3",
-                                        subheader: "Kgco2",
-                                        value: "28",
-                                        scale: "M"
-                                    },
-                                    {
-                                        header: "Water",
-                                        subheader: "Kgco2",
-                                        value: "2",
-                                        scale: "K"
-                                    },
-                                    {
-                                        header: "Water Stress",
-                                        subheader: "Litres",
-                                        value: "3",
-                                        scale: "K"
                                     },
                                     {
                                         header: "Waste",
                                         subheader: "Kgco2",
                                         value: "0",
                                         scale: "K"
-                                    }],
-                                    "Charts": [{
-                                        type: "doughnut",
-                                        title: "Emissions split by Scope",
-                                        labels: ["Scope1", "Scope 2", "Scope 3"],
-                                        data: [[88, 0, 12]],
-                                        datasetLabels: ["Dataset 1"]
-
                                     },
                                     {
-                                        type: "line",
-                                        title: "Scope wise emissions by Year",
-                                        labels: ["0", "2024", "2025"],
-                                        data: [[null, 50, 156.2], [null, 3.31, null], [null, 28.2, 16.9]],
-                                        datasetLabels: ["Scope 1", "Scope 2", "Scope 3"]
-                                    }]
-                                }
-                            },
-                            "Karnataka": {
-                                "2023": {
-                                    "KPI": [{
-                                        header: "Total Emissions",
-                                        subheader: "Kgco2",
-                                        value: "234",
-                                        scale: "M"
+                                        header: "Biodiversity",
+                                        subheader: "Trees Planted",
+                                        value: "60",
+                                        scale: ""
                                     },
                                     {
-                                        header: "Scope 1",
-                                        subheader: "Kgco2",
-                                        value: "206",
-                                        scale: "M"
-                                    },
-                                    {
-                                        header: "Scope 2",
-                                        subheader: "Kgco2",
-                                        value: "33",
+                                        header: "Social Spend",
+                                        subheader: "Expenditure",
+                                        value: "103",
                                         scale: "K"
                                     },
                                     {
-                                        header: "Scope 3",
-                                        subheader: "Kgco2",
-                                        value: "28",
-                                        scale: "M"
-                                    },
-                                    {
-                                        header: "Water",
-                                        subheader: "Kgco2",
-                                        value: "2",
+                                        header: "Beneficiaries",
+                                        subheader: "People",
+                                        value: "103",
                                         scale: "K"
                                     },
                                     {
-                                        header: "Water Stress",
-                                        subheader: "Litres",
-                                        value: "3",
-                                        scale: "K"
-                                    },
-                                    {
-                                        header: "Waste",
-                                        subheader: "Kgco2",
-                                        value: "0",
-                                        scale: "K"
+                                        header: "Gender Split",
+                                        subheader: "Female:Male",
+                                        value: "1.31",
+                                        scale: ""
                                     }],
                                     "Charts": [{
                                         type: "doughnut",
-                                        title: "Emissions split by Scope",
-                                        labels: ["Scope1", "Scope 2", "Scope 3"],
-                                        data: [[88, 0, 12]],
-                                        datasetLabels: ["Scope 1"]
-
-                                    },
-                                    {
-                                        type: "line",
-                                        title: "Scope wise emissions by Year",
-                                        labels: ["0", "2024", "2025"],
-                                        data: [[null, 50, 156.2], [null, 3.31, null], [null, 28.2, 16.9]],
-                                        datasetLabels: ["Scope 1", "Scope 2", "Scope 3"]
-                                    },
-
-                                    {
-                                        type: "doughnut",
-                                        title: "Emissions split by Scope2",
-                                        labels: ["Scope1", "Scope 2", "Scope 3"],
-                                        data: [[88, 0, 12]],
-                                        datasetLabels: ["Dataset 1"]
-
-                                    },
-                                    {
-                                        type: "line",
-                                        title: "Scope wise emissions by Year2",
-                                        labels: ["0", "2024", "2025"],
-                                        data: [[null, 50, 156.2], [null, 3.31, null], [null, 28.2, 16.9]],
-                                        datasetLabels: ["Scope 1", "Scope 2", "Scope 3"]
-                                    }]
-                                }
-                            }
-                        }
-                    },
-                    "Scope 1": {
-                        "locations": {
-                            "Jharkhand": {
-                                "2023": {
-                                    "KPI": [{
-                                        header: "Scope 1",
-                                        subheader: "Kgco2",
-                                        value: "206",
-                                        scale: "M"
-                                    },
-                                    {
-                                        header: "Bioenergy",
-                                        subheader: "Kgco2",
-                                        value: "2",
-                                        scale: "M"
-                                    },
-                                    {
-                                        header: "Fuels",
-                                        subheader: "Kgco2",
-                                        value: "37",
-                                        scale: "M"
-                                    },
-                                    {
-                                        header: "Owned Vehicles",
-                                        subheader: "Kgco2",
-                                        value: "0.01",
-                                        scale: "M"
-                                    },
-                                    {
-                                        header: "Refrigerant",
-                                        subheader: "Kgco2",
-                                        value: "167",
-                                        scale: "M"
-                                    }],
-                                    "Charts": [{
-                                        type: "doughnut",
-                                        title: "Scope 1 Emissions split by Source",
-                                        labels: ["Refrigerant & Other", "Fuels", "Bioenergy", "Owned Vehicles"],
-                                        data: [[81.3, 17.8, 0.9]],
+                                        title: "Title 1",
+                                        labels: ['50+', '35-50', 'Less than 22', "22 to 35"],
+                                        data: [[52.6, 36.8, 7.9, 2.6]],
                                         datasetLabels: ["Dataset 1"]
 
                                     },
                                     {
                                         type: "doughnut",
-                                        title: "Bioenergy Emissions split",
-                                        labels: ["Kyoto protocol - standard", "Other perfluorinated gases", "Solid fuels", "Montreal protocol - standard", "Fluorinated ethers", "Liquid fuels", "Kyoto protocol-blends", "Other refrigerants", "Biomass", "Montreal protocol - blends"],
-                                        data: [[44.4, 16.8, 12.1, 7.4, 7.4, 5.7, 3.6, 1.1, 0.9, 0.6]],
+                                        title: "Title 2",
+                                        labels: ['Male', 'Female', 'Others'],
+                                        data: [[52.6, 44.7, 2.6]],
                                         datasetLabels: ["Dataset 1"]
-
-                                    }]
-                                },
-                                "2024": {
-                                    "KPI": [{
-                                        header: "Total Emissions",
-                                        subheader: "Kgco2",
-                                        value: "140",
-                                        scale: "M"
-                                    }],
-                                    "Charts": [{
+                                    }, {
                                         type: "doughnut",
-                                        title: "Emissions split by Scope",
-                                        labels: ["Scope1", "Scope 2", "Scope 3"],
+                                        title: "Title 3",
+                                        labels: ['Scope 1', 'Scope 2', 'Scope 3'],
                                         data: [[88, 0, 12]],
-                                        datasetLabels: ["Scope 1"]
-
-                                    }]
-                                }
-                            }
-                        }
-                    },
-                    "Scope 2": {
-                        "locations": {
-                            "Jharkhand": {
-                                "2023": {
-                                    "KPI": [{
-                                        header: "Scope 2",
-                                        subheader: "Kgco2",
-                                        value: "0.0331",
-                                        scale: "M"
-                                    },
-                                    {
-                                        header: "District cooling",
-                                        subheader: "Kgco2",
-                                        value: "0.01",
-                                        scale: "M"
-                                    },
-                                    {
-                                        header: "Electricity.",
-                                        subheader: "Kgco2",
-                                        value: "0.0249",
-                                        scale: "M"
-                                    },
-                                    {
-                                        header: "Heat and steam",
-                                        subheader: "Kgco2",
-                                        value: "0.01",
-                                        scale: "M"
-                                    },
-                                    {
-                                        header: "Owned Vehicles",
-                                        subheader: "Kgco2",
-                                        value: "0.872",
-                                        scale: "M"
-                                    }],
-                                    "Charts": [{
-                                        type: "doughnut",
-                                        title: "Scope 2 Emissions split by Activities",
-                                        labels: ["Electricity", "District cooling", "Electricity - Backup", "Heat and steam", "Passenger vehicles"],
-                                        data: [[58.8, 32.2, 6.3, 2.4, 0.2]],
                                         datasetLabels: ["Dataset 1"]
-
-                                    }]
-                                },
-                                "2024": {
-                                    "KPI": [{
-                                        header: "Total Emissions",
-                                        subheader: "Kgco2",
-                                        value: "140",
-                                        scale: "M"
-                                    }],
-                                    "Charts": [{
-                                        type: "doughnut",
-                                        title: "Emissions split by Scope",
-                                        labels: ["Scope1", "Scope 2", "Scope 3"],
-                                        data: [[88, 0, 12]],
-                                        datasetLabels: ["Scope 1"]
-
                                     }]
                                 }
                             }
@@ -328,6 +125,7 @@ sap.ui.define(
                                 this._createSubSection(sectionData, key)
                             ]
                         });
+
                         oObjectPageLayout.addSection(oSection);
                     }
                 }
@@ -435,7 +233,7 @@ sap.ui.define(
                 });
                 oKPIBox.addStyleClass("sapUiSmallMarginBottom");
                 var aChartItems = selectedData.Charts.map(function (chart) {
-                    var sHTMLContent = `<div class="width-350"><canvas id="${sectionKey.replace(/\s/g, '')}${chart.title.replace(/\s/g, '')}Chart"></canvas></div>`;
+                    var sHTMLContent = `<div class="width-250"><canvas id="${sectionKey.replace(/\s/g, '')}${chart.title.replace(/\s/g, '')}Chart"></canvas></div>`;
                     return new HTML({
                         content: sHTMLContent,
                         afterRendering: this._onRenderChart.bind(this, chart, sectionKey)
@@ -534,7 +332,6 @@ sap.ui.define(
             onLogOut: function () {
                 this.logOut();
             },
-
         });
     }
 );
