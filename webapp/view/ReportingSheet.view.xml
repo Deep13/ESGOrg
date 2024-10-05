@@ -129,7 +129,7 @@
                                 <Toolbar>
                                     <Title text="Variant Table" />
                                     <ToolbarSpacer />
-                                    <Button text="Delete this Variant"
+                                    <Button id="deleteVariantButton" text="Delete this Variant"
                                         press="onDeleteVariant" />
                                 </Toolbar>
                             </headerToolbar>

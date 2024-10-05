@@ -6843,7 +6843,7 @@ sap.ui.define(
               "Type of home office": "With cooling",
               "Number of employees": "",
               "Working regime (For full-time: 100%)": "",
-              "% working from home": "",
+              "% working from home (e.g. 50% from home)": "",
               "Number of months": "",
               "Factor": ""
             },
@@ -6851,7 +6851,7 @@ sap.ui.define(
               "Type of home office": "No heating/No cooling",
               "Number of employees": "",
               "Working regime (For full-time: 100%)": "",
-              "% working from home": "",
+              "% working from home (e.g. 50% from home)": "",
               "Number of months": "",
               "Factor": ""
             },
@@ -6859,7 +6859,7 @@ sap.ui.define(
               "Type of home office": "With heating",
               "Number of employees": "",
               "Working regime (For full-time: 100%)": "",
-              "% working from home": "",
+              "% working from home (e.g. 50% from home)": "",
               "Number of months": "",
               "Factor": ""
             }

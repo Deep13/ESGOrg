@@ -43,20 +43,26 @@ sap.ui.define(
                     var oModel = new sap.ui.model.json.JSONModel(masterModel);
                     oModel.setSizeLimit(20000);
                     this.getView().setModel(oModel, "masterModel");
+                    that.createVariantMaster();
                     if (user.role === "Admin") {
                         that.getView().byId("adminVariant").setVisible(true);
                         if (masterModel.currentReportingCycle.status) {
                             that.getView().byId("adminVariantCreate").setVisible(false);
+                            that.getView().byId("deleteVariantButton").setEnabled(false);
                         }
                         else {
                             that.getView().byId("adminVariantCreate").setVisible(true);
+                            that.getView().byId("deleteVariantButton").setEnabled(true);
+
                             that._initializeTableVariant([]);
-                            that.createVariantMaster();
+
                         }
                     }
                     else {
                         that.getView().byId("adminVariantCreate").setVisible(false);
                         that.getView().byId("adminVariant").setVisible(false);
+                        that.getView().byId("deleteVariantButton").setEnabled(false);
+
                     }
                 });
 
@@ -324,7 +330,11 @@ sap.ui.define(
                 oTable.removeAllItems();
                 oTable.unbindItems();
                 var struct = [...this.structData];
-                var combinedData = this.updateStructWithIncoming(struct, data)
+                var aKeys = this.getColumns(this.module);
+                var nonEdiatble = aKeys
+                    .filter(item => item.editable == false) // Filter items where editable is true
+                    .map(item => item.title);
+                var combinedData = this.updateStructWithIncoming(struct, data, nonEdiatble)
                 this.getView().getModel("moduleMaster").setData({ results: combinedData });
                 // Dynamically create columns based on JSON keys
                 var aKeys = this.getColumns(this.module);
@@ -366,11 +376,22 @@ sap.ui.define(
                     MessageBox.warning("Kindly select branch");
                     return;
                 }
+                var columns = that.getColumns(that.module);
+                var checkCol = [];
+                columns.map(val => {
+                    if (val.editable) {
+                        checkCol.push(val.title)
+                    }
+                })
                 console.log(aData);
+                var aFilteredData = [];
+                aFilteredData = aData.filter(row => {
+                    return checkCol.every(key => row[key] && row[key] !== '');
+                });
                 var user = that.userData;
                 firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc(that.module).set({
                     [branch]: {
-                        data: aData,
+                        data: aFilteredData,
                         status: "Draft",
                         updatedAt: new Date(),
                         updatedBy: user.userId,
@@ -447,7 +468,7 @@ sap.ui.define(
                                                             // MessageBox.error("Error writing document: " + error);
                                                         });
                                                     MessageBox.success("Data successfully submitted for reporting");
-
+                                                    that.byId("status").setText("Submitted");
 
                                                 })
                                                 .catch((error) => {
@@ -484,6 +505,7 @@ sap.ui.define(
                                                 // MessageBox.error("Error writing document: " + error);
                                             });
                                         MessageBox.success("Data successfully submitted for reporting");
+                                        that.byId("status").setText("Submitted");
 
 
                                     })
@@ -790,18 +812,33 @@ sap.ui.define(
 
                 });
             },
-            updateStructWithIncoming: function (data, incoming) {
+            updateStructWithIncoming: function (data, incoming, matchingKeys) {
                 var struct = JSON.parse(JSON.stringify(data));
                 // Loop through each element in struct
-                struct.forEach(structItem => {
-                    // Find matching entry in incoming based on multiple fields
-                    let matchedIncoming = incoming.find(incomingItem =>
-                        incomingItem.Reference == structItem.Reference);
+                // struct.forEach(structItem => {
+                //     // Find matching entry in incoming based on multiple fields
+                //     let matchedIncoming = incoming.find(incomingItem =>
+                //         incomingItem.Reference == structItem.Reference);
 
-                    // If a match is found, update the struct item with Factor and Amount from incoming
-                    if (matchedIncoming) {
-                        structItem.Factor = matchedIncoming.Factor; // Update Factor
-                        structItem.Amount = matchedIncoming.Amount; // Add Amount
+                //     // If a match is found, update the struct item with Factor and Amount from incoming
+                //     if (matchedIncoming) {
+                //         structItem.Factor = matchedIncoming.Factor; // Update Factor
+                //         structItem.Amount = matchedIncoming.Amount; // Add Amount
+                //     }
+                // });
+                struct.forEach(targetObj => {
+                    // Find the matching object from the source array based on all matching keys
+                    const match = incoming.find(sourceObj =>
+                        matchingKeys.every(key => sourceObj[key] === targetObj[key])
+                    );
+
+                    if (match) {
+                        // Loop through all keys in the matched object and update the target object dynamically
+                        Object.keys(match).forEach(key => {
+                            if (!matchingKeys.includes(key)) {
+                                targetObj[key] = match[key]; // Only update keys that are not part of the matching keys
+                            }
+                        });
                     }
                 });
 
