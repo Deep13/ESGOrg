@@ -2,11 +2,8 @@ sap.ui.define(
     ["../controller/BaseController", "sap/ui/model/json/JSONModel", "sap/m/Column",
         "sap/m/Label",
         "sap/m/Input",
-        "sap/m/Select",
-        "sap/ui/core/Item",
-        "sap/m/ColumnListItem",
-        "sap/m/MessageToast", "sap/m/MessageBox"],
-    function (Controller, JSONModel, Column, Label, Input, Select, Item, ColumnListItem, MessageToast, MessageBox) {
+        "sap/m/MessageBox"],
+    function (Controller, JSONModel, Column, Label, Input, MessageBox) {
         "use strict";
         return Controller.extend("ESGOrg.ESGOrg.controller.ReportingSheet", {
             /**
@@ -35,6 +32,7 @@ sap.ui.define(
                     var oModel = new sap.ui.model.json.JSONModel({
                         isEditable: true // Prefill with backend data or start empty
                     });
+                    oModel.setSizeLimit(20000);
                     this.getView().setModel(oModel, "editableModel");
                     var uniqueOfficeTypes = [...new Set(user.branches.map(item => item.officeType))];
 
@@ -43,6 +41,7 @@ sap.ui.define(
                     var masterModel = { ...that.getMaster(), EmployeeBranches: user.branches, EmployeeOffices: formattedOfficeTypes };
 
                     var oModel = new sap.ui.model.json.JSONModel(masterModel);
+                    oModel.setSizeLimit(20000);
                     this.getView().setModel(oModel, "masterModel");
                     if (user.role === "Admin") {
                         that.getView().byId("adminVariant").setVisible(true);
@@ -65,6 +64,16 @@ sap.ui.define(
             onItemSelect: function (oEvent) {
                 var oItem = oEvent.getParameter("item");
                 this.byId("pageContainer").to(this.getView().createId(oItem.getKey()));
+                this.byId("dataBranch").setSelectedKey("");
+                this.byId("variantBranch").setSelectedKey("");
+                this.byId("selectedOffice").setSelectedKey("");
+                this.byId("status").setText("");
+                var oTable = this.byId("editableTable");
+                oTable.removeAllColumns();
+                oTable.removeAllItems();
+                oTable = this.byId("VariantTable");
+                oTable.removeAllColumns();
+                oTable.removeAllItems();
             },
             selectBranch: function (oEvent) {
                 var that = this;
@@ -303,6 +312,7 @@ sap.ui.define(
                     var oModel = new sap.ui.model.json.JSONModel({
                         results: aRows  // Prefill with backend data or start empty
                     });
+                    oModel.setSizeLimit(20000);
                     this.getView().setModel(oModel, "moduleMaster");
                 }
             },
@@ -357,58 +367,23 @@ sap.ui.define(
                     return;
                 }
                 console.log(aData);
-                var aFilteredData = []
-                aData.map(val => {
-                    if (val.Amount) {
-                        aFilteredData.push(val)
+                var user = that.userData;
+                firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc(that.module).set({
+                    [branch]: {
+                        data: aData,
+                        status: "Draft",
+                        updatedAt: new Date(),
+                        updatedBy: user.userId,
+                        dataType: that.custom ? "Custom" : "Variant"
                     }
-                });
-                if (aFilteredData.length !== aData.length) {
-                    MessageBox.confirm(
-                        "Columns with empty Amount would be ignored. Do you still want to proceed?", {
-                        title: "Confirmation",
-                        onClose: function (oAction) {
-                            if (oAction === "OK") {
-                                var user = that.userData;
-                                firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc(that.module).set({
-                                    [branch]: {
-                                        data: aFilteredData,
-                                        status: "Draft",
-                                        updatedAt: new Date(),
-                                        updatedBy: user.userId,
-                                        dataType: that.custom ? "Custom" : "Variant"
-                                    }
 
-                                }, { merge: true })
-                                    .then(() => {
-                                        MessageBox.success("Data successfully saved as draft!");
-                                    })
-                                    .catch((error) => {
-                                        MessageBox.error("Error writing document: " + error);
-                                    });
-                            }
-                        }
+                }, { merge: true })
+                    .then(() => {
+                        MessageBox.success("Data successfully saved as draft!");
+                    })
+                    .catch((error) => {
+                        MessageBox.error("Error writing document: " + error);
                     });
-                }
-                else {
-                    var user = that.userData;
-                    firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc(that.module).set({
-                        [branch]: {
-                            data: aFilteredData,
-                            status: "Draft",
-                            updatedAt: new Date(),
-                            updatedBy: user.userId,
-                            dataType: that.custom ? "Custom" : "Variant"
-                        }
-
-                    }, { merge: true })
-                        .then(() => {
-                            MessageBox.success("Data successfully saved as draft!");
-                        })
-                        .catch((error) => {
-                            MessageBox.error("Error writing document: " + error);
-                        });
-                }
 
             },
             onSave: function () {
@@ -419,6 +394,13 @@ sap.ui.define(
                     MessageBox.warning("Kindly select branch");
                     return;
                 }
+                var columns = that.getColumns(that.module);
+                var checkCol = [];
+                columns.map(val => {
+                    if (val.editable) {
+                        checkCol.push(val.title)
+                    }
+                })
                 MessageBox.confirm(
                     "Are you sure you want to Submit?", {
                     title: "Submit Confirmation",
@@ -428,14 +410,11 @@ sap.ui.define(
                             var monthYear = that.getView().getModel("masterModel").getProperty("/currentReportingCycle");
 
                             console.log(aData);
-                            var aFilteredData = []
-                            aData.map(val => {
-                                if (val.Amount) {
-                                    aFilteredData.push(val)
-
-                                }
-
+                            var aFilteredData = [];
+                            aFilteredData = aData.filter(row => {
+                                return checkCol.every(key => row[key] && row[key] !== '');
                             });
+
                             if (aFilteredData.length !== aData.length) {
                                 MessageBox.confirm(
                                     "Columns with empty Amount would be ignored. Do you still want to proceed?", {
@@ -597,30 +576,110 @@ sap.ui.define(
                     var selectData = [];
                 }
                 var user = this.userData;
-                firebase.firestore().collection(user.domain).doc("Master Data").collection("Reporting Variant").doc(that.module).set({
-                    [branch]: selectData
-                }, { merge: true })
-                    .then(() => {
-                        MessageBox.success("Variant successfully saved!");
-                        if (that.variantData) {
-                            that.variantData[branch] = selectData;
+                firebase.firestore().collection(user.domain).doc("Master Data").collection("Reporting Variant").doc(that.module).get()
+                    .then((data) => {
+                        if (data.exists && data.data()[branch]) {
+                            firebase.firestore().collection(user.domain).doc("Master Data").collection("Reporting Variant").doc(that.module).update({
+                                [branch]: firebase.firestore.FieldValue.arrayUnion(...selectData)
+                            })
+                                .then(() => {
+                                    MessageBox.success("Variant successfully saved!");
+                                    if (that.variantData) {
+                                        that.variantData[branch] = [...data.data()[branch], ...selectData];
+                                    }
+                                    else {
+                                        that.variantData = { [branch]: [...data.data()[branch], ...selectData] }
+                                    }
+
+                                })
+                                .catch((error) => {
+                                    MessageBox.error("Error writing document: " + error);
+                                });
                         }
                         else {
-                            that.variantData = { [branch]: selectData }
-                        }
+                            firebase.firestore().collection(user.domain).doc("Master Data").collection("Reporting Variant").doc(that.module).set({
+                                [branch]: selectData
+                            }, { merge: true })
+                                .then(() => {
+                                    MessageBox.success("Variant successfully saved!");
+                                    if (that.variantData) {
+                                        that.variantData[branch] = selectData;
+                                    }
+                                    else {
+                                        that.variantData = { [branch]: selectData }
+                                    }
 
+                                })
+                                .catch((error) => {
+                                    MessageBox.error("Error writing document: " + error);
+                                });
+                        }
                     })
                     .catch((error) => {
                         MessageBox.error("Error writing document: " + error);
                     });
+                // firebase.firestore().collection(user.domain).doc("Master Data").collection("Reporting Variant").doc(that.module).set({
+                //     [branch]: selectData
+                // }, { merge: true })
+                //     .then(() => {
+                //         MessageBox.success("Variant successfully saved!");
+                //         if (that.variantData) {
+                //             that.variantData[branch] = selectData;
+                //         }
+                //         else {
+                //             that.variantData = { [branch]: selectData }
+                //         }
+
+                //     })
+                //     .catch((error) => {
+                //         MessageBox.error("Error writing document: " + error);
+                //     });
             },
             onDeleteVariant: function () {
                 var that = this;
                 var branch = this.byId("variantBranch").getSelectedItem().getBindingContext("masterModel").getObject().officeType;
-                if (that.variantData[branch] && that.variantData[branch].length > 0) {
+                var oTable = this.byId("VariantTable");
+                var aSelectedItems = oTable.getSelectedItems();
+                var oModel = this.getView().getModel("variantDataModel");
+
+                if (aSelectedItems.length > 0) {
+                    var aSelectedIndices = aSelectedItems.map(function (item) {
+                        return oTable.indexOfItem(item);
+                    });
+                    aSelectedItems.map(function (item) {
+                        oTable.removeItem(item)
+                    });
+                    // Remove selected rows from the flight data
+
+
+                    // Update the model
+
+                    MessageBox.confirm(`Are you sure you want to delete these data for office ${branch}`, {
+                        onClose: function (oAction) {
+                            if (oAction === "OK") {
+
+                                var user = that.userData;
+                                firebase.firestore().collection(user.domain).doc("Master Data").collection("Reporting Variant").doc(that.module).update({
+                                    [branch]: that.variantData[branch]
+                                })
+                                    .then(() => {
+                                        aSelectedIndices.sort().reverse().forEach(function (index) {
+                                            that.variantData[branch].splice(index, 1);
+                                        });
+                                        MessageBox.success("Variant successfully deleted!");
+
+                                    })
+                                    .catch((error) => {
+                                        MessageBox.error("Error writing document: " + error);
+                                    });
+                            }
+                        }
+                    })
+                } else {
                     MessageBox.confirm(`Are you sure you want to delete variant for office ${branch}`, {
                         onClose: function (oAction) {
                             if (oAction === "OK") {
+
                                 var user = that.userData;
                                 firebase.firestore().collection(user.domain).doc("Master Data").collection("Reporting Variant").doc(that.module).update({
                                     [branch]: firebase.firestore.FieldValue.delete()
@@ -641,6 +700,33 @@ sap.ui.define(
                     })
                 }
             },
+            // onDeleteVariant: function () {
+            //     var that = this;
+            //     var branch = this.byId("variantBranch").getSelectedItem().getBindingContext("masterModel").getObject().officeType;
+            //     if (that.variantData[branch] && that.variantData[branch].length > 0) {
+            //         MessageBox.confirm(`Are you sure you want to delete variant for office ${branch}`, {
+            //             onClose: function (oAction) {
+            //                 if (oAction === "OK") {
+            //                     var user = that.userData;
+            //                     firebase.firestore().collection(user.domain).doc("Master Data").collection("Reporting Variant").doc(that.module).update({
+            //                         [branch]: firebase.firestore.FieldValue.delete()
+            //                     })
+            //                         .then(() => {
+            //                             MessageBox.success("Variant successfully deleted!");
+            //                             delete (that.variantData[branch]);
+            //                             var oTable = that.byId("VariantTable");
+            //                             oTable.removeAllColumns();
+            //                             oTable.removeAllItems();
+
+            //                         })
+            //                         .catch((error) => {
+            //                             MessageBox.error("Error writing document: " + error);
+            //                         });
+            //                 }
+            //             }
+            //         })
+            //     }
+            // },
             _prefillRowsVariant: function (aRows, columns) {
                 var oTable = this.byId("VariantTable");
                 var aCells;
@@ -670,28 +756,36 @@ sap.ui.define(
                     // let concatenatedValue = Object.values(entry1).join("");
 
                     // Find matching entry in Data 2 by comparing concatenatedValue to Lookup
-                    if (["Elec heat cooling"].indexOf(that.module) == -1) {
-                        let matchedEntry = data2.find(entry2 => entry2.ID == entry1.Reference);
-                        // delete entry1.Reference;
-                        // If a match is found, return the GHG Conversion, else return null or "Not Found"
-                        return {
-                            ...entry1,  // Include original data from Data 1
-                            Factor: matchedEntry ? matchedEntry['GHG Conversion'] : ''
-                        };
+                    if (entry1.Reference) {
+                        if (that.module == "Food") {
+                            return entry1;
+                        }
+                        else if (["Elec heat cooling"].indexOf(that.module) == -1) {
+                            let matchedEntry = data2.find(entry2 => entry2.ID == entry1.Reference);
+                            // delete entry1.Reference;
+                            // If a match is found, return the GHG Conversion, else return null or "Not Found"
+                            return {
+                                ...entry1,  // Include original data from Data 1
+                                Factor: matchedEntry ? matchedEntry['GHG Conversion'] : ''
+                            };
+                        }
+                        else {
+                            var returnData = {};
+                            let matchedEntry = data2.find(entry2 => entry2.ID == entry1.Reference);
+                            // delete entry1.Reference;
+                            // If a match is found, return the GHG Conversion, else return null or "Not Found"
+                            returnData = {
+                                ...entry1,  // Include original data from Data 1
+                                ["GEF Factors"]: matchedEntry ? matchedEntry['GHG Conversion'] : ''
+                            };
+                            let matchedEntry2 = data2.find(entry2 => entry2.ID == entry1["Reference 2"]);
+                            // delete entry1["Reference 2"];
+                            returnData["T&D Factors"] = matchedEntry2 ? matchedEntry2['GHG Conversion'] : ''
+                            return returnData
+                        }
                     }
                     else {
-                        var returnData = {};
-                        let matchedEntry = data2.find(entry2 => entry2.ID == entry1.Reference);
-                        // delete entry1.Reference;
-                        // If a match is found, return the GHG Conversion, else return null or "Not Found"
-                        returnData = {
-                            ...entry1,  // Include original data from Data 1
-                            ["GEF Factors"]: matchedEntry ? matchedEntry['GHG Conversion'] : ''
-                        };
-                        let matchedEntry2 = data2.find(entry2 => entry2.ID == entry1["Reference 2"]);
-                        // delete entry1["Reference 2"];
-                        returnData["T&D Factors"] = matchedEntry2 ? matchedEntry2['GHG Conversion'] : ''
-                        return returnData
+                        return entry1;
                     }
 
                 });
@@ -725,6 +819,7 @@ sap.ui.define(
                         // Create JSONModel and set the data
                         that.structData = conData;
                         var oModel = new JSONModel({ results: conData });
+                        oModel.setSizeLimit(20000);
                         that.getView().setModel(oModel, "variantMaster");
 
                         // Get table reference

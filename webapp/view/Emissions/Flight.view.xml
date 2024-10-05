@@ -1,0 +1,343 @@
+<mvc:View xmlns:mvc="sap.ui.core.mvc" xmlns="sap.m" xmlns:core="sap.ui.core"
+    xmlns:object="sap.uxap"
+    xmlns:layout="sap.ui.layout"
+    controllerName="ESGOrg.ESGOrg.controller.Emissions.Flight">
+    <Page id="page" titleAlignment="Center" class="sapUiSizeCompact">
+        <customHeader>
+            <OverflowToolbar>
+                <Button icon="sap-icon://navigation-left-arrow" tooltip="Back" press="onpressBack" />
+                <Image src="./assets/company_logo.png" class="sapUiMediumMargin"
+                    width="60px" />
+                <ToolbarSpacer />
+                <Title id="title" text="Flight" />
+                <ToolbarSpacer />
+                <HBox alignItems="Center">
+                    <Button icon="sap-icon://log" tooltip="Log Out" press="onLogOut" />
+                    <Button icon="sap-icon://headset" tooltip="Support" press="" />
+                </HBox>
+            </OverflowToolbar>
+        </customHeader>
+        <content>
+            <object:ObjectPageHeaderContent>
+                <object:content>
+
+                    <layout:VerticalLayout class="sapUiMediumMarginTop">
+                        <ObjectStatus title="Period"
+                            text="{masterModel>/currentReportingCycle/month}" />
+                        <ObjectStatus title="Year" text="{masterModel>/currentReportingCycle/year}" />
+                        <ObjectStatus title="Scope" text="1" />
+                    </layout:VerticalLayout>
+                    <layout:VerticalLayout class="sapUiMediumMarginTop">
+                        <ObjectStatus title="Organization" text="{masterModel>/organisationName}" />
+                        <ObjectStatus id="status" title="" state="Success" />
+
+                    </layout:VerticalLayout>
+                </object:content>
+            </object:ObjectPageHeaderContent>
+            <IconTabHeader
+                select=".onItemSelect"
+                mode="Inline">
+                <layoutData>
+                    <OverflowToolbarLayoutData priority="NeverOverflow"
+                        shrinkable="true" />
+                </layoutData>
+                <items>
+                    <IconTabFilter
+                        text="Records"
+                        key="page1"
+                        interactionMode="SelectLeavesOnly">
+                    </IconTabFilter>
+                    <IconTabFilter
+                        id="adminVariant"
+                        text="Variants"
+                        visible="false"
+                        key="page2"
+                        interactionMode="SelectLeavesOnly">
+                    </IconTabFilter>
+                    <IconTabFilter
+                        id="adminVariantCreate"
+                        text="Create Variants"
+                        visible="false"
+                        key="page3"
+                        interactionMode="SelectLeavesOnly">
+                    </IconTabFilter>
+                </items>
+            </IconTabHeader>
+            <NavContainer id="pageContainer" initialPage="page1">
+                <pages>
+                    <ScrollContainer
+                        id="page1"
+                        horizontal="false"
+                        vertical="true"
+                        height="100%"
+                        class="sapUiContentPadding">
+                        <VBox>
+                            <VBox>
+                                <ObjectStatus title="State/Circle/Zone/Office" />
+                                <Select
+                                    id="dataBranch"
+                                    change="selectBranch"
+                                    forceSelection="false"
+                                    selectedKey="{masterModel>/EmployeeBranch}"
+                                    items="{
+                            path: 'masterModel>/EmployeeBranches'
+                        }">
+                                    <core:Item key="{masterModel>branch}"
+                                        text="{masterModel>branch}" />
+                                </Select>
+                            </VBox>
+                            <!-- <Table sticky="ColumnHeaders" id="editableTable" inset="false"
+                                noDataText="Select branch to see some data"
+                            >
+                               
+                            </Table> -->
+                            <Table sticky="ColumnHeaders" id="flightTable"
+                                items="{dataModel>/results}" inset="false"
+                                mode="MultiSelect">
+                                <headerToolbar>
+                                    <Toolbar id="headToolbar" visible="false">
+                                        <Title text="Editable Table" />
+                                        <ToolbarSpacer />
+                                        <Button text="Add Row" press="onAddRow"
+                                            enabled="{dataModel>/editable}" />
+                                        <Button text="Delete Selected" press="onDeleteRow"
+                                            enabled="{dataModel>/editable}" />
+                                        <Button text="Save as Draft" press="onSubmit" />
+                                        <Button text="Submit" press="onSave" />
+                                    </Toolbar>
+                                </headerToolbar>
+
+                                <columns>
+                                    <Column>
+                                        <Text text="Origin (city or IATA code)" />
+                                    </Column>
+                                    <Column>
+                                        <Text text="Destination (city or IATA code)" />
+                                    </Column>
+                                    <Column>
+                                        <Text text="Class" />
+                                    </Column>
+                                    <Column>
+                                        <Text text="Single way / Return" />
+                                    </Column>
+                                    <Column>
+                                        <Text text="kg CO2e" />
+                                    </Column>
+                                </columns>
+
+                                <items>
+                                    <ColumnListItem>
+                                        <cells>
+                                            <!-- Origin Input -->
+                                            <Input value="{dataModel>origin}"
+                                                placeholder="Enter origin city or IATA code"
+                                                editable="{dataModel>/editable}" />
+                                            <!-- Destination Input -->
+                                            <Input value="{dataModel>destination}"
+                                                placeholder="Enter destination city or IATA code"
+                                                editable="{dataModel>/editable}" />
+                                            <!-- Class Dropdown -->
+                                            <Select selectedKey="{dataModel>class}"
+                                                editable="{dataModel>/editable}">
+                                                <items>
+                                                    <core:Item key="Economy" text="Economy" />
+                                                    <core:Item key="Business" text="Business" />
+                                                    <core:Item key="Private jet" text="Private jet" />
+                                                </items>
+                                            </Select>
+                                            <!-- Single way / Return Dropdown -->
+                                            <Select selectedKey="{dataModel>tripType}"
+                                                editable="{dataModel>/editable}">
+                                                <items>
+                                                    <core:Item key="Single way" text="Single way" />
+                                                    <core:Item key="Return" text="Return" />
+                                                </items>
+                                            </Select>
+                                            <!-- CO2e Input -->
+                                            <Input value="{dataModel>co2e}"
+                                                placeholder="Enter CO2e value" />
+                                        </cells>
+                                    </ColumnListItem>
+                                </items>
+                            </Table>
+                        </VBox>
+                    </ScrollContainer>
+                    <ScrollContainer
+                        id="page2"
+                        horizontal="false"
+                        vertical="true"
+                        height="100%"
+                        class="sapUiContentPadding">
+                        <VBox>
+                            <ObjectStatus title="Office" />
+                            <Select
+                                id="variantBranch"
+                                change="selectBranchVariant"
+                                forceSelection="false"
+                                items="{
+                path: 'masterModel>/EmployeeOffices'
+            }">
+                                <core:Item key="{masterModel>officeType}"
+                                    text="{masterModel>officeType}" />
+                            </Select>
+                        </VBox>
+                        <Table sticky="ColumnHeaders" id="VariantTable" inset="false"
+                            items="{variantDataModel>/results}"
+                            noDataText="Select branch to see some data" mode="MultiSelect"
+                        >
+                            <headerToolbar>
+                                <Toolbar>
+                                    <Title text="Variant Table" />
+                                    <ToolbarSpacer />
+                                    <Button text="Delete this Variant"
+                                        press="onDeleteVariant" />
+                                </Toolbar>
+                            </headerToolbar>
+                            <columns>
+                                <Column>
+                                    <Text text="Origin (city or IATA code)" />
+                                </Column>
+                                <Column>
+                                    <Text text="Destination (city or IATA code)" />
+                                </Column>
+                                <Column>
+                                    <Text text="Class" />
+                                </Column>
+                                <Column>
+                                    <Text text="Single way / Return" />
+                                </Column>
+                                <Column>
+                                    <Text text="kg CO2e" />
+                                </Column>
+                            </columns>
+
+                            <items>
+                                <ColumnListItem>
+                                    <cells>
+                                        <!-- Origin Input -->
+                                        <Input editable="false" value="{variantDataModel>origin}"
+                                            placeholder="Enter origin city or IATA code" />
+                                        <!-- Destination Input -->
+                                        <Input editable="false"
+                                            value="{variantDataModel>destination}"
+                                            placeholder="Enter destination city or IATA code" />
+                                        <!-- Class Dropdown -->
+                                        <Select editable="false"
+                                            selectedKey="{variantDataModel>class}">
+                                            <items>
+                                                <core:Item key="Economy" text="Economy" />
+                                                <core:Item key="Business" text="Business" />
+                                                <core:Item key="Private jet" text="Private jet" />
+                                            </items>
+                                        </Select>
+                                        <!-- Single way / Return Dropdown -->
+                                        <Select editable="false"
+                                            selectedKey="{variantDataModel>tripType}">
+                                            <items>
+                                                <core:Item key="Single way" text="Single way" />
+                                                <core:Item key="Return" text="Return" />
+                                            </items>
+                                        </Select>
+                                        <!-- CO2e Input -->
+                                        <Input editable="false" value="{variantDataModel>co2e}"
+                                            placeholder="Enter CO2e value" />
+                                    </cells>
+                                </ColumnListItem>
+                            </items>
+                        </Table>
+                    </ScrollContainer>
+                    <ScrollContainer
+                        id="page3"
+                        horizontal="false"
+                        vertical="true"
+                        height="100%"
+                        class="sapUiContentPadding">
+                        <VBox>
+                            <ObjectStatus title="Office" />
+                            <Select
+                                id="selectedOffice"
+                                forceSelection="false"
+                                items="{
+                    path: 'masterModel>/EmployeeOffices'
+                }">
+                                <core:Item key="{masterModel>officeType}"
+                                    text="{masterModel>officeType}" />
+                            </Select>
+                        </VBox>
+                        <Table sticky="ColumnHeaders" id="CreateVariantTable" inset="false"
+                            width="100%"
+                            mode="MultiSelect" items="{variantModel>/results}">
+                            <headerToolbar>
+                                <Toolbar>
+                                    <Title text="Variant Table" />
+                                    <ToolbarSpacer />
+                                    <Button text="Add Row" press="onAddRowVariant" />
+                                    <Button text="Delete Selected" press="onDeleteRowVariant" />
+                                    <Button text="Save as Variant" press="onSaveVariant" />
+                                </Toolbar>
+                            </headerToolbar>
+                            <columns>
+                                <Column>
+                                    <Text text="Origin (city or IATA code)" />
+                                </Column>
+                                <Column>
+                                    <Text text="Destination (city or IATA code)" />
+                                </Column>
+                                <Column>
+                                    <Text text="Class" />
+                                </Column>
+                                <Column>
+                                    <Text text="Single way / Return" />
+                                </Column>
+                                <Column>
+                                    <Text text="kg CO2e" />
+                                </Column>
+                            </columns>
+
+                            <items>
+                                <ColumnListItem>
+                                    <cells>
+                                        <!-- Origin Input -->
+                                        <Input value="{variantModel>origin}"
+                                            placeholder="Enter origin city or IATA code" />
+                                        <!-- Destination Input -->
+                                        <Input value="{variantModel>destination}"
+                                            placeholder="Enter destination city or IATA code" />
+                                        <!-- Class Dropdown -->
+                                        <Select selectedKey="{variantModel>class}">
+                                            <items>
+                                                <core:Item key="Economy" text="Economy" />
+                                                <core:Item key="Business" text="Business" />
+                                                <core:Item key="Private jet" text="Private jet" />
+                                            </items>
+                                        </Select>
+                                        <!-- Single way / Return Dropdown -->
+                                        <Select selectedKey="{variantModel>tripType}">
+                                            <items>
+                                                <core:Item key="Single way" text="Single way" />
+                                                <core:Item key="Return" text="Return" />
+                                            </items>
+                                        </Select>
+                                        <!-- CO2e Input -->
+                                        <Input value="{variantModel>co2e}"
+                                            placeholder="Enter CO2e value" />
+                                    </cells>
+                                </ColumnListItem>
+                            </items>
+                        </Table>
+
+                    </ScrollContainer>
+                </pages>
+            </NavContainer>
+        </content>
+        <footer>
+            <OverflowToolbar>
+                <ToolbarSpacer />
+                <Text text="Koshish Sustainable Solutions Pvt.Ltd © 2024" />
+                <ToolbarSpacer />
+
+
+            </OverflowToolbar>
+        </footer>
+    </Page>
+</mvc:View>

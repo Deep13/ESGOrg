@@ -70,7 +70,15 @@ sap.ui.define(
                 }, this);
             },
             onPressTile: function (val) {
-                this.oRouter.navTo("ReportingSheet", { module: JSON.stringify({ tile: this.module, sub: val }) });
+                if (val == "Flight") {
+                    this.oRouter.navTo("Flight", { module: JSON.stringify({ tile: this.module, sub: val }) });
+                }
+                else if (val == "Accommodation") {
+                    this.oRouter.navTo("Accomodation", { module: JSON.stringify({ tile: this.module, sub: val }) });
+                }
+                else {
+                    this.oRouter.navTo("ReportingSheet", { module: JSON.stringify({ tile: this.module, sub: val }) });
+                }
             },
         });
     })

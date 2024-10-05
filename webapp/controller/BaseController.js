@@ -108,29 +108,28 @@ sap.ui.define(
         var that = this;
         return await new Promise((resolve, reject) => {
           if (!this.reportingSheets) {
-
             const docRef = firebase.firestore().collection(user.domain).doc("Master Data").collection("Reporting Master Data").doc("ReportingSheets");
             docRef.get().then((doc) => {
               if (doc.exists) {
                 var data = doc.data();
-                var Emissions = [];
+                var Environment = [];
                 var Social = [];
                 var Governance = [];
 
                 // Iterate through the data array
                 data.complianceData.forEach(function (item) {
                   // Check if enabled is true, and push the sheetName to the respective array based on complianceType
-                  if (item.enabled) {
-                    if (item.complianceType === "Emissions") {
-                      Emissions.push(item.sheetName);
-                    } else if (item.complianceType === "Social") {
-                      Social.push(item.sheetName);
-                    } else if (item.complianceType === "Governance") {
-                      Governance.push(item.sheetName);
-                    }
+                  // if (item.enabled) {
+                  if (item.complianceType === "Environment") {
+                    Environment.push(item.sheetName);
+                  } else if (item.complianceType === "Social") {
+                    Social.push(item.sheetName);
+                  } else if (item.complianceType === "Governance") {
+                    Governance.push(item.sheetName);
                   }
+                  // }
                 });
-                that.reportingSheets = { Emissions, Social, Governance }
+                that.reportingSheets = { Environment, Social, Governance }
                 return resolve(that.reportingSheets)
               } else {
                 that.reportingSheets = undefined
@@ -149,7 +148,7 @@ sap.ui.define(
       },
       getIconMap: function (module) {
         var iconMap = {
-          "Emissions": {
+          "Environment": {
             "Fuel": "sap-icon://mileage",
             "Bioenergy": "sap-icon://e-care",
             "Refrigerant and other": "sap-icon://fridge",
@@ -256,9 +255,9 @@ sap.ui.define(
             { "title": "Scope", "editable": false },
             { "title": "Activity", "editable": false },
             { "title": "Waste Material", "editable": false },
-            { "title": "Source Description", "editable": false },
-            { "title": "Disposal Method", "editable": false },
             { "title": "Unit", "editable": false },
+            { "title": "Disposal Method", "editable": false },
+            { "title": "Source Description", "editable": true },
             { "title": "Weight", "editable": true },
             { "title": "Factor", "editable": true }
           ],
@@ -340,7 +339,6 @@ sap.ui.define(
             { "title": "Count of Employees", "editable": true }
           ],
           "Retention": [
-            { "title": "Framework", "editable": false },
             { "title": "Employee Type", "editable": false },
             { "title": "Gender", "editable": false },
             { "title": "Tenure", "editable": false },
@@ -357,15 +355,15 @@ sap.ui.define(
           "Training and Edu": [
             { "title": "Framework", "editable": false },
             { "title": "Types of training", "editable": false },
+            { "title": "Segment", "editable": false },
             { "title": "Avg Hours per batch", "editable": true },
             { "title": "No. of employees", "editable": true },
             { "title": "Financial investment", "editable": true },
-            { "title": "Segment", "editable": false }
           ],
           "Child Labor": [
             { "title": "Framework", "editable": false },
-            { "title": "Supplier Name", "editable": false },
             { "title": "Risk Level", "editable": false },
+            { "title": "Supplier Name", "editable": true },
             { "title": "No. of Incidents reported", "editable": true }
           ],
           "Customer Privacy": [
@@ -374,7 +372,7 @@ sap.ui.define(
             { "title": "No. of complaints received", "editable": true },
             { "title": "No. of complaints solved", "editable": true }
           ],
-          "Mktg & Labelling": [
+          "Mktg and Labelling": [
             { "title": "Framework", "editable": false },
             { "title": "Incident", "editable": false },
             { "title": "No. of non-compliance Incidents", "editable": true },
@@ -388,8 +386,8 @@ sap.ui.define(
           ],
           "Social Benefits": [
             { "title": "Framework", "editable": false },
-            { "title": "Program name", "editable": false },
             { "title": "Domain", "editable": false },
+            { "title": "Program name", "editable": true },
             { "title": "No. of Beneficiaries", "editable": true },
             { "title": "Expenditure", "editable": true }
           ],
@@ -1719,7 +1717,7 @@ sap.ui.define(
               "Level 3": "Small car",
               "Fuel": "Plug-in Hybrid Electric Vehicle",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -1730,7 +1728,7 @@ sap.ui.define(
               "Level 3": "Small car",
               "Fuel": "Battery Electric Vehicle",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -1741,7 +1739,7 @@ sap.ui.define(
               "Level 3": "Medium car",
               "Fuel": "Plug-in Hybrid Electric Vehicle",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -1752,7 +1750,7 @@ sap.ui.define(
               "Level 3": "Medium car",
               "Fuel": "Battery Electric Vehicle",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -1763,7 +1761,7 @@ sap.ui.define(
               "Level 3": "Large car",
               "Fuel": "Plug-in Hybrid Electric Vehicle",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -1774,7 +1772,7 @@ sap.ui.define(
               "Level 3": "Large car",
               "Fuel": "Battery Electric Vehicle",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -1785,7 +1783,7 @@ sap.ui.define(
               "Level 3": "Average car",
               "Fuel": "Plug-in Hybrid Electric Vehicle",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -1796,7 +1794,7 @@ sap.ui.define(
               "Level 3": "Average car",
               "Fuel": "Battery Electric Vehicle",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -1807,7 +1805,7 @@ sap.ui.define(
               "Level 3": "Small car",
               "Fuel": "Diesel",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -1818,7 +1816,7 @@ sap.ui.define(
               "Level 3": "Small car",
               "Fuel": "Petrol",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -1829,7 +1827,7 @@ sap.ui.define(
               "Level 3": "Small car",
               "Fuel": "Hybrid",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -1840,7 +1838,7 @@ sap.ui.define(
               "Level 3": "Small car",
               "Fuel": "Unknown",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -1851,7 +1849,7 @@ sap.ui.define(
               "Level 3": "Medium car",
               "Fuel": "Diesel",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -1862,7 +1860,7 @@ sap.ui.define(
               "Level 3": "Medium car",
               "Fuel": "Petrol",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -1873,7 +1871,7 @@ sap.ui.define(
               "Level 3": "Medium car",
               "Fuel": "Hybrid",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -1884,7 +1882,7 @@ sap.ui.define(
               "Level 3": "Medium car",
               "Fuel": "CNG",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -1895,7 +1893,7 @@ sap.ui.define(
               "Level 3": "Medium car",
               "Fuel": "LPG",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -1906,7 +1904,7 @@ sap.ui.define(
               "Level 3": "Medium car",
               "Fuel": "Unknown",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -1917,7 +1915,7 @@ sap.ui.define(
               "Level 3": "Large car",
               "Fuel": "Diesel",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -1928,7 +1926,7 @@ sap.ui.define(
               "Level 3": "Large car",
               "Fuel": "Petrol",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -1939,7 +1937,7 @@ sap.ui.define(
               "Level 3": "Large car",
               "Fuel": "Hybrid",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -1950,7 +1948,7 @@ sap.ui.define(
               "Level 3": "Large car",
               "Fuel": "CNG",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -1961,7 +1959,7 @@ sap.ui.define(
               "Level 3": "Large car",
               "Fuel": "LPG",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -1972,7 +1970,7 @@ sap.ui.define(
               "Level 3": "Large car",
               "Fuel": "Unknown",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -1983,7 +1981,7 @@ sap.ui.define(
               "Level 3": "Average car",
               "Fuel": "Diesel",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -1994,7 +1992,7 @@ sap.ui.define(
               "Level 3": "Average car",
               "Fuel": "Petrol",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2005,7 +2003,7 @@ sap.ui.define(
               "Level 3": "Average car",
               "Fuel": "Hybrid",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2016,7 +2014,7 @@ sap.ui.define(
               "Level 3": "Average car",
               "Fuel": "CNG",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2027,7 +2025,7 @@ sap.ui.define(
               "Level 3": "Average car",
               "Fuel": "LPG",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2038,7 +2036,7 @@ sap.ui.define(
               "Level 3": "Average car",
               "Fuel": "Unknown",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2049,7 +2047,7 @@ sap.ui.define(
               "Level 3": "Small",
               "Fuel": "",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2060,7 +2058,7 @@ sap.ui.define(
               "Level 3": "Medium",
               "Fuel": "",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2071,7 +2069,7 @@ sap.ui.define(
               "Level 3": "Large",
               "Fuel": "",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2082,7 +2080,7 @@ sap.ui.define(
               "Level 3": "Average",
               "Fuel": "",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2093,7 +2091,7 @@ sap.ui.define(
               "Level 3": "Class I (up to 1.305 tonnes)",
               "Fuel": "Battery Electric Vehicle",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2104,7 +2102,7 @@ sap.ui.define(
               "Level 3": "Class II (1.305 to 1.74 tonnes)",
               "Fuel": "Battery Electric Vehicle",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2115,7 +2113,7 @@ sap.ui.define(
               "Level 3": "Class III (1.74 to 3.5 tonnes)",
               "Fuel": "Battery Electric Vehicle",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2126,7 +2124,7 @@ sap.ui.define(
               "Level 3": "Average (up to 3.5 tonnes)",
               "Fuel": "Battery Electric Vehicle",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2137,7 +2135,7 @@ sap.ui.define(
               "Level 3": "Class I (up to 1.305 tonnes)",
               "Fuel": "Diesel",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2148,7 +2146,7 @@ sap.ui.define(
               "Level 3": "Class I (up to 1.305 tonnes)",
               "Fuel": "Petrol",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2159,7 +2157,7 @@ sap.ui.define(
               "Level 3": "Class I (up to 1.305 tonnes)",
               "Fuel": "CNG",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2170,7 +2168,7 @@ sap.ui.define(
               "Level 3": "Class I (up to 1.305 tonnes)",
               "Fuel": "LPG",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2181,7 +2179,7 @@ sap.ui.define(
               "Level 3": "Class I (up to 1.305 tonnes)",
               "Fuel": "Unknown",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2192,7 +2190,7 @@ sap.ui.define(
               "Level 3": "Class II (1.305 to 1.74 tonnes)",
               "Fuel": "Diesel",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2203,7 +2201,7 @@ sap.ui.define(
               "Level 3": "Class II (1.305 to 1.74 tonnes)",
               "Fuel": "Petrol",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2214,7 +2212,7 @@ sap.ui.define(
               "Level 3": "Class II (1.305 to 1.74 tonnes)",
               "Fuel": "CNG",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2225,7 +2223,7 @@ sap.ui.define(
               "Level 3": "Class II (1.305 to 1.74 tonnes)",
               "Fuel": "LPG",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2236,7 +2234,7 @@ sap.ui.define(
               "Level 3": "Class II (1.305 to 1.74 tonnes)",
               "Fuel": "Unknown",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2247,7 +2245,7 @@ sap.ui.define(
               "Level 3": "Class III (1.74 to 3.5 tonnes)",
               "Fuel": "Diesel",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2258,7 +2256,7 @@ sap.ui.define(
               "Level 3": "Class III (1.74 to 3.5 tonnes)",
               "Fuel": "Petrol",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2269,7 +2267,7 @@ sap.ui.define(
               "Level 3": "Class III (1.74 to 3.5 tonnes)",
               "Fuel": "CNG",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2280,7 +2278,7 @@ sap.ui.define(
               "Level 3": "Class III (1.74 to 3.5 tonnes)",
               "Fuel": "LPG",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2291,7 +2289,7 @@ sap.ui.define(
               "Level 3": "Class III (1.74 to 3.5 tonnes)",
               "Fuel": "Unknown",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2302,7 +2300,7 @@ sap.ui.define(
               "Level 3": "Average (up to 3.5 tonnes)",
               "Fuel": "Diesel",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2313,7 +2311,7 @@ sap.ui.define(
               "Level 3": "Average (up to 3.5 tonnes)",
               "Fuel": "Petrol",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2324,7 +2322,7 @@ sap.ui.define(
               "Level 3": "Average (up to 3.5 tonnes)",
               "Fuel": "CNG",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2335,7 +2333,7 @@ sap.ui.define(
               "Level 3": "Average (up to 3.5 tonnes)",
               "Fuel": "LPG",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2346,7 +2344,7 @@ sap.ui.define(
               "Level 3": "Average (up to 3.5 tonnes)",
               "Fuel": "Unknown",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2357,7 +2355,7 @@ sap.ui.define(
               "Level 3": "Rigid (>3.5 - 7.5 tonnes)",
               "Fuel": "Average laden",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2368,7 +2366,7 @@ sap.ui.define(
               "Level 3": "Rigid (>7.5 tonnes-17 tonnes)",
               "Fuel": "Average laden",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2379,7 +2377,7 @@ sap.ui.define(
               "Level 3": "Rigid (>17 tonnes)",
               "Fuel": "Average laden",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2390,7 +2388,7 @@ sap.ui.define(
               "Level 3": "All rigids",
               "Fuel": "Average laden",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2401,7 +2399,7 @@ sap.ui.define(
               "Level 3": "Articulated (>3.5 - 33t)",
               "Fuel": "Average laden",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2412,7 +2410,7 @@ sap.ui.define(
               "Level 3": "Articulated (>33t)",
               "Fuel": "Average laden",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2423,7 +2421,7 @@ sap.ui.define(
               "Level 3": "All artics",
               "Fuel": "Average laden",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2434,7 +2432,7 @@ sap.ui.define(
               "Level 3": "All HGVs",
               "Fuel": "Average laden",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2445,7 +2443,7 @@ sap.ui.define(
               "Level 3": "Rigid (>3.5 - 7.5 tonnes)",
               "Fuel": "Average laden",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2456,7 +2454,7 @@ sap.ui.define(
               "Level 3": "Rigid (>7.5 tonnes-17 tonnes)",
               "Fuel": "Average laden",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2467,7 +2465,7 @@ sap.ui.define(
               "Level 3": "Rigid (>17 tonnes)",
               "Fuel": "Average laden",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2478,7 +2476,7 @@ sap.ui.define(
               "Level 3": "All rigids",
               "Fuel": "Average laden",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2489,7 +2487,7 @@ sap.ui.define(
               "Level 3": "Articulated (>3.5 - 33t)",
               "Fuel": "Average laden",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2500,7 +2498,7 @@ sap.ui.define(
               "Level 3": "Articulated (>33t)",
               "Fuel": "Average laden",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2511,7 +2509,7 @@ sap.ui.define(
               "Level 3": "All artics",
               "Fuel": "Average laden",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             },
             {
@@ -2522,7 +2520,7 @@ sap.ui.define(
               "Level 3": "All HGVs",
               "Fuel": "Average laden",
               "Unit": "km",
-              "Distance": "",
+              "Distance (km)": "",
               "Factor": ""
             }
           ],
@@ -3121,7 +3119,51 @@ sap.ui.define(
               "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Aggregates",
-              "Source Description": "Packaging",
+              "Source Description": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2518",
+              "Scope": "Scope 3",
+              "Activity": "Construction",
+              "Waste Material": "Aggregates",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2518",
+              "Scope": "Scope 3",
+              "Activity": "Construction",
+              "Waste Material": "Aggregates",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2524",
+              "Scope": "Scope 3",
+              "Activity": "Construction",
+              "Waste Material": "Average construction",
+              "Source Description": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2524",
+              "Scope": "Scope 3",
+              "Activity": "Construction",
+              "Waste Material": "Average construction",
+              "Source Description": "",
               "Disposal Method": "Landfilled",
               "Unit": "tonnes",
               "Weight": "",
@@ -3132,7 +3174,29 @@ sap.ui.define(
               "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Average construction",
-              "Source Description": "Packaging",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2530",
+              "Scope": "Scope 3",
+              "Activity": "Construction",
+              "Waste Material": "Asbestos",
+              "Source Description": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2530",
+              "Scope": "Scope 3",
+              "Activity": "Construction",
+              "Waste Material": "Asbestos",
+              "Source Description": "",
               "Disposal Method": "Landfilled",
               "Unit": "tonnes",
               "Weight": "",
@@ -3144,7 +3208,7 @@ sap.ui.define(
               "Activity": "Construction",
               "Waste Material": "Asbestos",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3155,7 +3219,29 @@ sap.ui.define(
               "Activity": "Construction",
               "Waste Material": "Asphalt",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2536",
+              "Scope": "Scope 3",
+              "Activity": "Construction",
+              "Waste Material": "Asphalt",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2536",
+              "Scope": "Scope 3",
+              "Activity": "Construction",
+              "Waste Material": "Asphalt",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3166,7 +3252,29 @@ sap.ui.define(
               "Activity": "Construction",
               "Waste Material": "Bricks",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2542",
+              "Scope": "Scope 3",
+              "Activity": "Construction",
+              "Waste Material": "Bricks",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2542",
+              "Scope": "Scope 3",
+              "Activity": "Construction",
+              "Waste Material": "Bricks",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3177,7 +3285,29 @@ sap.ui.define(
               "Activity": "Construction",
               "Waste Material": "Concrete",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2548",
+              "Scope": "Scope 3",
+              "Activity": "Construction",
+              "Waste Material": "Concrete",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2548",
+              "Scope": "Scope 3",
+              "Activity": "Construction",
+              "Waste Material": "Concrete",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3188,7 +3318,29 @@ sap.ui.define(
               "Activity": "Construction",
               "Waste Material": "Insulation",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2554",
+              "Scope": "Scope 3",
+              "Activity": "Construction",
+              "Waste Material": "Insulation",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2554",
+              "Scope": "Scope 3",
+              "Activity": "Construction",
+              "Waste Material": "Insulation",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3199,7 +3351,29 @@ sap.ui.define(
               "Activity": "Construction",
               "Waste Material": "Metals",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2560",
+              "Scope": "Scope 3",
+              "Activity": "Construction",
+              "Waste Material": "Metals",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2560",
+              "Scope": "Scope 3",
+              "Activity": "Construction",
+              "Waste Material": "Metals",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3210,7 +3384,29 @@ sap.ui.define(
               "Activity": "Construction",
               "Waste Material": "Soils",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2566",
+              "Scope": "Scope 3",
+              "Activity": "Construction",
+              "Waste Material": "Soils",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2566",
+              "Scope": "Scope 3",
+              "Activity": "Construction",
+              "Waste Material": "Soils",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3221,7 +3417,29 @@ sap.ui.define(
               "Activity": "Construction",
               "Waste Material": "Mineral oil",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2572",
+              "Scope": "Scope 3",
+              "Activity": "Construction",
+              "Waste Material": "Mineral oil",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2572",
+              "Scope": "Scope 3",
+              "Activity": "Construction",
+              "Waste Material": "Mineral oil",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3232,7 +3450,29 @@ sap.ui.define(
               "Activity": "Construction",
               "Waste Material": "Plasterboard",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2578",
+              "Scope": "Scope 3",
+              "Activity": "Construction",
+              "Waste Material": "Plasterboard",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2578",
+              "Scope": "Scope 3",
+              "Activity": "Construction",
+              "Waste Material": "Plasterboard",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3243,7 +3483,29 @@ sap.ui.define(
               "Activity": "Construction",
               "Waste Material": "Tyres",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2584",
+              "Scope": "Scope 3",
+              "Activity": "Construction",
+              "Waste Material": "Tyres",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2584",
+              "Scope": "Scope 3",
+              "Activity": "Construction",
+              "Waste Material": "Tyres",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3254,7 +3516,29 @@ sap.ui.define(
               "Activity": "Construction",
               "Waste Material": "Wood",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2590",
+              "Scope": "Scope 3",
+              "Activity": "Construction",
+              "Waste Material": "Wood",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2590",
+              "Scope": "Scope 3",
+              "Activity": "Construction",
+              "Waste Material": "Wood",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3265,7 +3549,29 @@ sap.ui.define(
               "Activity": "Other",
               "Waste Material": "Books",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2596",
+              "Scope": "Scope 3",
+              "Activity": "Other",
+              "Waste Material": "Books",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2596",
+              "Scope": "Scope 3",
+              "Activity": "Other",
+              "Waste Material": "Books",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3276,7 +3582,29 @@ sap.ui.define(
               "Activity": "Other",
               "Waste Material": "Glass",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2602",
+              "Scope": "Scope 3",
+              "Activity": "Other",
+              "Waste Material": "Glass",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2602",
+              "Scope": "Scope 3",
+              "Activity": "Other",
+              "Waste Material": "Glass",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3287,7 +3615,29 @@ sap.ui.define(
               "Activity": "Other",
               "Waste Material": "Clothing",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2608",
+              "Scope": "Scope 3",
+              "Activity": "Other",
+              "Waste Material": "Clothing",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2608",
+              "Scope": "Scope 3",
+              "Activity": "Other",
+              "Waste Material": "Clothing",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3298,7 +3648,29 @@ sap.ui.define(
               "Activity": "Refuse",
               "Waste Material": "Household residual waste",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2614",
+              "Scope": "Scope 3",
+              "Activity": "Refuse",
+              "Waste Material": "Household residual waste",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2614",
+              "Scope": "Scope 3",
+              "Activity": "Refuse",
+              "Waste Material": "Household residual waste",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3309,7 +3681,29 @@ sap.ui.define(
               "Activity": "Refuse",
               "Waste Material": "Organic: food and drink waste",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2620",
+              "Scope": "Scope 3",
+              "Activity": "Refuse",
+              "Waste Material": "Organic: food and drink waste",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2620",
+              "Scope": "Scope 3",
+              "Activity": "Refuse",
+              "Waste Material": "Organic: food and drink waste",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3320,7 +3714,29 @@ sap.ui.define(
               "Activity": "Refuse",
               "Waste Material": "Organic: garden waste",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2626",
+              "Scope": "Scope 3",
+              "Activity": "Refuse",
+              "Waste Material": "Organic: garden waste",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2626",
+              "Scope": "Scope 3",
+              "Activity": "Refuse",
+              "Waste Material": "Organic: garden waste",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3331,7 +3747,29 @@ sap.ui.define(
               "Activity": "Refuse",
               "Waste Material": "Organic: mixed food and garden waste",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2632",
+              "Scope": "Scope 3",
+              "Activity": "Refuse",
+              "Waste Material": "Organic: mixed food and garden waste",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2632",
+              "Scope": "Scope 3",
+              "Activity": "Refuse",
+              "Waste Material": "Organic: mixed food and garden waste",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3342,7 +3780,29 @@ sap.ui.define(
               "Activity": "Refuse",
               "Waste Material": "Commercial and industrial waste",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2638",
+              "Scope": "Scope 3",
+              "Activity": "Refuse",
+              "Waste Material": "Commercial and industrial waste",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2638",
+              "Scope": "Scope 3",
+              "Activity": "Refuse",
+              "Waste Material": "Commercial and industrial waste",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3353,7 +3813,29 @@ sap.ui.define(
               "Activity": "Electrical items",
               "Waste Material": "WEEE - fridges and freezers",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2642",
+              "Scope": "Scope 3",
+              "Activity": "Electrical items",
+              "Waste Material": "WEEE - fridges and freezers",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2642",
+              "Scope": "Scope 3",
+              "Activity": "Electrical items",
+              "Waste Material": "WEEE - fridges and freezers",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3364,7 +3846,29 @@ sap.ui.define(
               "Activity": "Electrical items",
               "Waste Material": "WEEE - large",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2646",
+              "Scope": "Scope 3",
+              "Activity": "Electrical items",
+              "Waste Material": "WEEE - large",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2646",
+              "Scope": "Scope 3",
+              "Activity": "Electrical items",
+              "Waste Material": "WEEE - large",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3375,7 +3879,29 @@ sap.ui.define(
               "Activity": "Electrical items",
               "Waste Material": "WEEE - mixed",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2650",
+              "Scope": "Scope 3",
+              "Activity": "Electrical items",
+              "Waste Material": "WEEE - mixed",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2650",
+              "Scope": "Scope 3",
+              "Activity": "Electrical items",
+              "Waste Material": "WEEE - mixed",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3386,7 +3912,29 @@ sap.ui.define(
               "Activity": "Electrical items",
               "Waste Material": "WEEE - small",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2654",
+              "Scope": "Scope 3",
+              "Activity": "Electrical items",
+              "Waste Material": "WEEE - small",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2654",
+              "Scope": "Scope 3",
+              "Activity": "Electrical items",
+              "Waste Material": "WEEE - small",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3397,7 +3945,29 @@ sap.ui.define(
               "Activity": "Electrical items",
               "Waste Material": "Batteries",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2658",
+              "Scope": "Scope 3",
+              "Activity": "Electrical items",
+              "Waste Material": "Batteries",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2658",
+              "Scope": "Scope 3",
+              "Activity": "Electrical items",
+              "Waste Material": "Batteries",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3408,7 +3978,29 @@ sap.ui.define(
               "Activity": "Metal",
               "Waste Material": "Metal: aluminium cans and foil (excl. forming)",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2662",
+              "Scope": "Scope 3",
+              "Activity": "Metal",
+              "Waste Material": "Metal: aluminium cans and foil (excl. forming)",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2662",
+              "Scope": "Scope 3",
+              "Activity": "Metal",
+              "Waste Material": "Metal: aluminium cans and foil (excl. forming)",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3419,7 +4011,29 @@ sap.ui.define(
               "Activity": "Metal",
               "Waste Material": "Metal: mixed cans",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2666",
+              "Scope": "Scope 3",
+              "Activity": "Metal",
+              "Waste Material": "Metal: mixed cans",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2666",
+              "Scope": "Scope 3",
+              "Activity": "Metal",
+              "Waste Material": "Metal: mixed cans",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3430,7 +4044,29 @@ sap.ui.define(
               "Activity": "Metal",
               "Waste Material": "Metal: scrap metal",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2670",
+              "Scope": "Scope 3",
+              "Activity": "Metal",
+              "Waste Material": "Metal: scrap metal",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2670",
+              "Scope": "Scope 3",
+              "Activity": "Metal",
+              "Waste Material": "Metal: scrap metal",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3441,7 +4077,29 @@ sap.ui.define(
               "Activity": "Metal",
               "Waste Material": "Metal: steel cans",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2674",
+              "Scope": "Scope 3",
+              "Activity": "Metal",
+              "Waste Material": "Metal: steel cans",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2674",
+              "Scope": "Scope 3",
+              "Activity": "Metal",
+              "Waste Material": "Metal: steel cans",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3452,7 +4110,29 @@ sap.ui.define(
               "Activity": "Plastic",
               "Waste Material": "Plastics: average plastics",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2678",
+              "Scope": "Scope 3",
+              "Activity": "Plastic",
+              "Waste Material": "Plastics: average plastics",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2678",
+              "Scope": "Scope 3",
+              "Activity": "Plastic",
+              "Waste Material": "Plastics: average plastics",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3463,7 +4143,29 @@ sap.ui.define(
               "Activity": "Plastic",
               "Waste Material": "Plastics: average plastic film",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2682",
+              "Scope": "Scope 3",
+              "Activity": "Plastic",
+              "Waste Material": "Plastics: average plastic film",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2682",
+              "Scope": "Scope 3",
+              "Activity": "Plastic",
+              "Waste Material": "Plastics: average plastic film",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3474,7 +4176,29 @@ sap.ui.define(
               "Activity": "Plastic",
               "Waste Material": "Plastics: average plastic rigid",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2686",
+              "Scope": "Scope 3",
+              "Activity": "Plastic",
+              "Waste Material": "Plastics: average plastic rigid",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2686",
+              "Scope": "Scope 3",
+              "Activity": "Plastic",
+              "Waste Material": "Plastics: average plastic rigid",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3485,7 +4209,29 @@ sap.ui.define(
               "Activity": "Plastic",
               "Waste Material": "Plastics: HDPE (incl. forming)",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2690",
+              "Scope": "Scope 3",
+              "Activity": "Plastic",
+              "Waste Material": "Plastics: HDPE (incl. forming)",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2690",
+              "Scope": "Scope 3",
+              "Activity": "Plastic",
+              "Waste Material": "Plastics: HDPE (incl. forming)",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3496,7 +4242,29 @@ sap.ui.define(
               "Activity": "Plastic",
               "Waste Material": "Plastics: LDPE and LLDPE (incl. forming)",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2694",
+              "Scope": "Scope 3",
+              "Activity": "Plastic",
+              "Waste Material": "Plastics: LDPE and LLDPE (incl. forming)",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2694",
+              "Scope": "Scope 3",
+              "Activity": "Plastic",
+              "Waste Material": "Plastics: LDPE and LLDPE (incl. forming)",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3507,7 +4275,29 @@ sap.ui.define(
               "Activity": "Plastic",
               "Waste Material": "Plastics: PET (incl. forming)",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2698",
+              "Scope": "Scope 3",
+              "Activity": "Plastic",
+              "Waste Material": "Plastics: PET (incl. forming)",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2698",
+              "Scope": "Scope 3",
+              "Activity": "Plastic",
+              "Waste Material": "Plastics: PET (incl. forming)",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3518,7 +4308,29 @@ sap.ui.define(
               "Activity": "Plastic",
               "Waste Material": "Plastics: PP (incl. forming)",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2702",
+              "Scope": "Scope 3",
+              "Activity": "Plastic",
+              "Waste Material": "Plastics: PP (incl. forming)",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2702",
+              "Scope": "Scope 3",
+              "Activity": "Plastic",
+              "Waste Material": "Plastics: PP (incl. forming)",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3529,7 +4341,29 @@ sap.ui.define(
               "Activity": "Plastic",
               "Waste Material": "Plastics: PS (incl. forming)",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2706",
+              "Scope": "Scope 3",
+              "Activity": "Plastic",
+              "Waste Material": "Plastics: PS (incl. forming)",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2706",
+              "Scope": "Scope 3",
+              "Activity": "Plastic",
+              "Waste Material": "Plastics: PS (incl. forming)",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3540,7 +4374,29 @@ sap.ui.define(
               "Activity": "Plastic",
               "Waste Material": "Plastics: PVC (incl. forming)",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2710",
+              "Scope": "Scope 3",
+              "Activity": "Plastic",
+              "Waste Material": "Plastics: PVC (incl. forming)",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2710",
+              "Scope": "Scope 3",
+              "Activity": "Plastic",
+              "Waste Material": "Plastics: PVC (incl. forming)",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3551,7 +4407,29 @@ sap.ui.define(
               "Activity": "Paper",
               "Waste Material": "Paper and board: board",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2715",
+              "Scope": "Scope 3",
+              "Activity": "Paper",
+              "Waste Material": "Paper and board: board",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2715",
+              "Scope": "Scope 3",
+              "Activity": "Paper",
+              "Waste Material": "Paper and board: board",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3562,7 +4440,29 @@ sap.ui.define(
               "Activity": "Paper",
               "Waste Material": "Paper and board: mixed",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2720",
+              "Scope": "Scope 3",
+              "Activity": "Paper",
+              "Waste Material": "Paper and board: mixed",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2720",
+              "Scope": "Scope 3",
+              "Activity": "Paper",
+              "Waste Material": "Paper and board: mixed",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
@@ -3573,12 +4473,36 @@ sap.ui.define(
               "Activity": "Paper",
               "Waste Material": "Paper and board: paper",
               "Source Description": "",
-              "Disposal Method": "",
+              "Disposal Method": "Recycled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2725",
+              "Scope": "Scope 3",
+              "Activity": "Paper",
+              "Waste Material": "Paper and board: paper",
+              "Source Description": "",
+              "Disposal Method": "Landfilled",
+              "Unit": "tonnes",
+              "Weight": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "2725",
+              "Scope": "Scope 3",
+              "Activity": "Paper",
+              "Waste Material": "Paper and board: paper",
+              "Source Description": "",
+              "Disposal Method": "Combusted",
               "Unit": "tonnes",
               "Weight": "",
               "Factor": ""
             }
-          ],
+          ]
+
+          ,
           "Flight": [
             {
               "Scope": "Scope 3",
@@ -5842,76 +6766,76 @@ sap.ui.define(
           ],
           "Food": [
             {
+              "Factor": "0.84",
               "Meal Type": "1 standard breakfast",
               "Unit": "breakfast",
               "Amount": "",
-              "Factor": ""
             },
             {
+              "Factor": "2.33",
               "Meal Type": "1 gourmet breakfast",
               "Unit": "breakfast",
               "Amount": "",
-              "Factor": ""
             },
             {
+              "Factor": "2.02",
               "Meal Type": "1 cold or hot snack",
               "Unit": "hot snack",
               "Amount": "",
-              "Factor": ""
             },
             {
+              "Factor": "4.7",
               "Meal Type": "1 average meal",
               "Unit": "meal",
               "Amount": "",
-              "Factor": ""
             },
             {
+              "Factor": "0.2",
               "Meal Type": "Non-alcoholic beverage",
               "Unit": "litre",
               "Amount": "",
-              "Factor": ""
             },
             {
+              "Factor": "1.87",
               "Meal Type": "Alcoholic beverage",
               "Unit": "litre",
               "Amount": "",
-              "Factor": ""
             },
             {
+              "Factor": "2.77",
               "Meal Type": "1 hot snack (burger + frites)",
               "Unit": "hot snack",
               "Amount": "",
-              "Factor": ""
             },
             {
+              "Factor": "1.27",
               "Meal Type": "1 sandwich",
               "Unit": "sandwich",
               "Amount": "",
-              "Factor": ""
             },
             {
+              "Factor": "1.69",
               "Meal Type": "Meal, vegan",
               "Unit": "meal",
               "Amount": "",
-              "Factor": ""
             },
             {
+              "Factor": "2.85",
               "Meal Type": "Meal, vegetarian",
               "Unit": "meal",
               "Amount": "",
-              "Factor": ""
             },
             {
+              "Factor": "6.93",
               "Meal Type": "Meal, with beef",
               "Unit": "meal",
               "Amount": "",
-              "Factor": ""
             },
             {
+              "Factor": "3.39",
               "Meal Type": "Meal, with chicken",
               "Unit": "meal",
               "Amount": "",
-              "Factor": ""
             }
           ],
           "Home Office": [
@@ -5946,7 +6870,62 @@ sap.ui.define(
               "Scope": "Scope 3",
               "Type": "Water Supply",
               "Unit": "cubic metres",
-              "Source": "",
+              "Source": "Surface",
+              "Amount": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "668",
+              "Scope": "Scope 3",
+              "Type": "Water Supply",
+              "Unit": "cubic metres",
+              "Source": "Ground",
+              "Amount": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "668",
+              "Scope": "Scope 3",
+              "Type": "Water Supply",
+              "Unit": "cubic metres",
+              "Source": "Sea",
+              "Amount": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "668",
+              "Scope": "Scope 3",
+              "Type": "Water Supply",
+              "Unit": "cubic metres",
+              "Source": "Rain",
+              "Amount": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "668",
+              "Scope": "Scope 3",
+              "Type": "Water Supply",
+              "Unit": "cubic metres",
+              "Source": "Treated",
+              "Amount": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "668",
+              "Scope": "Scope 3",
+              "Type": "Water Supply",
+              "Unit": "cubic metres",
+              "Source": "3rd Party",
+              "Amount": "",
+              "Factor": ""
+            },
+
+            {
+              "Reference": "670",
+              "Scope": "Scope 3",
+              "Type": "Water Drainage",
+              "Unit": "cubic metres",
+              "Source": "Surface",
               "Amount": "",
               "Factor": ""
             },
@@ -5955,7 +6934,40 @@ sap.ui.define(
               "Scope": "Scope 3",
               "Type": "Water Drainage",
               "Unit": "cubic metres",
-              "Source": "",
+              "Source": "Ground",
+              "Amount": "",
+              "Factor": ""
+            },
+            {
+              "Reference": "670",
+              "Scope": "Scope 3",
+              "Type": "Water Drainage",
+              "Unit": "cubic metres",
+              "Source": "Sea",
+              "Amount": "",
+              "Factor": ""
+            }, {
+              "Reference": "670",
+              "Scope": "Scope 3",
+              "Type": "Water Drainage",
+              "Unit": "cubic metres",
+              "Source": "Rain",
+              "Amount": "",
+              "Factor": ""
+            }, {
+              "Reference": "670",
+              "Scope": "Scope 3",
+              "Type": "Water Drainage",
+              "Unit": "cubic metres",
+              "Source": "Treated",
+              "Amount": "",
+              "Factor": ""
+            }, {
+              "Reference": "670",
+              "Scope": "Scope 3",
+              "Type": "Water Drainage",
+              "Unit": "cubic metres",
+              "Source": "3rd Party",
               "Amount": "",
               "Factor": ""
             }
@@ -5964,7 +6976,911 @@ sap.ui.define(
           "Entity": [
             {
               "Framework": "GRI",
-              "Entity Type": "Compensation ratio",
+              "Entity Type": "BOD",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "BOD",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "BOD",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "BOD",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "BOD",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "BOD",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "BOD",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "BOD",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "BOD",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "BOD",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "BOD",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "BOD",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "BOD",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "BOD",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "BOD",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "BOD",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "BOD",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "BOD",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "Independent Directors",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "Independent Directors",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "Independent Directors",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "Independent Directors",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "Independent Directors",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "Independent Directors",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "Independent Directors",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "Independent Directors",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "Independent Directors",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "Independent Directors",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "Independent Directors",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "Independent Directors",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "Independent Directors",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "Independent Directors",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "Independent Directors",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "Independent Directors",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "Independent Directors",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "Independent Directors",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "Executives",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "Executives",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "Executives",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "Executives",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "Executives",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "Executives",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "Executives",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "Executives",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "Executives",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "Executives",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "Executives",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "Executives",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "Executives",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "Executives",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "Executives",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "Executives",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "Executives",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "Executives",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI",
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Entity Type": "BOD",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Entity Type": "BOD",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Entity Type": "BOD",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Entity Type": "BOD",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Entity Type": "BOD",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Entity Type": "BOD",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Entity Type": "BOD",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Entity Type": "BOD",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Entity Type": "BOD",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Entity Type": "BOD",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Entity Type": "BOD",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Entity Type": "BOD",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Entity Type": "BOD",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Entity Type": "BOD",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Entity Type": "BOD",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Entity Type": "BOD",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Entity Type": "BOD",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Entity Type": "BOD",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Entity Type": "CFO/CEO",
               "Gender": "Male",
               "Age": "50+",
               "Tenure": "Above 10 years",
@@ -5974,43 +7890,388 @@ sap.ui.define(
               "Framework": "GRI,BRSR",
               "Entity Type": "CFO/CEO",
               "Gender": "Female",
-              "Age": "35 to 50",
-              "Tenure": "Between 1-2 years",
-              "Count": ""
-            },
-            {
-              "Framework": "GRI",
-              "Entity Type": "Independent Directors",
-              "Gender": "Others",
-              "Age": "22 to 35",
-              "Tenure": "Between 1-2 years",
-              "Count": ""
-            },
-            {
-              "Framework": "GRI",
-              "Entity Type": "Executives",
-              "Gender": "Female",
-              "Age": "Less than 22",
-              "Tenure": "Between 1-2 years",
+              "Age": "50+",
+              "Tenure": "Less than 1 year",
               "Count": ""
             },
             {
               "Framework": "GRI,BRSR",
-              "Entity Type": "BOD turnover rate",
-              "Gender": "Male",
-              "Age": "35 to 50",
-              "Tenure": "Between 1-2 years",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 1- 2 years",
               "Count": ""
             },
             {
-              "Framework": "GRI",
-              "Entity Type": "Independent Directors",
+              "Framework": "GRI,BRSR",
+              "Entity Type": "CFO/CEO",
               "Gender": "Female",
-              "Age": "35 to 50",
-              "Tenure": "Between 1-2 years",
+              "Age": "50+",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Framework": "BRSR",
+              "Entity Type": "BOD",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Framework": "BRSR",
+              "Entity Type": "BOD",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Framework": "BRSR",
+              "Entity Type": "BOD",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Framework": "BRSR",
+              "Entity Type": "BOD",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Framework": "BRSR",
+              "Entity Type": "BOD",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Framework": "BRSR",
+              "Entity Type": "BOD",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Framework": "BRSR",
+              "Entity Type": "BOD",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Framework": "BRSR",
+              "Entity Type": "BOD",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Framework": "BRSR",
+              "Entity Type": "BOD",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Framework": "BRSR",
+              "Entity Type": "BOD",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Framework": "BRSR",
+              "Entity Type": "BOD",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Framework": "BRSR",
+              "Entity Type": "BOD",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Framework": "BRSR",
+              "Entity Type": "BOD",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Framework": "BRSR",
+              "Entity Type": "BOD",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Framework": "BRSR",
+              "Entity Type": "BOD",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Framework": "BRSR",
+              "Entity Type": "BOD",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Framework": "BRSR",
+              "Entity Type": "BOD",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Framework": "BRSR",
+              "Entity Type": "BOD",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Framework": "BRSR",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Framework": "BRSR",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Framework": "BRSR",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Framework": "BRSR",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Framework": "BRSR",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Framework": "BRSR",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Framework": "BRSR",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Framework": "BRSR",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Framework": "BRSR",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Framework": "BRSR",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Framework": "BRSR",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Framework": "BRSR",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Framework": "BRSR",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Framework": "BRSR",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Framework": "BRSR",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Framework": "BRSR",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Framework": "BRSR",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Framework": "BRSR",
+              "Entity Type": "CFO/CEO",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Above 10 years",
               "Count": ""
             }
           ]
+
           ,
           "Eco. Performance": [
             {
@@ -6048,32 +8309,32 @@ sap.ui.define(
             {
               "Framework": "GRI,BRSR",
               "Data": "Entry level wage",
-              "Values": "1"
+              "Values": ""
             },
             {
               "Framework": "GRI,BRSR",
               "Data": "Minimum level wage",
-              "Values": "2"
+              "Values": ""
             },
             {
               "Framework": "GRI,BRSR",
               "Data": "Ratio of entry to minimum wage",
-              "Values": "3"
+              "Values": ""
             },
             {
               "Framework": "GRI,BRSR",
               "Data": "No of presence in national level",
-              "Values": "4"
+              "Values": ""
             },
             {
               "Framework": "GRI,BRSR",
               "Data": "No.of offices in International level",
-              "Values": "5"
+              "Values": ""
             },
             {
               "Framework": "GRI,BRSR",
               "Data": "currently presence in states",
-              "Values": "6"
+              "Values": ""
             }
           ],
 
@@ -6081,9 +8342,249 @@ sap.ui.define(
             {
               "Framework": "",
               "Employment Type": "Employees",
-              "Category": "Existing",
+              "Category": "New Hires - Disabled",
+              "Gender": "Male",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "New Hires - Disabled",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "New Hires - Disabled",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "New Hires - Disabled",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "New Hires - Disabled",
               "Gender": "Male",
               "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "New Hires - Disabled",
+              "Gender": "Female",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "New Hires - Disabled",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "New Hires - Disabled",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "New Hires - Disabled",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "New Hires - Disabled",
+              "Gender": "Female",
+              "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "New Hires - Disabled",
+              "Gender": "LGBTQ",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "New Hires - Disabled",
+              "Gender": "LGBTQ",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "New Hires - Disabled",
+              "Gender": "LGBTQ",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "New Hires - Disabled",
+              "Gender": "LGBTQ",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "New Hires - Disabled",
+              "Gender": "LGBTQ",
+              "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "New Hires",
+              "Gender": "Male",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "New Hires",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "New Hires",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "New Hires",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "New Hires",
+              "Gender": "Male",
+              "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "New Hires",
+              "Gender": "Female",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "New Hires",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "New Hires",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "New Hires",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "New Hires",
+              "Gender": "Female",
+              "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "New Hires",
+              "Gender": "LGBTQ",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "New Hires",
+              "Gender": "LGBTQ",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "New Hires",
+              "Gender": "LGBTQ",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "New Hires",
+              "Gender": "LGBTQ",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "New Hires",
+              "Gender": "LGBTQ",
+              "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "Existing",
+              "Gender": "Male",
+              "Age": "50+",
               "Count": ""
             },
             {
@@ -6097,7 +8598,47 @@ sap.ui.define(
             {
               "Framework": "",
               "Employment Type": "Employees",
-              "Category": "New Hires",
+              "Category": "Existing",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "Existing",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "Existing",
+              "Gender": "Male",
+              "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "Existing",
+              "Gender": "Female",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "Existing",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "Existing",
               "Gender": "Female",
               "Age": "22 to 35",
               "Count": ""
@@ -6113,7 +8654,15 @@ sap.ui.define(
             {
               "Framework": "",
               "Employment Type": "Employees",
-              "Category": "New Hires",
+              "Category": "Existing",
+              "Gender": "Female",
+              "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "Existing",
               "Gender": "LGBTQ",
               "Age": "50+",
               "Count": ""
@@ -6129,40 +8678,993 @@ sap.ui.define(
             {
               "Framework": "",
               "Employment Type": "Employees",
-              "Category": "",
-              "Gender": "",
+              "Category": "Existing",
+              "Gender": "LGBTQ",
               "Age": "22 to 35",
               "Count": ""
             },
             {
               "Framework": "",
               "Employment Type": "Employees",
-              "Category": "",
-              "Gender": "",
+              "Category": "Existing",
+              "Gender": "LGBTQ",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "Existing",
+              "Gender": "LGBTQ",
+              "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "Existing - Disabled",
+              "Gender": "Male",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "Existing - Disabled",
+              "Gender": "Male",
               "Age": "35 to 50",
               "Count": ""
             },
             {
               "Framework": "",
               "Employment Type": "Employees",
-              "Category": "",
-              "Gender": "",
-              "Age": "",
+              "Category": "Existing - Disabled",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "Existing - Disabled",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "Existing - Disabled",
+              "Gender": "Male",
+              "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "Existing - Disabled",
+              "Gender": "Female",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "Existing - Disabled",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "Existing - Disabled",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "Existing - Disabled",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "Existing - Disabled",
+              "Gender": "Female",
+              "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "Existing - Disabled",
+              "Gender": "LGBTQ",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "Existing - Disabled",
+              "Gender": "LGBTQ",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "Existing - Disabled",
+              "Gender": "LGBTQ",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "Existing - Disabled",
+              "Gender": "LGBTQ",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Employees",
+              "Category": "Existing - Disabled",
+              "Gender": "LGBTQ",
+              "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "New Hires - Disabled",
+              "Gender": "Male",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "New Hires - Disabled",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "New Hires - Disabled",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "New Hires - Disabled",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "New Hires - Disabled",
+              "Gender": "Male",
+              "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "New Hires - Disabled",
+              "Gender": "Female",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "New Hires - Disabled",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "New Hires - Disabled",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "New Hires - Disabled",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "New Hires - Disabled",
+              "Gender": "Female",
+              "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "New Hires - Disabled",
+              "Gender": "LGBTQ",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "New Hires - Disabled",
+              "Gender": "LGBTQ",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "New Hires - Disabled",
+              "Gender": "LGBTQ",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "New Hires - Disabled",
+              "Gender": "LGBTQ",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "New Hires - Disabled",
+              "Gender": "LGBTQ",
+              "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "New Hires",
+              "Gender": "Male",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "New Hires",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "New Hires",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "New Hires",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "New Hires",
+              "Gender": "Male",
+              "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "New Hires",
+              "Gender": "Female",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "New Hires",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "New Hires",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "New Hires",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "New Hires",
+              "Gender": "Female",
+              "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "New Hires",
+              "Gender": "LGBTQ",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "New Hires",
+              "Gender": "LGBTQ",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "New Hires",
+              "Gender": "LGBTQ",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "New Hires",
+              "Gender": "LGBTQ",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "New Hires",
+              "Gender": "LGBTQ",
+              "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "Existing",
+              "Gender": "Male",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "Existing",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "Existing",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "Existing",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "Existing",
+              "Gender": "Male",
+              "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "Existing",
+              "Gender": "Female",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "Existing",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "Existing",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "Existing",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "Existing",
+              "Gender": "Female",
+              "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "Existing",
+              "Gender": "LGBTQ",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "Existing",
+              "Gender": "LGBTQ",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "Existing",
+              "Gender": "LGBTQ",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "Existing",
+              "Gender": "LGBTQ",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "Existing",
+              "Gender": "LGBTQ",
+              "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "Existing - Disabled",
+              "Gender": "Male",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "Existing - Disabled",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "Existing - Disabled",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "Existing - Disabled",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "Existing - Disabled",
+              "Gender": "Male",
+              "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "Existing - Disabled",
+              "Gender": "Female",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "Existing - Disabled",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "Existing - Disabled",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "Existing - Disabled",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "Existing - Disabled",
+              "Gender": "Female",
+              "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "Existing - Disabled",
+              "Gender": "LGBTQ",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "Existing - Disabled",
+              "Gender": "LGBTQ",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "Existing - Disabled",
+              "Gender": "LGBTQ",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "Existing - Disabled",
+              "Gender": "LGBTQ",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Temporary Employee",
+              "Category": "Existing - Disabled",
+              "Gender": "LGBTQ",
+              "Age": "Overall",
               "Count": ""
             },
             {
               "Framework": "",
               "Employment Type": "Workers",
-              "Category": "",
-              "Gender": "",
-              "Age": "",
+              "Category": "New Hires - Disabled",
+              "Gender": "Male",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "New Hires - Disabled",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "New Hires - Disabled",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "New Hires - Disabled",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "New Hires - Disabled",
+              "Gender": "Male",
+              "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "New Hires - Disabled",
+              "Gender": "Female",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "New Hires - Disabled",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "New Hires - Disabled",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "New Hires - Disabled",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "New Hires - Disabled",
+              "Gender": "Female",
+              "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "New Hires - Disabled",
+              "Gender": "LGBTQ",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "New Hires - Disabled",
+              "Gender": "LGBTQ",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "New Hires - Disabled",
+              "Gender": "LGBTQ",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "New Hires - Disabled",
+              "Gender": "LGBTQ",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "New Hires - Disabled",
+              "Gender": "LGBTQ",
+              "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "New Hires",
+              "Gender": "Male",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "New Hires",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "New Hires",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "New Hires",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "New Hires",
+              "Gender": "Male",
+              "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "New Hires",
+              "Gender": "Female",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "New Hires",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "New Hires",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "New Hires",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "New Hires",
+              "Gender": "Female",
+              "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "New Hires",
+              "Gender": "LGBTQ",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "New Hires",
+              "Gender": "LGBTQ",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "New Hires",
+              "Gender": "LGBTQ",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "New Hires",
+              "Gender": "LGBTQ",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "New Hires",
+              "Gender": "LGBTQ",
+              "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "Existing",
+              "Gender": "Male",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "Existing",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "Existing",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "Existing",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "Existing",
+              "Gender": "Male",
+              "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "Existing",
+              "Gender": "Female",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "Existing",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "Existing",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "Existing",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "Existing",
+              "Gender": "Female",
+              "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "Existing",
+              "Gender": "LGBTQ",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "Existing",
+              "Gender": "LGBTQ",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "Existing",
+              "Gender": "LGBTQ",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "Existing",
+              "Gender": "LGBTQ",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Framework": "",
+              "Employment Type": "Workers",
+              "Category": "Existing",
+              "Gender": "LGBTQ",
+              "Age": "Overall",
               "Count": ""
             }
-          ],
+          ]
+          ,
           "Leave": [
             {
               "Framework": "GRI,BRSR",
-              "Type of Leave": "Sick leave",
+              "Type of Leave": "Maternity leave",
               "Duration in Days": "",
               "Count of Employees": ""
             },
@@ -6171,11 +9673,35 @@ sap.ui.define(
               "Type of Leave": "Paternity leave",
               "Duration in Days": "",
               "Count of Employees": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Type of Leave": "Birthday leave",
+              "Duration in Days": "",
+              "Count of Employees": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Type of Leave": "Marriage leave",
+              "Duration in Days": "",
+              "Count of Employees": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Type of Leave": "Accidental leave",
+              "Duration in Days": "",
+              "Count of Employees": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Type of Leave": "Sick leave",
+              "Duration in Days": "",
+              "Count of Employees": ""
             }
-          ],
+          ]
+          ,
           "Retention": [
             {
-              "Framework": "",
               "Employee Type": "Employees",
               "Gender": "Male",
               "Tenure": "Less than 1 year",
@@ -6183,195 +9709,164 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
-              "Employee Type": "Temporary Employee",
-              "Gender": "",
-              "Tenure": "",
-              "Age": "",
-              "Count": ""
-            },
-            {
-              "Framework": "",
-              "Employee Type": "Workers",
-              "Gender": "",
-              "Tenure": "",
-              "Age": "",
-              "Count": ""
-            },
-            {
-              "Framework": "",
-              "Employee Type": "BOD",
-              "Gender": "",
-              "Tenure": "",
-              "Age": "",
-              "Count": ""
-            },
-            {
-              "Framework": "",
               "Employee Type": "Employees",
-              "Gender": "",
-              "Tenure": "",
-              "Age": "",
+              "Gender": "Male",
+              "Tenure": "Less than 1 year",
+              "Age": "35 to 50",
               "Count": ""
             },
             {
-              "Framework": "",
               "Employee Type": "Employees",
-              "Gender": "",
-              "Tenure": "",
-              "Age": "",
+              "Gender": "Male",
+              "Tenure": "Less than 1 year",
+              "Age": "22 to 35",
               "Count": ""
             },
             {
-              "Framework": "",
               "Employee Type": "Employees",
-              "Gender": "",
-              "Tenure": "",
-              "Age": "",
+              "Gender": "Male",
+              "Tenure": "Less than 1 year",
+              "Age": "Less than 22",
               "Count": ""
             },
             {
-              "Framework": "",
               "Employee Type": "Employees",
-              "Gender": "",
-              "Tenure": "",
-              "Age": "",
+              "Gender": "Female",
+              "Tenure": "Less than 1 year",
+              "Age": "50+",
               "Count": ""
             },
             {
-              "Framework": "",
               "Employee Type": "Employees",
-              "Gender": "",
-              "Tenure": "",
-              "Age": "",
+              "Gender": "Female",
+              "Tenure": "Less than 1 year",
+              "Age": "35 to 50",
               "Count": ""
             },
             {
-              "Framework": "",
               "Employee Type": "Employees",
-              "Gender": "",
-              "Tenure": "",
-              "Age": "",
+              "Gender": "Female",
+              "Tenure": "Less than 1 year",
+              "Age": "22 to 35",
               "Count": ""
             },
             {
-              "Framework": "",
               "Employee Type": "Employees",
-              "Gender": "",
-              "Tenure": "",
-              "Age": "",
+              "Gender": "Female",
+              "Tenure": "Less than 1 year",
+              "Age": "Less than 22",
               "Count": ""
             },
             {
-              "Framework": "",
               "Employee Type": "Employees",
-              "Gender": "",
-              "Tenure": "",
-              "Age": "",
+              "Gender": "Others",
+              "Tenure": "Less than 1 year",
+              "Age": "50+",
               "Count": ""
             },
             {
-              "Framework": "",
               "Employee Type": "Employees",
-              "Gender": "",
-              "Tenure": "",
-              "Age": "",
+              "Gender": "Others",
+              "Tenure": "Less than 1 year",
+              "Age": "35 to 50",
               "Count": ""
             },
             {
-              "Framework": "",
               "Employee Type": "Employees",
-              "Gender": "",
-              "Tenure": "",
-              "Age": "",
+              "Gender": "Others",
+              "Tenure": "Less than 1 year",
+              "Age": "22 to 35",
               "Count": ""
             },
             {
-              "Framework": "",
               "Employee Type": "Employees",
-              "Gender": "",
-              "Tenure": "",
-              "Age": "",
+              "Gender": "Others",
+              "Tenure": "Less than 1 year",
+              "Age": "Less than 22",
               "Count": ""
             },
             {
-              "Framework": "",
               "Employee Type": "Employees",
-              "Gender": "",
-              "Tenure": "",
-              "Age": "",
+              "Gender": "Male",
+              "Tenure": "Between 1- 2 years",
+              "Age": "50+",
               "Count": ""
             },
             {
-              "Framework": "",
               "Employee Type": "Employees",
-              "Gender": "",
-              "Tenure": "",
-              "Age": "",
+              "Gender": "Male",
+              "Tenure": "Between 1- 2 years",
+              "Age": "35 to 50",
               "Count": ""
             },
             {
-              "Framework": "",
               "Employee Type": "Employees",
-              "Gender": "",
-              "Tenure": "",
-              "Age": "",
+              "Gender": "Male",
+              "Tenure": "Between 1- 2 years",
+              "Age": "22 to 35",
               "Count": ""
             },
             {
-              "Framework": "",
               "Employee Type": "Employees",
-              "Gender": "",
-              "Tenure": "",
-              "Age": "",
+              "Gender": "Male",
+              "Tenure": "Between 1- 2 years",
+              "Age": "Less than 22",
               "Count": ""
             },
             {
-              "Framework": "",
               "Employee Type": "Employees",
-              "Gender": "",
-              "Tenure": "",
-              "Age": "",
+              "Gender": "Female",
+              "Tenure": "Between 1- 2 years",
+              "Age": "50+",
               "Count": ""
             },
             {
-              "Framework": "",
               "Employee Type": "Employees",
-              "Gender": "",
-              "Tenure": "",
-              "Age": "",
+              "Gender": "Female",
+              "Tenure": "Between 1- 2 years",
+              "Age": "35 to 50",
               "Count": ""
             },
             {
-              "Framework": "",
               "Employee Type": "Employees",
-              "Gender": "",
-              "Tenure": "",
-              "Age": "",
+              "Gender": "Female",
+              "Tenure": "Between 1- 2 years",
+              "Age": "22 to 35",
               "Count": ""
             },
             {
-              "Framework": "",
               "Employee Type": "Employees",
-              "Gender": "",
-              "Tenure": "",
-              "Age": "",
+              "Gender": "Female",
+              "Tenure": "Between 1- 2 years",
+              "Age": "Less than 22",
               "Count": ""
             },
             {
-              "Framework": "",
               "Employee Type": "Employees",
-              "Gender": "",
-              "Tenure": "",
-              "Age": "",
+              "Gender": "Others",
+              "Tenure": "Between 1- 2 years",
+              "Age": "50+",
               "Count": ""
             },
             {
-              "Framework": "",
               "Employee Type": "Employees",
-              "Gender": "",
-              "Tenure": "",
-              "Age": "",
+              "Gender": "Others",
+              "Tenure": "Between 1- 2 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Others",
+              "Tenure": "Between 1- 2 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Others",
+              "Tenure": "Between 1- 2 years",
+              "Age": "Less than 22",
               "Count": ""
             }
           ]
@@ -6386,7 +9881,49 @@ sap.ui.define(
             },
             {
               "Framework": "GRI,BRSR",
+              "Injury Type": "Slips, Trips, and Falls",
+              "Number of Incidents": "",
+              "Gender": "Female",
+              "Count of Persons": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Injury Type": "Slips, Trips, and Falls",
+              "Number of Incidents": "",
+              "Gender": "Others",
+              "Count of Persons": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
               "Injury Type": "Cuts and Lacerations",
+              "Number of Incidents": "",
+              "Gender": "Male",
+              "Count of Persons": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Injury Type": "Cuts and Lacerations",
+              "Number of Incidents": "",
+              "Gender": "Female",
+              "Count of Persons": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Injury Type": "Cuts and Lacerations",
+              "Number of Incidents": "",
+              "Gender": "Others",
+              "Count of Persons": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Injury Type": "Overexertion Injuries",
+              "Number of Incidents": "",
+              "Gender": "Male",
+              "Count of Persons": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Injury Type": "Overexertion Injuries",
               "Number of Incidents": "",
               "Gender": "Female",
               "Count of Persons": ""
@@ -6402,35 +9939,105 @@ sap.ui.define(
               "Framework": "GRI,BRSR",
               "Injury Type": "Contact with Objects and Equipment",
               "Number of Incidents": "",
-              "Gender": "",
+              "Gender": "Male",
+              "Count of Persons": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Injury Type": "Contact with Objects and Equipment",
+              "Number of Incidents": "",
+              "Gender": "Female",
+              "Count of Persons": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Injury Type": "Contact with Objects and Equipment",
+              "Number of Incidents": "",
+              "Gender": "Others",
               "Count of Persons": ""
             },
             {
               "Framework": "GRI,BRSR",
               "Injury Type": "Fires and Explosions",
               "Number of Incidents": "",
-              "Gender": "",
+              "Gender": "Male",
+              "Count of Persons": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Injury Type": "Fires and Explosions",
+              "Number of Incidents": "",
+              "Gender": "Female",
+              "Count of Persons": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Injury Type": "Fires and Explosions",
+              "Number of Incidents": "",
+              "Gender": "Others",
               "Count of Persons": ""
             },
             {
               "Framework": "GRI,BRSR",
               "Injury Type": "Exposure to Hazardous Materials",
               "Number of Incidents": "",
-              "Gender": "",
+              "Gender": "Male",
+              "Count of Persons": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Injury Type": "Exposure to Hazardous Materials",
+              "Number of Incidents": "",
+              "Gender": "Female",
+              "Count of Persons": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Injury Type": "Exposure to Hazardous Materials",
+              "Number of Incidents": "",
+              "Gender": "Others",
               "Count of Persons": ""
             },
             {
               "Framework": "GRI,BRSR",
               "Injury Type": "Accident during Business Travel",
               "Number of Incidents": "",
-              "Gender": "",
+              "Gender": "Male",
+              "Count of Persons": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Injury Type": "Accident during Business Travel",
+              "Number of Incidents": "",
+              "Gender": "Female",
+              "Count of Persons": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Injury Type": "Accident during Business Travel",
+              "Number of Incidents": "",
+              "Gender": "Others",
               "Count of Persons": ""
             },
             {
               "Framework": "GRI,BRSR",
               "Injury Type": "Accident during workplace commute",
               "Number of Incidents": "",
-              "Gender": "",
+              "Gender": "Male",
+              "Count of Persons": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Injury Type": "Accident during workplace commute",
+              "Number of Incidents": "",
+              "Gender": "Female",
+              "Count of Persons": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Injury Type": "Accident during workplace commute",
+              "Number of Incidents": "",
+              "Gender": "Others",
               "Count of Persons": ""
             }
           ]
@@ -6439,65 +10046,1296 @@ sap.ui.define(
             {
               "Framework": "GRI,BRSR",
               "Types of training": "Employee health & safety training",
+
+              "Segment": "BOD",
               "Avg Hours per batch": "",
               "No. of employees": "",
               "Financial investment": "",
-              "Segment": "BOD"
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Employee health & safety training",
+
+              "Segment": "Employees",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Employee health & safety training",
+
+              "Segment": "Key management personnel",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Employee health & safety training",
+
+              "Segment": "Workers",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Employee health & safety training",
+
+              "Segment": "others",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
             },
             {
               "Framework": "GRI,BRSR",
               "Types of training": "Employee Skill Upgradation Training",
+
+              "Segment": "BOD",
               "Avg Hours per batch": "",
               "No. of employees": "",
               "Financial investment": "",
-              "Segment": "Key management personnel"
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Employee Skill Upgradation Training",
+
+              "Segment": "Employees",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Employee Skill Upgradation Training",
+
+              "Segment": "Key management personnel",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Employee Skill Upgradation Training",
+
+              "Segment": "Workers",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Employee Skill Upgradation Training",
+
+              "Segment": "others",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
             },
             {
               "Framework": "GRI,BRSR",
               "Types of training": "Onboarding and orientation",
+
+              "Segment": "BOD",
               "Avg Hours per batch": "",
               "No. of employees": "",
               "Financial investment": "",
-              "Segment": "Workers"
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Onboarding and orientation",
+
+              "Segment": "Employees",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Onboarding and orientation",
+
+              "Segment": "Key management personnel",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Onboarding and orientation",
+
+              "Segment": "Workers",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Onboarding and orientation",
+
+              "Segment": "others",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
             },
             {
               "Framework": "GRI,BRSR",
               "Types of training": "Technical Training",
+
+              "Segment": "BOD",
               "Avg Hours per batch": "",
               "No. of employees": "",
               "Financial investment": "",
-              "Segment": "Others"
             },
             {
               "Framework": "GRI,BRSR",
-              "Types of training": "Corporate Training",
+              "Types of training": "Technical Training",
+
+              "Segment": "Employees",
               "Avg Hours per batch": "",
               "No. of employees": "",
               "Financial investment": "",
-              "Segment": "Employees"
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Technical Training",
+
+              "Segment": "Key management personnel",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Technical Training",
+
+              "Segment": "Workers",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Technical Training",
+
+              "Segment": "others",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "corporate training",
+
+              "Segment": "BOD",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "corporate training",
+
+              "Segment": "Employees",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "corporate training",
+
+              "Segment": "Key management personnel",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "corporate training",
+
+              "Segment": "Workers",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "corporate training",
+
+              "Segment": "others",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
             },
             {
               "Framework": "GRI,BRSR",
               "Types of training": "Anti-corruption Training",
+
+              "Segment": "BOD",
               "Avg Hours per batch": "",
               "No. of employees": "",
               "Financial investment": "",
-              "Segment": "BOD"
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Anti-corruption Training",
+
+              "Segment": "Employees",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Anti-corruption Training",
+
+              "Segment": "Key management personnel",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Anti-corruption Training",
+
+              "Segment": "Workers",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Anti-corruption Training",
+
+              "Segment": "others",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "POSH training",
+
+              "Segment": "BOD",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "POSH training",
+
+              "Segment": "BOD",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "POSH training",
+
+              "Segment": "Employees",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "POSH training",
+
+              "Segment": "Key management personnel",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "POSH training",
+
+              "Segment": "Workers",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "POSH training",
+
+              "Segment": "others",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Strategy Implementation",
+
+              "Segment": "BOD",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Strategy Implementation",
+
+              "Segment": "Employees",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Strategy Implementation",
+
+              "Segment": "Key management personnel",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Strategy Implementation",
+
+              "Segment": "Workers",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Strategy Implementation",
+
+              "Segment": "others",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Business operation",
+
+              "Segment": "BOD",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Business operation",
+
+              "Segment": "Employees",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Business operation",
+
+              "Segment": "Key management personnel",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Business operation",
+
+              "Segment": "Workers",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Business operation",
+
+              "Segment": "others",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Organisation structure",
+
+              "Segment": "BOD",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Organisation structure",
+
+              "Segment": "Employees",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Organisation structure",
+
+              "Segment": "Key management personnel",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Organisation structure",
+
+              "Segment": "Workers",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Organisation structure",
+
+              "Segment": "others",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Risk Management training",
+
+              "Segment": "BOD",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Risk Management training",
+
+              "Segment": "Employees",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Risk Management training",
+
+              "Segment": "Key management personnel",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Risk Management training",
+
+              "Segment": "Workers",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Risk Management training",
+
+              "Segment": "others",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Regulatory framework",
+
+              "Segment": "BOD",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Regulatory framework",
+
+              "Segment": "Employees",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Regulatory framework",
+
+              "Segment": "Key management personnel",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Regulatory framework",
+
+              "Segment": "Workers",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Regulatory framework",
+
+              "Segment": "others",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Cyber security",
+
+              "Segment": "BOD",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Cyber security",
+
+              "Segment": "Employees",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Cyber security",
+
+              "Segment": "Key management personnel",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Cyber security",
+
+              "Segment": "Workers",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Cyber security",
+
+              "Segment": "others",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Future outlook training",
+
+              "Segment": "BOD",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Future outlook training",
+
+              "Segment": "Employees",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Future outlook training",
+
+              "Segment": "Key management personnel",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Future outlook training",
+
+              "Segment": "Workers",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Future outlook training",
+
+              "Segment": "others",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Leadership connect program",
+
+              "Segment": "BOD",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Leadership connect program",
+
+              "Segment": "Employees",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Leadership connect program",
+
+              "Segment": "Key management personnel",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Leadership connect program",
+
+              "Segment": "Workers",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Leadership connect program",
+
+              "Segment": "others",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Corporate governance training",
+
+              "Segment": "BOD",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Corporate governance training",
+
+              "Segment": "Employees",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Corporate governance training",
+
+              "Segment": "Key management personnel",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Corporate governance training",
+
+              "Segment": "Workers",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Corporate governance training",
+
+              "Segment": "others",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Emerging compliance landscape",
+
+              "Segment": "BOD",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Emerging compliance landscape",
+
+              "Segment": "Employees",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Emerging compliance landscape",
+
+              "Segment": "Key management personnel",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Emerging compliance landscape",
+
+              "Segment": "Workers",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Emerging compliance landscape",
+
+              "Segment": "others",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "AML (Anti-money laundering)",
+
+              "Segment": "BOD",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "AML (Anti-money laundering)",
+
+              "Segment": "Employees",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "AML (Anti-money laundering)",
+
+              "Segment": "Key management personnel",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "AML (Anti-money laundering)",
+
+              "Segment": "Workers",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "AML (Anti-money laundering)",
+
+              "Segment": "others",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "KYC",
+
+              "Segment": "BOD",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "KYC",
+
+              "Segment": "Employees",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "KYC",
+
+              "Segment": "Key management personnel",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "KYC",
+
+              "Segment": "Workers",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "KYC",
+
+              "Segment": "others",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Whistle-blower Policy Training",
+
+              "Segment": "BOD",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Whistle-blower Policy Training",
+
+              "Segment": "Employees",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Whistle-blower Policy Training",
+
+              "Segment": "Key management personnel",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Whistle-blower Policy Training",
+
+              "Segment": "Workers",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Whistle-blower Policy Training",
+
+              "Segment": "others",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "NRI Product & KYC Documentation",
+
+              "Segment": "BOD",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "NRI Product & KYC Documentation",
+
+              "Segment": "Employees",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "NRI Product & KYC Documentation",
+
+              "Segment": "Key management personnel",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "NRI Product & KYC Documentation",
+
+              "Segment": "Workers",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "NRI Product & KYC Documentation",
+
+              "Segment": "others",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Mobile Banking",
+
+              "Segment": "BOD",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Mobile Banking",
+
+              "Segment": "Employees",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Mobile Banking",
+
+              "Segment": "Key management personnel",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Mobile Banking",
+
+              "Segment": "Workers",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Mobile Banking",
+
+              "Segment": "others",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Prohibition of Insider Trading",
+
+              "Segment": "BOD",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Prohibition of Insider Trading",
+
+              "Segment": "Employees",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Prohibition of Insider Trading",
+
+              "Segment": "Key management personnel",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Prohibition of Insider Trading",
+
+              "Segment": "Workers",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Prohibition of Insider Trading",
+
+              "Segment": "others",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Cash Management System",
+
+              "Segment": "BOD",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Cash Management System",
+
+              "Segment": "Employees",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Cash Management System",
+
+              "Segment": "Key management personnel",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Cash Management System",
+
+              "Segment": "Workers",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Cash Management System",
+
+              "Segment": "others",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Code of Conduct & Ethics",
+
+              "Segment": "BOD",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Code of Conduct & Ethics",
+
+              "Segment": "Employees",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Code of Conduct & Ethics",
+
+              "Segment": "Key management personnel",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Code of Conduct & Ethics",
+
+              "Segment": "Workers",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Code of Conduct & Ethics",
+
+              "Segment": "others",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "CERSAI",
+
+              "Segment": "BOD",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "CERSAI",
+
+              "Segment": "Employees",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "CERSAI",
+
+              "Segment": "Key management personnel",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "CERSAI",
+
+              "Segment": "Workers",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "CERSAI",
+
+              "Segment": "others",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Grievance Redressal Mechanism",
+
+              "Segment": "BOD",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Grievance Redressal Mechanism",
+
+              "Segment": "Employees",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Grievance Redressal Mechanism",
+
+              "Segment": "Key management personnel",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Grievance Redressal Mechanism",
+
+              "Segment": "Workers",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Grievance Redressal Mechanism",
+
+              "Segment": "others",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
             },
             {
               "Framework": "GRI,BRSR",
               "Types of training": "Other",
+
+              "Segment": "BOD",
               "Avg Hours per batch": "",
               "No. of employees": "",
               "Financial investment": "",
-              "Segment": "BOD"
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Other",
+
+              "Segment": "Employees",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Other",
+
+              "Segment": "Key management personnel",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Other",
+
+              "Segment": "Workers",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Types of training": "Other",
+
+              "Segment": "others",
+              "Avg Hours per batch": "",
+              "No. of employees": "",
+              "Financial investment": "",
             }
           ]
           ,
           "Child Labor": [
             {
               "Framework": "GRI,BRSR",
-              "Supplier Name": "M/S Dev & sons",
+              "Supplier Name": "",
+              "Risk Level": "High",
+              "No. of Incidents reported": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Supplier Name": "",
+              "Risk Level": "Moderate",
+              "No. of Incidents reported": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Supplier Name": "",
+              "Risk Level": "Low",
+              "No. of Incidents reported": ""
+            },
+            {
+              "Framework": "GRI,BRSR",
+              "Supplier Name": "",
               "Risk Level": "Uncertain",
               "No. of Incidents reported": ""
             }
@@ -6585,8 +11423,8 @@ sap.ui.define(
             {
               "Framework": "GRI,BRSR",
               "Type of Incident": "Product defects or malfunctions",
-              "No.of non-compliance Incident": 1,
-              "Customers Impacted": 10
+              "No.of non-compliance Incident": "",
+              "Customers Impacted": ""
             },
             {
               "Framework": "GRI,BRSR",
@@ -6635,48 +11473,48 @@ sap.ui.define(
           "Social Benefits": [
             {
               "Framework": "GRI,BRSR",
-              "Initiative": "Plantation Drive",
-              "Type": "Plantation"
+              "Program name": "",
+              "Domain": "Plantation"
             },
             {
               "Framework": "GRI,BRSR",
-              "Initiative": "Plantation Drive",
-              "Type": "Livlihoods"
+              "Program name": "",
+              "Domain": "Livlihoods"
             },
             {
               "Framework": "GRI,BRSR",
-              "Initiative": "Plantation Drive",
-              "Type": "Education"
+              "Program name": "",
+              "Domain": "Education"
             },
             {
               "Framework": "GRI,BRSR",
-              "Initiative": "Plantation Drive",
-              "Type": "Rain water harvesting"
+              "Program name": "",
+              "Domain": "Rain water harvesting"
             },
             {
               "Framework": "GRI,BRSR",
-              "Initiative": "Plantation Drive",
-              "Type": "Renewable energy"
+              "Program name": "",
+              "Domain": "Renewable energy"
             },
             {
               "Framework": "GRI,BRSR",
-              "Initiative": "Plantation Drive",
-              "Type": "Training and Awareness"
+              "Program name": "",
+              "Domain": "Training and Awareness"
             },
             {
               "Framework": "GRI,BRSR",
-              "Initiative": "Plantation Drive",
-              "Type": "Forestry"
+              "Program name": "",
+              "Domain": "Forestry"
             },
             {
               "Framework": "GRI,BRSR",
-              "Initiative": "Plantation Drive",
-              "Type": "Natural Farming"
+              "Program name": "",
+              "Domain": "Natural Farming"
             },
             {
               "Framework": "GRI,BRSR",
-              "Initiative": "Plantation Drive",
-              "Type": "Food Safety"
+              "Program name": "",
+              "Domain": "Food Safety"
             }
           ]
 

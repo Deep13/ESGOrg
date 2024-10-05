@@ -46,7 +46,7 @@
 					</HBox>
 					<GenericTile
 						class="sapUiTinyMarginBegin sapUiTinyMarginTop tileLayout"
-						header="Emissions" subheader=""
+						header="Environment" subheader=""
 						press="onPressEmissions">
 						<TileContent>
 							<NumericContent id="EmissionTile" scale="%" value="0"

@@ -117,7 +117,7 @@ sap.ui.define(
               categoryCount++;
 
               // Track category-specific percentages
-              if (category === "Emissions") {
+              if (category === "Environment") {
                 totalEmissionsPercentage += percentage;
               } else if (category === "Social") {
                 totalSocialPercentage += percentage;
@@ -139,13 +139,13 @@ sap.ui.define(
           } else {
             // If location is missing from statistics, set all categories to 0%
             let locationResult = {
-              "Emissions": "0.00%",
+              "Environment": "0.00%",
               "Social": "0.00%",
               "Governance": "0.00%",
               "Total": "0.00%"
             };
             result[location] = locationResult;
-            totalCategories += 3;  // 3 categories: Emissions, Social, Governance
+            totalCategories += 3;  // 3 categories: Environment, Social, Governance
           }
         });
 
@@ -306,16 +306,12 @@ sap.ui.define(
         MessageToast.show("E-Mail has been sent");
       },
 
-
-      onLogOut: function () {
-        this.logOut();
-      },
       onPressEnvironment: function () {
         this.getRouter().navTo("EnvironmentAnalytics");
       },
       onPressEmissions: function () {
         this.getRouter().navTo("ReportingTiles", {
-          module: "Emissions"
+          module: "Environment"
         });
       },
       onPressSocial: function () {

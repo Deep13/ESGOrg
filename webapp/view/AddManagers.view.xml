@@ -47,9 +47,6 @@
                     <Column>
                         <Text text="Branch" />
                     </Column>
-                    <Column>
-                        <Text text="Actions" />
-                    </Column>
                 </columns>
                 <items>
                     <ColumnListItem>
@@ -65,12 +62,10 @@
                             path: 'employeeModel>branches',
                             formatter: '.branchText'
                         }" />
-                            <HBox>
+                            <!-- <HBox>
                                 <Button text="Edit" press="onEditEmployee" icon="sap-icon://edit"
                                     class="sapUiSmallMarginEnd" />
-                                <Button text="Delete" press="onDeleteEmployee"
-                                    icon="sap-icon://delete" />
-                            </HBox>
+                            </HBox> -->
                         </cells>
                     </ColumnListItem>
                 </items>

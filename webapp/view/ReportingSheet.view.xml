@@ -88,7 +88,7 @@
                                 </Select>
                             </VBox>
                             <Table id="editableTable" inset="false"
-                                noDataText="Select branch to see some data"
+                                noDataText="Select branch to see some data" sticky="ColumnHeaders"
                             >
                                 <headerToolbar>
                                     <Toolbar>
@@ -122,7 +122,8 @@
                             </Select>
                         </VBox>
                         <Table id="VariantTable" inset="false"
-                            noDataText="Select branch to see some data"
+                            noDataText="Select branch to see some data" sticky="ColumnHeaders"
+                            mode="MultiSelect"
                         >
                             <headerToolbar>
                                 <Toolbar>
@@ -153,7 +154,7 @@
                             </Select>
                         </VBox>
                         <Table id="CreateVariantTable" inset="false" width="100%"
-                            mode="MultiSelect">
+                            mode="MultiSelect" sticky="ColumnHeaders">
                             <headerToolbar>
                                 <Toolbar>
                                     <Title text="Variant Table" />

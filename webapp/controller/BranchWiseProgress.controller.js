@@ -39,7 +39,7 @@ sap.ui.define([
                     var oData = {
                         overall: {
                             Overview: fullTotalPercentage,
-                            Emissions: avgEmissionsPercentage,
+                            Environment: avgEmissionsPercentage,
                             Social: avgSocialPercentage,
                             Governance: avgGovernancePercentage
                         },
@@ -50,19 +50,19 @@ sap.ui.define([
                     branches.map(val => {
                         oData.branches.push({
                             name: val.branch,
-                            Overview: result[val.branch].Total,
-                            Emissions: result[val.branch].Emissions,
-                            Social: result[val.branch].Social,
-                            Governance: result[val.branch].Governance,
+                            Overview: result[val.branch] ? result[val.branch].Total : "0",
+                            Environment: result[val.branch] ? result[val.branch].Environment : "0",
+                            Social: result[val.branch] ? result[val.branch].Social : "0",
+                            Governance: result[val.branch] ? result[val.branch].Governance : "0",
                             completedModules: {
-                                Emissions: data.Emissions.filter(mod => docData[val.branch] ? docData[val.branch].Emissions ? docData[val.branch].Emissions.indexOf(mod) !== -1 : false : false),
-                                Social: data.Social.filter(mod => docData[val.branch] ? docData[val.branch].Social ? docData[val.branch].Social.indexOf(mod) !== -1 : false : false),
-                                Governance: data.Governance.filter(mod => docData[val.branch] ? docData[val.branch].Governance ? docData[val.branch].Governance.indexOf(mod) !== -1 : false : false),
+                                Environment: data.Environment.filter(mod => docData ? docData[val.branch] ? docData[val.branch].Environment ? docData[val.branch].Environment.indexOf(mod) !== -1 : false : false : false),
+                                Social: data.Social.filter(mod => docData ? docData[val.branch] ? docData[val.branch].Social ? docData[val.branch].Social.indexOf(mod) !== -1 : false : false : false),
+                                Governance: data.Governance.filter(mod => docData ? docData[val.branch] ? docData[val.branch].Governance ? docData[val.branch].Governance.indexOf(mod) !== -1 : false : false : false),
                             },
                             incompleteModules: {
-                                Emissions: data.Emissions.filter(mod => docData[val.branch] ? docData[val.branch].Emissions ? docData[val.branch].Emissions.indexOf(mod) == -1 : true : true),
-                                Social: data.Social.filter(mod => docData[val.branch] ? docData[val.branch].Social ? docData[val.branch].Social.indexOf(mod) == -1 : true : true),
-                                Governance: data.Governance.filter(mod => docData[val.branch] ? docData[val.branch].Governance ? docData[val.branch].Governance.indexOf(mod) == -1 : true : true),
+                                Environment: data.Environment.filter(mod => docData ? docData[val.branch] ? docData[val.branch].Environment ? docData[val.branch].Environment.indexOf(mod) == -1 : true : true : true),
+                                Social: data.Social.filter(mod => docData ? docData[val.branch] ? docData[val.branch].Social ? docData[val.branch].Social.indexOf(mod) == -1 : true : true : true),
+                                Governance: data.Governance.filter(mod => docData ? docData[val.branch] ? docData[val.branch].Governance ? docData[val.branch].Governance.indexOf(mod) == -1 : true : true : true),
                             }
                         })
                     })
@@ -183,16 +183,18 @@ sap.ui.define([
             // Loop through each key in the data to create sections and subsections
             oData.branches.map(val => {
                 // Create a new ObjectPageSection
+                var title = val.name.split("-");
+
                 var oSection = new ObjectPageSection({
-                    title: val.name,
+                    title: title[title.length - 1],
                     subSections: [
-                        this._createSubSection(val)
+                        this._createSubSection(val, title[title.length - 1])
                     ]
                 });
                 oObjectPageLayout.addSection(oSection);
             })
         },
-        _createSubSection: function (sectionData) {
+        _createSubSection: function (sectionData, title) {
             var HBox = new sap.m.HBox({ width: "100%", justifyContent: "SpaceBetween" });
             var oVBox = new sap.m.VBox({ width: "20%" });
             var oProgressIndicator = new sap.m.ProgressIndicator({
@@ -206,18 +208,18 @@ sap.ui.define([
             var oVBox = new sap.m.VBox({ width: "20%" });
             var oProgressIndicator = new sap.m.ProgressIndicator({
                 state: "Success",
-                percentValue: sectionData.Emissions,
-                displayValue: sectionData.Emissions + "%"
+                percentValue: sectionData.Environment,
+                displayValue: sectionData.Environment + "%"
             });
-            oVBox.addItem(new sap.m.Label({ text: "Emissions" + ": " }));
+            oVBox.addItem(new sap.m.Label({ text: "Environment" + ": " }));
             oVBox.addItem(oProgressIndicator);
 
-            if (sectionData.completedModules && sectionData.completedModules["Emissions"] && sectionData.completedModules["Emissions"].length > 0) {
-                oVBox.addItem(new sap.m.Label({ text: "Emissions" + " Completed Modules: " }).addStyleClass("sapUiMediumMarginTop"));
+            if (sectionData.completedModules && sectionData.completedModules["Environment"] && sectionData.completedModules["Environment"].length > 0) {
+                oVBox.addItem(new sap.m.Label({ text: "Environment" + " Completed Modules: " }).addStyleClass("sapUiMediumMarginTop"));
 
                 // Create the Completed Modules list
                 var oCompletedList = new sap.m.List({ backgroundDesign: "Transparent" });
-                var aCompletedModules = sectionData.completedModules["Emissions"] || [];
+                var aCompletedModules = sectionData.completedModules["Environment"] || [];
                 aCompletedModules.forEach(function (module) {
                     oCompletedList.addItem(new sap.m.StandardListItem({
                         title: module
@@ -225,13 +227,13 @@ sap.ui.define([
                 });
                 oVBox.addItem(oCompletedList);
             }
-            if (sectionData.incompleteModules && sectionData.incompleteModules["Emissions"] && sectionData.incompleteModules["Emissions"].length > 0) {
+            if (sectionData.incompleteModules && sectionData.incompleteModules["Environment"] && sectionData.incompleteModules["Environment"].length > 0) {
                 // Add title for Incomplete modules
-                oVBox.addItem(new sap.m.Label({ text: "Emissions" + " Incomplete Modules: " }).addStyleClass("sapUiMediumMarginTop"));
+                oVBox.addItem(new sap.m.Label({ text: "Environment" + " Incomplete Modules: " }).addStyleClass("sapUiMediumMarginTop"));
 
                 // Create the Incomplete Modules list
                 var oIncompleteList = new sap.m.List({ backgroundDesign: "Transparent" });
-                var aIncompleteModules = sectionData.incompleteModules["Emissions"] || [];
+                var aIncompleteModules = sectionData.incompleteModules["Environment"] || [];
                 aIncompleteModules.forEach(function (module) {
                     oIncompleteList.addItem(new sap.m.StandardListItem({
                         title: module
@@ -326,7 +328,7 @@ sap.ui.define([
 
 
             return new sap.uxap.ObjectPageSubSection({
-                title: sectionData.name,
+                title: title,
                 blocks: [oVBox]
             });
         },
@@ -357,7 +359,7 @@ sap.ui.define([
                 }
 
                 // Add completed and incomplete modules
-                var categories = ["Emissions", "Social", "Governance"];
+                var categories = ["Environment", "Social", "Governance"];
                 categories.forEach(category => {
                     var completedModules = branch.completedModules[category] || [];
                     var incompleteModules = branch.incompleteModules[category] || [];

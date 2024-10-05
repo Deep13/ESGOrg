@@ -171,6 +171,21 @@
           "name": "BranchWiseProgress",
           "pattern": "BranchWiseProgress",
           "target": "BranchWiseProgress"
+        },
+        {
+          "name": "Flight",
+          "pattern": "Flight/{module}",
+          "target": "Flight"
+        },
+        {
+          "name": "Accomodation",
+          "pattern": "Accomodation/{module}",
+          "target": "Accomodation"
+        },
+        {
+          "name": "HomeOffice",
+          "pattern": "HomeOffice/{module}",
+          "target": "HomeOffice"
         }
       ],
       "targets": {
@@ -179,6 +194,24 @@
           "transition": "slide",
           "viewLevel": 1,
           "viewName": "Login"
+        },
+        "HomeOffice": {
+          "viewType": "XML",
+          "transition": "slide",
+          "viewLevel": 1,
+          "viewName": "Emissions/HomeOffice"
+        },
+        "Accomodation": {
+          "viewType": "XML",
+          "transition": "slide",
+          "viewLevel": 1,
+          "viewName": "Emissions/Accomodation"
+        },
+        "Flight": {
+          "viewType": "XML",
+          "transition": "slide",
+          "viewLevel": 1,
+          "viewName": "Emissions/Flight"
         },
         "BranchWiseProgress": {
           "viewType": "XML",
