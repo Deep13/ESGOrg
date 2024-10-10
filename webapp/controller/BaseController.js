@@ -119,15 +119,15 @@ sap.ui.define(
                 // Iterate through the data array
                 data.complianceData.forEach(function (item) {
                   // Check if enabled is true, and push the sheetName to the respective array based on complianceType
-                  // if (item.enabled) {
-                  if (item.complianceType === "Environment") {
-                    Environment.push(item.sheetName);
-                  } else if (item.complianceType === "Social") {
-                    Social.push(item.sheetName);
-                  } else if (item.complianceType === "Governance") {
-                    Governance.push(item.sheetName);
+                  if (item.enabled) {
+                    if (item.complianceType === "Environment") {
+                      Environment.push(item.sheetName);
+                    } else if (item.complianceType === "Social") {
+                      Social.push(item.sheetName);
+                    } else if (item.complianceType === "Governance") {
+                      Governance.push(item.sheetName);
+                    }
                   }
-                  // }
                 });
                 that.reportingSheets = { Environment, Social, Governance }
                 return resolve(that.reportingSheets)

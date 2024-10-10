@@ -79,12 +79,18 @@
                                     id="dataBranch"
                                     change="selectBranch"
                                     forceSelection="false"
+                                    showSecondaryValues="true"
+                                    wrapItemsText="true"
                                     selectedKey="{masterModel>/EmployeeBranch}"
                                     items="{
                                 path: 'masterModel>/EmployeeBranches'
                             }">
-                                    <core:Item key="{masterModel>branch}"
-                                        text="{masterModel>branch}" />
+                                    <!-- <core:Item key="{masterModel>branch}"
+                                        text="{masterModel>branch}"
+                                        additionalText="{masterModel>officeType}" /> -->
+                                    <core:ListItem key="{masterModel>branch}"
+                                        text="{masterModel>branch}"
+                                        additionalText="{masterModel>officeType}" />
                                 </Select>
                             </VBox>
                             <Table id="editableTable" inset="false"

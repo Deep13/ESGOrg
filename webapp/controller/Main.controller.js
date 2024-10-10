@@ -283,7 +283,15 @@ sap.ui.define(
         this._oPopover.openBy(oEvent.getSource());
       },
       onShowBranchData: function () {
-        this.getRouter().navTo("BranchWiseProgress");
+        var masterData = this.getMaster();
+        var monthYear = masterData.currentReportingCycle;
+        if (monthYear) {
+          this.getRouter().navTo("BranchWiseProgress");
+        }
+        else {
+          MessageToast.show("You don't have any reporting cycle in progress.")
+        }
+
       },
 
       onSubmit: function () {

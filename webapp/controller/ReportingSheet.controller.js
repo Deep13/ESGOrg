@@ -46,7 +46,7 @@ sap.ui.define(
                     that.createVariantMaster();
                     if (user.role === "Admin") {
                         that.getView().byId("adminVariant").setVisible(true);
-                        if (masterModel.currentReportingCycle.status) {
+                        if (masterModel.currentReportingCycle?.status) {
                             that.getView().byId("adminVariantCreate").setVisible(false);
                             that.getView().byId("deleteVariantButton").setEnabled(false);
                         }
@@ -137,29 +137,61 @@ sap.ui.define(
                     }
                 }
                 else {
-                    const docRefRecord = firebase.firestore().collection(userData.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc(that.module);
-                    docRefRecord.get().then((doc) => {
-                        if (doc.exists) {
-                            console.log("Document data:", doc.data());
-                            this.moduleData = doc.data();
-                            if (that.moduleData[branch]) {
+                    if (monthYear) {
+                        const docRefRecord = firebase.firestore().collection(userData.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc(that.module);
+                        docRefRecord.get().then((doc) => {
+                            if (doc.exists) {
+                                console.log("Document data:", doc.data());
+                                this.moduleData = doc.data();
+                                if (that.moduleData[branch]) {
 
-                                if (this.moduleData[branch].dataType == "Variant") {
-                                    if (this.moduleData[branch].status == "Submitted") {
-                                        that.byId("status").setText("Submitted");
-                                        that._initializeTable(that.moduleData[branch].data, false);
+                                    if (this.moduleData[branch].dataType == "Variant") {
+                                        if (this.moduleData[branch].status == "Submitted") {
+                                            that.byId("status").setText("Submitted");
+                                            that._initializeTable(that.moduleData[branch].data, false);
+                                        }
+                                        else {
+
+                                            that._initializeTable(that.moduleData[branch].data, true);
+                                        }
+
                                     }
                                     else {
-
-                                        that._initializeTable(that.moduleData[branch].data, true);
+                                        that._initializeTableCustom(that.moduleData[branch].data);
                                     }
-
                                 }
                                 else {
-                                    that._initializeTableCustom(that.moduleData[branch].data);
+                                    if (that.variantData) {
+                                        if (that.variantData[officeType] && that.variantData[officeType].length > 0) {
+                                            that._initializeTable(that.variantData[officeType])
+                                        }
+                                        else {
+                                            that.createModuleTable();
+                                        }
+                                    }
+                                    else {
+                                        const docRef = firebase.firestore().collection(userData.domain).doc("Master Data").collection("Reporting Variant").doc(that.module);
+                                        docRef.get().then((doc) => {
+                                            if (doc.exists) {
+                                                console.log("Document data:", doc.data());
+                                                this.variantData = doc.data();
+                                                if (that.variantData[officeType] && that.variantData[officeType].length > 0) {
+                                                    that._initializeTable(that.variantData[officeType])
+                                                }
+                                                else {
+                                                    that.createModuleTable();
+                                                }
+                                            }
+                                            else {
+                                                this.variantData = undefined;
+                                                that.createModuleTable();
+                                            }
+                                        }).catch((error) => {
+                                            that.createModuleTable()
+                                        });
+                                    }
                                 }
-                            }
-                            else {
+                            } else {
                                 if (that.variantData) {
                                     if (that.variantData[officeType] && that.variantData[officeType].length > 0) {
                                         that._initializeTable(that.variantData[officeType])
@@ -189,44 +221,46 @@ sap.ui.define(
                                         that.createModuleTable()
                                     });
                                 }
+
                             }
-                        } else {
-                            if (that.variantData) {
-                                if (that.variantData[officeType] && that.variantData[officeType].length > 0) {
-                                    that._initializeTable(that.variantData[officeType])
-                                }
-                                else {
-                                    that.createModuleTable();
-                                }
+                        }).catch((error) => {
+                            that._initializeTable([])
+
+
+                        });
+                    }
+                    else {
+                        if (that.variantData) {
+                            if (that.variantData[officeType] && that.variantData[officeType].length > 0) {
+                                that._initializeTable(that.variantData[officeType])
                             }
                             else {
-                                const docRef = firebase.firestore().collection(userData.domain).doc("Master Data").collection("Reporting Variant").doc(that.module);
-                                docRef.get().then((doc) => {
-                                    if (doc.exists) {
-                                        console.log("Document data:", doc.data());
-                                        this.variantData = doc.data();
-                                        if (that.variantData[officeType] && that.variantData[officeType].length > 0) {
-                                            that._initializeTable(that.variantData[officeType])
-                                        }
-                                        else {
-                                            that.createModuleTable();
-                                        }
+                                that.createModuleTable();
+                            }
+                        }
+                        else {
+                            const docRef = firebase.firestore().collection(userData.domain).doc("Master Data").collection("Reporting Variant").doc(that.module);
+                            docRef.get().then((doc) => {
+                                if (doc.exists) {
+                                    console.log("Document data:", doc.data());
+                                    this.variantData = doc.data();
+                                    if (that.variantData[officeType] && that.variantData[officeType].length > 0) {
+                                        that._initializeTable(that.variantData[officeType])
                                     }
                                     else {
-                                        this.variantData = undefined;
                                         that.createModuleTable();
                                     }
-                                }).catch((error) => {
-                                    that.createModuleTable()
-                                });
-                            }
-
+                                }
+                                else {
+                                    this.variantData = undefined;
+                                    that.createModuleTable();
+                                }
+                            }).catch((error) => {
+                                that.createModuleTable()
+                            });
                         }
-                    }).catch((error) => {
-                        that._initializeTable([])
 
-
-                    });
+                    }
                 }
             },
             createModuleTable: function () {

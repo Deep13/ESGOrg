@@ -90,6 +90,7 @@ sap.ui.define([
             let totalEmissionsPercentage = 0;
             let totalSocialPercentage = 0;
             let totalGovernancePercentage = 0;
+            let totalOverviewPercentage = 0;
 
             let branchesWithData = 0;
 
@@ -121,7 +122,7 @@ sap.ui.define([
                         categoryCount++;
 
                         // Track category-specific percentages
-                        if (category === "Emissions") {
+                        if (category === "Environment") {
                             totalEmissionsPercentage += percentage;
                         } else if (category === "Social") {
                             totalSocialPercentage += percentage;
@@ -133,7 +134,7 @@ sap.ui.define([
                     // Calculate total percentage for the location
                     let locationTotalPercentage = (locationPercentageSum / categoryCount).toFixed(2);
                     locationResult["Total"] = locationTotalPercentage;
-
+                    totalOverviewPercentage += parseFloat(locationTotalPercentage);
                     // Add to overall percentage calculation
                     totalPercentage += locationPercentageSum;
                     totalCategories += categoryCount;
@@ -143,7 +144,7 @@ sap.ui.define([
                 } else {
                     // If location is missing from statistics, set all categories to 0%
                     let locationResult = {
-                        "Emissions": "0.00",
+                        "Environment": "0.00",
                         "Social": "0.00",
                         "Governance": "0.00",
                         "Total": "0.00"
@@ -154,12 +155,12 @@ sap.ui.define([
             });
 
             // Calculate full total percentage across all branches
-            let fullTotalPercentage = (totalPercentage / totalCategories).toFixed(2);
+            let fullTotalPercentage = (totalOverviewPercentage / branches.length).toFixed(2);
 
             // Calculate overall category-specific percentages
-            let avgEmissionsPercentage = (totalEmissionsPercentage / branchesWithData).toFixed(2);
-            let avgSocialPercentage = (totalSocialPercentage / branchesWithData).toFixed(2);
-            let avgGovernancePercentage = (totalGovernancePercentage / branchesWithData).toFixed(2);
+            let avgEmissionsPercentage = (totalEmissionsPercentage / branches.length).toFixed(2);
+            let avgSocialPercentage = (totalSocialPercentage / branches.length).toFixed(2);
+            let avgGovernancePercentage = (totalGovernancePercentage / branches.length).toFixed(2);
 
             return {
                 result,

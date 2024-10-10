@@ -24,16 +24,19 @@ sap.ui.define(
             },
             onLogin: function () {
                 var that = this;
+                sap.ui.core.BusyIndicator.show();
                 var email = this.getView().byId('userInput').getValue();
                 var password = this.getView().byId('passwordInput').getValue();
                 firebase.auth().signInWithEmailAndPassword(email, password).then(async function (usersigned) {
                     // if (userDoc.exists) {
+                    sap.ui.core.BusyIndicator.hide();
                     that.getRouter().navTo("Main");
                     // }
                     // that.getRouter().navTo("Main");
 
                 }).catch(function (error) {
                     // console.log(error)
+                    sap.ui.core.BusyIndicator.hide();
                     var msg = "";
                     if (error.message) {
                         try {

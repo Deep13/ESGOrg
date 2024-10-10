@@ -45,9 +45,9 @@
                     <Column>
                         <Text text="End Date" />
                     </Column>
-                    <Column>
+                    <!-- <Column>
                         <Text text="Progress" />
-                    </Column>
+                    </Column> -->
 
                 </columns>
                 <items>
@@ -65,8 +65,8 @@
                                 path: 'closedAt',
                                 formatter: '.dateText'
                             }" />
-                            <Text
-                                text="{progress}" />
+                            <!-- <Text
+                                text="{progress}" /> -->
                         </cells>
                     </ColumnListItem>
                 </items>

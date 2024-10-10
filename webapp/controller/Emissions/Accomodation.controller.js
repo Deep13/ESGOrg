@@ -57,7 +57,7 @@ sap.ui.define([
                 this.getView().setModel(oModel, "masterModel");
                 if (user.role === "Admin") {
                     that.getView().byId("adminVariant").setVisible(true);
-                    if (masterModel.currentReportingCycle.status) {
+                    if (masterModel.currentReportingCycle?.status) {
                         that.getView().byId("adminVariantCreate").setVisible(false);
                     }
                     else {
@@ -148,31 +148,69 @@ sap.ui.define([
                 }
             }
             else {
-                const docRefRecord = firebase.firestore().collection(userData.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc(that.module);
-                docRefRecord.get().then((doc) => {
-                    if (doc.exists) {
-                        console.log("Document data:", doc.data());
-                        this.moduleData = doc.data();
-                        if (that.moduleData[branch]) {
+                if (monthYear) {
+                    const docRefRecord = firebase.firestore().collection(userData.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc(that.module);
+                    docRefRecord.get().then((doc) => {
+                        if (doc.exists) {
+                            console.log("Document data:", doc.data());
+                            this.moduleData = doc.data();
+                            if (that.moduleData[branch]) {
 
-                            if (this.moduleData[branch].dataType == "Variant") {
-                                that.custom = false;
-                                if (this.moduleData[branch].status == "Submitted") {
-                                    that.byId("status").setText("Submitted");
-                                    that._initializeTable(that.moduleData[branch].data, false);
+                                if (this.moduleData[branch].dataType == "Variant") {
+                                    that.custom = false;
+                                    if (this.moduleData[branch].status == "Submitted") {
+                                        that.byId("status").setText("Submitted");
+                                        that._initializeTable(that.moduleData[branch].data, false);
+                                    }
+                                    else {
+
+                                        that._initializeTable(that.moduleData[branch].data, false);
+                                    }
+
                                 }
                                 else {
-
-                                    that._initializeTable(that.moduleData[branch].data, false);
+                                    that.custom = true;
+                                    that._initializeTable(that.moduleData[branch].data, true);
                                 }
-
                             }
                             else {
-                                that.custom = true;
-                                that._initializeTable(that.moduleData[branch].data, true);
+                                if (that.variantData) {
+                                    if (that.variantData[officeType] && that.variantData[officeType].length > 0) {
+                                        that.custom = false;
+                                        that._initializeTable(that.variantData[officeType])
+                                    }
+                                    else {
+                                        that.custom = true;
+                                        that.createModuleTable();
+                                    }
+                                }
+                                else {
+                                    const docRef = firebase.firestore().collection(userData.domain).doc("Master Data").collection("Reporting Variant").doc(that.module);
+                                    docRef.get().then((doc) => {
+                                        if (doc.exists) {
+                                            console.log("Document data:", doc.data());
+                                            this.variantData = doc.data();
+                                            if (that.variantData[officeType] && that.variantData[officeType].length > 0) {
+                                                that.custom = false;
+                                                that._initializeTable(that.variantData[officeType])
+                                            }
+                                            else {
+                                                that.custom = true;
+                                                that.createModuleTable();
+                                            }
+                                        }
+                                        else {
+                                            this.variantData = undefined;
+                                            that.custom = true;
+                                            that.createModuleTable();
+                                        }
+                                    }).catch((error) => {
+                                        that.custom = true;
+                                        that.createModuleTable()
+                                    });
+                                }
                             }
-                        }
-                        else {
+                        } else {
                             if (that.variantData) {
                                 if (that.variantData[officeType] && that.variantData[officeType].length > 0) {
                                     that.custom = false;
@@ -208,52 +246,49 @@ sap.ui.define([
                                     that.createModuleTable()
                                 });
                             }
+
                         }
-                    } else {
-                        if (that.variantData) {
-                            if (that.variantData[officeType] && that.variantData[officeType].length > 0) {
-                                that.custom = false;
-                                that._initializeTable(that.variantData[officeType])
-                            }
-                            else {
-                                that.custom = true;
-                                that.createModuleTable();
-                            }
+                    }).catch((error) => {
+                        that.custom = true;
+                        that._initializeTable([])
+
+
+                    });
+                }
+                else {
+                    if (that.variantData) {
+                        if (that.variantData[officeType] && that.variantData[officeType].length > 0) {
+                            that._initializeTable(that.variantData[officeType])
                         }
                         else {
-                            const docRef = firebase.firestore().collection(userData.domain).doc("Master Data").collection("Reporting Variant").doc(that.module);
-                            docRef.get().then((doc) => {
-                                if (doc.exists) {
-                                    console.log("Document data:", doc.data());
-                                    this.variantData = doc.data();
-                                    if (that.variantData[officeType] && that.variantData[officeType].length > 0) {
-                                        that.custom = false;
-                                        that._initializeTable(that.variantData[officeType])
-                                    }
-                                    else {
-                                        that.custom = true;
-                                        that.createModuleTable();
-                                    }
+                            that.createModuleTable();
+                        }
+                    }
+                    else {
+                        const docRef = firebase.firestore().collection(userData.domain).doc("Master Data").collection("Reporting Variant").doc(that.module);
+                        docRef.get().then((doc) => {
+                            if (doc.exists) {
+                                console.log("Document data:", doc.data());
+                                this.variantData = doc.data();
+                                if (that.variantData[officeType] && that.variantData[officeType].length > 0) {
+                                    that._initializeTable(that.variantData[officeType])
                                 }
                                 else {
-                                    this.variantData = undefined;
-                                    that.custom = true;
                                     that.createModuleTable();
                                 }
-                            }).catch((error) => {
-                                that.custom = true;
-                                that.createModuleTable()
-                            });
-                        }
-
+                            }
+                            else {
+                                this.variantData = undefined;
+                                that.createModuleTable();
+                            }
+                        }).catch((error) => {
+                            that.createModuleTable()
+                        });
                     }
-                }).catch((error) => {
-                    that.custom = true;
-                    that._initializeTable([])
 
-
-                });
+                }
             }
+
         },
         _initializeTable: function (aRows, status) {
             var that = this;

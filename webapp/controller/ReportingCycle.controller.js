@@ -17,7 +17,7 @@ sap.ui.define(
             _handleRouteMatched: function () {
                 var that = this;
                 this.checkgetUserLog().then(user => {
-                    sap.ui.core.BusyIndicator.show();
+                    // sap.ui.core.BusyIndicator.show();
                     that.updateCycle();
                     firebase.firestore().collection(user.domain).doc("Master Data").collection("Reporting Cycle").get().then(snapShot => {
                         var cycle = [];
@@ -32,14 +32,17 @@ sap.ui.define(
             },
             updateCycle: function () {
                 var that = this;
+
                 var reportingCycle = this.MasterData.currentReportingCycle;
-                if (reportingCycle.status) {
-                    that.byId("lastCycle").setText(`Reporting Cycle in Progress:${reportingCycle.month}/${reportingCycle.year}`);
-                    that.byId("lastCycle").setState("Success");
-                }
-                else {
-                    that.byId("lastCycle").setText(`Last Reporting Cycle:${reportingCycle.month}/${reportingCycle.year}`);
-                    that.byId("lastCycle").setState("None");
+                if (reportingCycle) {
+                    if (reportingCycle.status) {
+                        that.byId("lastCycle").setText(`Reporting Cycle in Progress:${reportingCycle.month}/${reportingCycle.year}`);
+                        that.byId("lastCycle").setState("Success");
+                    }
+                    else {
+                        that.byId("lastCycle").setText(`Last Reporting Cycle:${reportingCycle.month}/${reportingCycle.year}`);
+                        that.byId("lastCycle").setState("None");
+                    }
                 }
             },
             dateText: function (date) {

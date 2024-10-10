@@ -141,14 +141,14 @@
 				</headerToolbar>
 				<content>
 
-					<GenericTile
+					<!-- <GenericTile
 						class="sapUiTinyMarginBegin sapUiTinyMarginTop tileLayout"
 						header="Manage Managers" subheader=""
 						press="onPressManagers">
 						<TileContent>
 							<ImageContent src="sap-icon://group" />
 						</TileContent>
-					</GenericTile>
+					</GenericTile> -->
 					<GenericTile
 						class="sapUiTinyMarginBegin sapUiTinyMarginTop tileLayout"
 						header="Intiate/Terminate" subheader="Reporting Cycle"
