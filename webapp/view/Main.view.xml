@@ -5,7 +5,7 @@
 		<customHeader>
 			<OverflowToolbar>
 				<Image src="./assets/company_logo.png" class="sapUiMediumMargin"
-					width="60px" />
+					width="90px" />
 				<ToolbarSpacer />
 				<Title text="{i18n>title}" />
 				<ToolbarSpacer />
@@ -105,7 +105,7 @@
 					<GenericTile
 						class="sapUiTinyMarginBegin sapUiTinyMarginTop tileLayout"
 						header="Social" subheader=""
-						press="onPressonboarding">
+						press="onPressSocialAnalytics">
 						<TileContent>
 							<ImageContent src="sap-icon://people-connected" />
 						</TileContent>
@@ -113,23 +113,40 @@
 					<GenericTile
 						class="sapUiTinyMarginBegin sapUiTinyMarginTop tileLayout"
 						header="Governance" subheader=""
-						press="onPressonboarding">
+						press="onPressGovernanceAnalytics">
 						<TileContent>
 							<ImageContent src="sap-icon://official-service" />
 						</TileContent>
 					</GenericTile>
-					<GenericTile
+					<!-- <GenericTile
 						class="sapUiTinyMarginBegin sapUiTinyMarginTop tileLayout"
 						header="Materiality Assessment" subheader=""
 						press="onPressonboarding">
 						<TileContent>
 							<ImageContent src="sap-icon://checklist-2" />
 						</TileContent>
-					</GenericTile>
+					</GenericTile> -->
 
 				</content>
 			</Panel>
+			<Panel width="auto" class="sapUiResponsiveMargin" accessibleRole="Region">
+				<headerToolbar>
+					<OverflowToolbar>
+						<Title text="Support" />
+					</OverflowToolbar>
+				</headerToolbar>
+				<content>
 
+					<GenericTile
+						class="sapUiTinyMarginBegin sapUiTinyMarginTop tileLayout"
+						header="Support" subheader=""
+						press="onPressSupport">
+						<TileContent>
+							<ImageContent src="sap-icon://vertical-bar-chart" />
+						</TileContent>
+					</GenericTile>
+				</content>
+			</Panel>
 
 			<Panel width="auto" class="sapUiResponsiveMargin" accessibleRole="Region"
 				visible="false"
@@ -166,7 +183,7 @@
 			<OverflowToolbar>
 				<HBox alignItems="Center" alignContent="Center" justifyContent="Center"
 					width="100%">
-					<Text text="Koshish Sustainable Solutions Pvt.Ltd © 2024" />
+					<Text text="Sustrack Sustainable Solutions Pvt.Ltd © 2024" />
 				</HBox>
 			</OverflowToolbar>
 		</footer>

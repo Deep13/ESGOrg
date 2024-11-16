@@ -18,7 +18,7 @@ sap.ui.define(
       _handleRouteMatched: function (oEvent) {
         var that = this;
         this.checkgetUserLog().then(async user => {
-          that.getView().byId("user").setText("Welcome, " + user.email);
+          that.getView().byId("user").setText("Welcome, " + user.username);
           if (user.role === "Admin") {
             that.getView().byId("AdminPanel").setVisible(true);
           }
@@ -221,67 +221,7 @@ sap.ui.define(
 
       },
 
-      onOpenPopover: function (oEvent) {
-        // Create a new Popover
-        if (!this._oPopover) {
-          this._oPopover = new Popover({
-            id: "incidentId",
-            title: "Raise Incident",
-            contentWidth: "300px",
-            placement: "Bottom",
-            contentPadding: true,
-            content: [
-              new Input({
-                placeholder: "Enter Title",
-                width: "100%",
-                value: "{/title}"
-              }),
-              new TextArea({
-                placeholder: "Enter Description",
-                width: "100%",
-                rows: 3,
-                value: "{/description}"
-              }),
-              new Input({
-                placeholder: "Enter Phone Number",
-                width: "100%",
-                type: "Tel",
-                value: "{/phone}"
-              }),
-              new Input({
-                placeholder: "Enter Email Address",
-                width: "100%",
-                type: "Email",
-                value: "{/email}"
-              }),
-              new Select({
-                width: "100%",
-                items: [
-                  new Item({ text: "Low", key: "Low" }),
-                  new Item({ text: "Medium", key: "Medium" }),
-                  new Item({ text: "High", key: "High" })
-                ],
-                selectedKey: "{/priority}"
-              })
-            ],
-            footer: new sap.m.Bar({
-              contentRight: [
-                new Button({
-                  text: "Submit",
-                  type: "Emphasized",
-                  press: this.onSubmit.bind(this)
-                })
-              ]
-            })
-          });
-          this._oPopover.addStyleClass("sapUiResponsivePadding")
-          // Bind popover to the current view model
-          this.getView().addDependent(this._oPopover);
-        }
 
-        // Open the popover next to the triggering button
-        this._oPopover.openBy(oEvent.getSource());
-      },
       onShowBranchData: function () {
         var masterData = this.getMaster();
         var monthYear = masterData.currentReportingCycle;
@@ -294,19 +234,8 @@ sap.ui.define(
 
       },
 
-      onSubmit: function () {
-        // Get the data entered in the popover
-        // var oModel = this.getView().getModel();
-        // var oData = oModel.getData();
-
-        // console.log("Title:", oData.title);
-        // console.log("Description:", oData.description);
-        // console.log("Phone:", oData.phone);
-        // console.log("Email:", oData.email);
-        // console.log("Priority:", oData.priority);
-
-        // Close the popover after submission
-        this._oPopover.close();
+      onPressSupport: function () {
+        this.getRouter().navTo("SupportPage");
       },
 
       handleEmailPress: function (oEvent) {
@@ -317,11 +246,18 @@ sap.ui.define(
       onPressEnvironment: function () {
         this.getRouter().navTo("EnvironmentAnalytics");
       },
+      onPressSocialAnalytics: function () {
+        this.getRouter().navTo("SocialAnalytics");
+      },
+      onPressGovernanceAnalytics: function () {
+        this.getRouter().navTo("GovernanceAnalytics");
+      },
       onPressEmissions: function () {
         this.getRouter().navTo("ReportingTiles", {
           module: "Environment"
         });
       },
+
       onPressSocial: function () {
         this.getRouter().navTo("ReportingTiles", {
           module: "Social"

@@ -7,11 +7,11 @@ sap.ui.define([
 ], function (Controller, HBox, VBox, ObjectPageSection, ObjectPageSubSection) {
     "use strict";
 
-    return Controller.extend("ESGOrg.ESGOrg.controller.BranchWiseProgress", {
+    return Controller.extend("ESGOrg.ESGOrg.controller.SupportPage", {
         onInit: function () {
             this.oRouter = sap.ui.core.UIComponent.getRouterFor(this);
             this.oRouter
-                .getRoute("BranchWiseProgress")
+                .getRoute("SupportPage")
                 .attachPatternMatched(this._handleRouteMatched, this);
         },
         _handleRouteMatched: function (oEvent) {
@@ -24,92 +24,22 @@ sap.ui.define([
                 var branches = user.branches;
                 var masterData = that.getMaster();
                 var monthYear = masterData.currentReportingCycle;
-                const docRef = firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc("Statistics");
-                docRef.get().then((doc) => {
-                    if (doc.exists) {
-                        var docData = doc.data();
-                        var { result, fullTotalPercentage, avgEmissionsPercentage, avgSocialPercentage, avgGovernancePercentage } = that.calculateCompletion(docData, data, branches);
-                    } else {
-                        var result = [];
-                        var fullTotalPercentage = 0;
-                        var avgEmissionsPercentage = 0;
-                        var avgSocialPercentage = 0;
-                        var avgGovernancePercentage = 0
-                    }
-                    // var oData = {
-                    //     overall: {
-                    //         Overview: fullTotalPercentage,
-                    //         Environment: avgEmissionsPercentage,
-                    //         Social: avgSocialPercentage,
-                    //         Governance: avgGovernancePercentage
-                    //     },
-                    //     branches: [
-                    //     ]
-                    // };
-
-                    // branches.map(val => {
-                    //     oData.branches.push({
-                    //         name: val.branch,
-                    //         Overview: result[val.branch] ? result[val.branch].Total : "0",
-                    //         Environment: result[val.branch] ? result[val.branch].Environment : "0",
-                    //         Social: result[val.branch] ? result[val.branch].Social : "0",
-                    //         Governance: result[val.branch] ? result[val.branch].Governance : "0",
-                    //         completedModules: {
-                    //             Environment: data.Environment.filter(mod => docData ? docData[val.branch] ? docData[val.branch].Environment ? docData[val.branch].Environment.indexOf(mod) !== -1 : false : false : false),
-                    //             Social: data.Social.filter(mod => docData ? docData[val.branch] ? docData[val.branch].Social ? docData[val.branch].Social.indexOf(mod) !== -1 : false : false : false),
-                    //             Governance: data.Governance.filter(mod => docData ? docData[val.branch] ? docData[val.branch].Governance ? docData[val.branch].Governance.indexOf(mod) !== -1 : false : false : false),
-                    //         },
-                    //         incompleteModules: {
-                    //             Environment: data.Environment.filter(mod => docData ? docData[val.branch] ? docData[val.branch].Environment ? docData[val.branch].Environment.indexOf(mod) == -1 : true : true : true),
-                    //             Social: data.Social.filter(mod => docData ? docData[val.branch] ? docData[val.branch].Social ? docData[val.branch].Social.indexOf(mod) == -1 : true : true : true),
-                    //             Governance: data.Governance.filter(mod => docData ? docData[val.branch] ? docData[val.branch].Governance ? docData[val.branch].Governance.indexOf(mod) == -1 : true : true : true),
-                    //         }
-                    //     })
-                    // })
-
-                    // // Dynamically create branch progress indicators
-                    // this._renderSections(oData);
-
-
-
-                    const tableData = [];
-                    branches.forEach(branch => {
-                        Object.keys(data).forEach(moduleName => {
-                            data[moduleName].forEach(subModule => {
-                                const isCompleted = docData[branch.branch] && docData[branch.branch][moduleName] && docData[branch.branch][moduleName].includes(subModule);
-                                tableData.push({
-                                    branchName: branch.branch,
-                                    moduleName: moduleName,
-                                    subModule: subModule,
-                                    status: isCompleted ? "Completed" : "Incomplete"
-                                });
-                            });
-                        });
+                var docRef;
+                if (user.role == "Admin") {
+                    docRef = firebase.firestore().collection("Incidents").where("orgID", "==", user.domain);
+                }
+                else {
+                    docRef = firebase.firestore().collection("Incidents").where("email", "==", user.email);
+                }
+                const tableData = [];
+                docRef.get().then((snapShots) => {
+                    snapShots.docs.map(doc => {
+                        tableData.push(doc.data());
                     });
 
-                    // Set model with table data
-                    const oModel = new sap.ui.model.json.JSONModel({ branches: tableData });
+
+                    const oModel = new sap.ui.model.json.JSONModel({ results: tableData });
                     this.getView().setModel(oModel);
-                    // Get unique values for filters
-                    // const uniqueBranches = [...new Set(tableData.map(item => item.branchName))].map(branch => ({ branchName: branch }));
-                    const uniqueBranches = ["All", ...new Set(tableData.map(item => item.branchName))].map(branch => ({ branchName: branch }));
-                    const uniqueModules = ["All", ...new Set(tableData.map(item => item.moduleName))].map(module => ({ moduleName: module }));
-                    const uniqueSubModules = ["All", ...new Set(tableData.map(item => item.subModule))].map(module => ({ subModule: module }));
-                    // const uniqueSubModules = [{ subModule: "All" }];
-
-                    const uniqueStatus = ["All", ...new Set(tableData.map(item => item.status))].map(status => ({ status: status }));
-
-                    // Create models for each ComboBox filter
-                    const branchModel = new sap.ui.model.json.JSONModel({ branches: uniqueBranches });
-                    const moduleModel = new sap.ui.model.json.JSONModel({ modules: uniqueModules });
-                    const subModuleModel = new sap.ui.model.json.JSONModel({ subModules: uniqueSubModules });
-                    const statusModel = new sap.ui.model.json.JSONModel({ status: uniqueStatus });
-
-                    // Set models for ComboBox filters
-                    this.getView().byId("branchFilter").setModel(branchModel, "branchModel");
-                    this.getView().byId("moduleFilter").setModel(moduleModel, "moduleModel");
-                    this.getView().byId("subModuleFilter").setModel(subModuleModel, "subModuleModel");
-                    this.getView().byId("statusFilter").setModel(statusModel, "statusModel");
 
                     sap.ui.core.BusyIndicator.hide();
                 }).catch((error) => {
@@ -126,46 +56,7 @@ sap.ui.define([
 
 
         // Filter Logic
-        onBranchFilter: function (oEvent) {
-            const selectedKey = oEvent.getParameter("selectedItem").getKey();
-            this._applyTableFilter("branchName", selectedKey);
-        },
-        onModuleFilter: function (oEvent) {
-            // Get the selected module
-            const selectedModule = oEvent.getParameter("selectedItem").getText();
 
-            // Define the full sub-modules data
-            const allModulesData = {
-                "Environment": ["Fuel", "Bioenergy", "Refrigerant and other", "Elec heat cooling", "WTT- fuels", "Waste Disposal", "Flight", "Accommodation", "Business travel - land and sea", "Freighting goods", "Employees commuting", "Food", "Home Office", "Water"],
-                "Social": ["Employment", "Leave", "Retention", "OH and S", "Training and Edu", "Child Labor", "Customer Privacy", "Mktg and Labelling", "CHS", "Social Benefits"],
-                "Governance": ["Entity", "Eco. Performance", "Market Presence"]
-            };
-
-            // Check if "All" is selected
-            if (selectedModule === "All") {
-                // Display all sub-modules
-                const allSubModules = Object.values(allModulesData).flat();
-                const subModulesForModel = [{ subModule: "All" }, ...allSubModules.map(subModule => ({ subModule }))];
-                const subModuleModel = new sap.ui.model.json.JSONModel({ subModules: subModulesForModel });
-                this.getView().byId("subModuleFilter").setModel(subModuleModel, "subModuleModel");
-                // return;
-            }
-
-            // Filter the sub-modules based on the selected module
-            const filteredSubModules = allModulesData[selectedModule] || [];
-            const subModulesForModel = [{ subModule: "All" }, ...filteredSubModules.map(subModule => ({ subModule }))];
-
-            // Update the model for the subModuleFilter ComboBox
-            const subModuleModel = new sap.ui.model.json.JSONModel({ subModules: subModulesForModel });
-            this.getView().byId("subModuleFilter").setModel(subModuleModel, "subModuleModel");
-            const selectedKey = oEvent.getParameter("selectedItem").getKey();
-            this._applyTableFilter("moduleName", selectedKey);
-        },
-
-        onSubModuleFilter: function (oEvent) {
-            const selectedKey = oEvent.getParameter("selectedItem").getKey();
-            this._applyTableFilter("subModule", selectedKey);
-        },
         _applyTableFilter: function (sField, sValue) {
             const oTable = this.byId("branchTable");
             const oBinding = oTable.getBinding("items");
@@ -186,6 +77,11 @@ sap.ui.define([
             const selectedKey = oEvent.getParameter("selectedItem").getKey();
             this._applyTableFilter("status", selectedKey);
         },
+        onPriorityFilter: function (oEvent) {
+            const selectedKey = oEvent.getParameter("selectedItem").getKey();
+            this._applyTableFilter("priority", selectedKey);
+        },
+
 
         onResetFilters: function () {
             // Clear all filters from the table
@@ -193,16 +89,11 @@ sap.ui.define([
             const oBinding = oTable.getBinding("items");
             oBinding.filter([]); // Remove all filters
 
-            // Reset all ComboBox selections to "All"
-            this.byId("branchFilter").setSelectedKey("All");
-            this.byId("moduleFilter").setSelectedKey("All");
-            this.byId("subModuleFilter").setSelectedKey("All");
             this.byId("statusFilter").setSelectedKey("All");
 
             // Optional: Manually trigger any logic if necessary
             this.applyFilters(); // Or call any logic that re-applies empty filters if needed
         },
-
 
 
 

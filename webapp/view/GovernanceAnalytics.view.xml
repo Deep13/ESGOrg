@@ -1,4 +1,4 @@
-<mvc:View controllerName="ESGOrg.ESGOrg.controller.EnvironmentAnalytics" xmlns:mvc="sap.ui.core.mvc"
+<mvc:View controllerName="ESGOrg.ESGOrg.controller.GovernanceAnalytics" xmlns:mvc="sap.ui.core.mvc"
     xmlns:core="sap.ui.core" displayBlock="true"
     xmlns:object="sap.uxap"
     xmlns:layout="sap.ui.layout"
@@ -11,7 +11,7 @@
                 <Image src="./assets/company_logo.png" class="sapUiMediumMargin"
                     width="90px" />
                 <ToolbarSpacer />
-                <Title text="Environment Analytics" />
+                <Title text="Governance Analytics" />
                 <ToolbarSpacer />
                 <HBox alignItems="Center">
                     <Button icon="sap-icon://log" tooltip="Log Out" press="onLogOut" />
@@ -47,48 +47,9 @@
                                                 text="{cycleModel>title}" />
                                         </Select>
                                     </HBox>
-                                    <HBox id="KPIData" wrap="Wrap">
+                                    <HBox id="KPIData">
                                     </HBox>
                                     <HBox id="chartData"></HBox>
-                                </VBox>
-                            </object:blocks>
-                        </object:ObjectPageSubSection>
-                    </object:subSections>
-                </object:ObjectPageSection>
-                <object:ObjectPageSection titleUppercase="false" title="Scope 1">
-                    <object:subSections>
-                        <object:ObjectPageSubSection titleUppercase="false">
-                            <object:blocks>
-                                <VBox>
-                                    <HBox id="KPIDataScope1" wrap="Wrap">
-                                    </HBox>
-                                    <HBox id="chartDataScope1"></HBox>
-                                </VBox>
-                            </object:blocks>
-                        </object:ObjectPageSubSection>
-                    </object:subSections>
-                </object:ObjectPageSection>
-                <object:ObjectPageSection titleUppercase="false" title="Scope 2">
-                    <object:subSections>
-                        <object:ObjectPageSubSection titleUppercase="false">
-                            <object:blocks>
-                                <VBox>
-                                    <HBox id="KPIDataScope2" wrap="Wrap">
-                                    </HBox>
-                                    <HBox id="chartDataScope2"></HBox>
-                                </VBox>
-                            </object:blocks>
-                        </object:ObjectPageSubSection>
-                    </object:subSections>
-                </object:ObjectPageSection>
-                <object:ObjectPageSection titleUppercase="false" title="Scope 3">
-                    <object:subSections>
-                        <object:ObjectPageSubSection titleUppercase="false">
-                            <object:blocks>
-                                <VBox>
-                                    <HBox id="KPIDataScope3" wrap="Wrap">
-                                    </HBox>
-                                    <HBox id="chartDataScope3"></HBox>
                                 </VBox>
                             </object:blocks>
                         </object:ObjectPageSubSection>

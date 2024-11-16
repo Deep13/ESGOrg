@@ -186,6 +186,21 @@
           "name": "HomeOffice",
           "pattern": "HomeOffice/{module}",
           "target": "HomeOffice"
+        },
+        {
+          "name": "SupportPage",
+          "pattern": "SupportPage",
+          "target": "SupportPage"
+        },
+        {
+          "name": "SocialAnalytics",
+          "pattern": "SocialAnalytics",
+          "target": "SocialAnalytics"
+        },
+        {
+          "name": "GovernanceAnalytics",
+          "pattern": "GovernanceAnalytics",
+          "target": "GovernanceAnalytics"
         }
       ],
       "targets": {
@@ -194,6 +209,24 @@
           "transition": "slide",
           "viewLevel": 1,
           "viewName": "Login"
+        },
+        "GovernanceAnalytics": {
+          "viewType": "XML",
+          "transition": "slide",
+          "viewLevel": 1,
+          "viewName": "GovernanceAnalytics"
+        },
+        "SocialAnalytics": {
+          "viewType": "XML",
+          "transition": "slide",
+          "viewLevel": 1,
+          "viewName": "SocialAnalytics"
+        },
+        "SupportPage": {
+          "viewType": "XML",
+          "transition": "slide",
+          "viewLevel": 1,
+          "viewName": "SupportPage"
         },
         "HomeOffice": {
           "viewType": "XML",

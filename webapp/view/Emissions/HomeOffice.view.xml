@@ -7,13 +7,13 @@
             <OverflowToolbar>
                 <Button icon="sap-icon://navigation-left-arrow" tooltip="Back" press="onpressBack" />
                 <Image src="./assets/company_logo.png" class="sapUiMediumMargin"
-                    width="60px" />
+                    width="90px" />
                 <ToolbarSpacer />
                 <Title id="title" text="Home Office" />
                 <ToolbarSpacer />
                 <HBox alignItems="Center">
                     <Button icon="sap-icon://log" tooltip="Log Out" press="onLogOut" />
-                    <Button icon="sap-icon://headset" tooltip="Support" press="" />
+                    <Button icon="sap-icon://headset" tooltip="Support" press="onOpenPopover" />
                 </HBox>
             </OverflowToolbar>
         </customHeader>
@@ -105,8 +105,8 @@
                                             enabled="{dataModel>/editable}" />
                                         <Button text="Delete Selected" press="onDeleteRow"
                                             enabled="{dataModel>/editable}" />
-                                        <Button text="Save as Draft" press="onSubmit" />
-                                        <Button text="Submit" press="onSave" />
+                                        <Button id="saveDraft" text="Save as Draft" press="onSubmit" />
+                                        <Button id="save" text="Submit" press="onSave" />
                                     </Toolbar>
                                 </headerToolbar>
 
@@ -136,7 +136,7 @@
                                         <cells>
 
                                             <!-- Class Dropdown -->
-                                            <Select selectedKey="{dataModel>type}"
+                                            <Select selectedKey="{dataModel>Type of home office}"
                                                 editable="{dataModel>/editable}">
                                                 <items>
                                                     <core:Item key="WC" text="With cooling" />
@@ -147,22 +147,23 @@
                                             </Select>
                                             <!-- Single way / Return Dropdown -->
                                             <!-- Origin Input -->
-                                            <Input value="{dataModel>noe}"
+                                            <Input value="{dataModel>Number of employees}"
                                                 placeholder="Number of employees"
-                                                editable="{dataModel>/editable}" />
+                                                editable="{dataModel>/editable}" type="Number" />
                                             <!-- Origin Input -->
-                                            <Input value="{dataModel>workingRegime}"
+                                            <Input
+                                                value="{dataModel>Working regime (For full-time)}"
                                                 placeholder="Working regime"
-                                                editable="{dataModel>/editable}" />
-                                            <Input value="{dataModel>workfromhome}"
+                                                editable="{dataModel>/editable}" type="Number" />
+                                            <Input value="{dataModel>Working from home}"
                                                 placeholder="Working from home"
-                                                editable="{dataModel>/editable}" />
+                                                editable="{dataModel>/editable}" type="Number" />
                                             <Input value="{dataModel>month}"
                                                 placeholder="No of months"
-                                                editable="{dataModel>/editable}" />
+                                                editable="{dataModel>/editable}" type="Number" />
                                             <!-- CO2e Input -->
-                                            <Input value="{dataModel>factor}"
-                                                placeholder="Factor" />
+                                            <Input value="{dataModel>Factor}"
+                                                placeholder="Factor" type="Number" />
                                         </cells>
                                     </ColumnListItem>
                                 </items>
@@ -226,7 +227,7 @@
                                     <cells>
 
                                         <!-- Class Dropdown -->
-                                        <Select selectedKey="{variantDataModel>type}"
+                                        <Select selectedKey="{variantDataModel>Type of home office}"
                                             editable="false">
                                             <items>
                                                 <core:Item key="WC" text="With cooling" />
@@ -237,22 +238,23 @@
                                         </Select>
                                         <!-- Single way / Return Dropdown -->
                                         <!-- Origin Input -->
-                                        <Input value="{variantDataModel>noe}"
+                                        <Input value="{variantDataModel>Number of employees}"
                                             placeholder="Number of employees"
-                                            editable="false" />
+                                            editable="false" type="Number" />
                                         <!-- Origin Input -->
-                                        <Input value="{variantDataModel>workingRegime}"
+                                        <Input
+                                            value="{variantDataModel>Working regime (For full-time)}"
                                             placeholder="Working regime"
-                                            editable="false" />
-                                        <Input value="{variantDataModel>workfromhome}"
+                                            editable="false" type="Number" />
+                                        <Input value="{variantDataModel>Working from home}"
                                             placeholder="Working from home"
-                                            editable="false" />
+                                            editable="false" type="Number" />
                                         <Input value="{variantDataModel>month}"
                                             placeholder="No of months"
-                                            editable="false" />
+                                            editable="false" type="Number" />
                                         <!-- CO2e Input -->
-                                        <Input value="{variantDataModel>factor}"
-                                            placeholder="Factor" />
+                                        <Input value="{variantDataModel>Factor}"
+                                            placeholder="Factor" type="Number" />
                                     </cells>
                                 </ColumnListItem>
                             </items>
@@ -314,7 +316,7 @@
                                     <cells>
 
                                         <!-- Class Dropdown -->
-                                        <Select selectedKey="{variantModel>type}"
+                                        <Select selectedKey="{variantModel>Type of home office}"
                                         >
                                             <items>
                                                 <core:Item key="WC" text="With cooling" />
@@ -325,22 +327,22 @@
                                         </Select>
                                         <!-- Single way / Return Dropdown -->
                                         <!-- Origin Input -->
-                                        <Input value="{variantModel>noe}"
-                                            placeholder="Number of employees"
+                                        <Input value="{variantModel>Number of employees}"
+                                            placeholder="Number of employees" type="Number"
                                         />
                                         <!-- Origin Input -->
-                                        <Input value="{variantModel>workingRegime}"
-                                            placeholder="Working regime"
+                                        <Input value="{variantModel>Working regime (For full-time)}"
+                                            placeholder="Working regime" type="Number"
                                         />
-                                        <Input value="{variantModel>workfromhome}"
-                                            placeholder="Working from home"
+                                        <Input value="{variantModel>Working from home}"
+                                            placeholder="Working from home" type="Number"
                                         />
                                         <Input value="{variantModel>month}"
-                                            placeholder="No of months"
+                                            placeholder="No of months" type="Number"
                                         />
                                         <!-- CO2e Input -->
-                                        <Input value="{variantModel>factor}"
-                                            placeholder="Factor" />
+                                        <Input value="{variantModel>Factor}"
+                                            placeholder="Factor" type="Number" />
                                     </cells>
                                 </ColumnListItem>
                             </items>
@@ -353,7 +355,7 @@
         <footer>
             <OverflowToolbar>
                 <ToolbarSpacer />
-                <Text text="Koshish Sustainable Solutions Pvt.Ltd © 2024" />
+                <Text text="Sustrack Sustainable Solutions Pvt.Ltd © 2024" />
                 <ToolbarSpacer />
 
 

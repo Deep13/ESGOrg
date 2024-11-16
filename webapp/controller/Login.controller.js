@@ -53,6 +53,15 @@ sap.ui.define(
                     }
                     alert(msg)
                 })
+            },
+            onPressEye: function () {
+                var passType = this.byId("passwordInput").getType();
+                if (passType == "Password") {
+                    this.byId("passwordInput").setType("Text")
+                }
+                else {
+                    this.byId("passwordInput").setType("Password")
+                }
             }
 
         });

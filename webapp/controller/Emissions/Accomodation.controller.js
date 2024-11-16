@@ -51,7 +51,17 @@ sap.ui.define([
 
                 // Convert unique officeType values to the desired format
                 var formattedOfficeTypes = uniqueOfficeTypes.map(type => ({ officeType: type }));
-                var masterModel = { ...that.getMaster(), EmployeeBranches: user.branches, EmployeeOffices: formattedOfficeTypes };
+                var oMaster = that.getMaster();
+                var masterModel = { ...oMaster, EmployeeBranches: user.branches, EmployeeOffices: formattedOfficeTypes };
+
+                if (oMaster.currentReportingCycle && oMaster.currentReportingCycle.status) {
+                    that.byId("saveDraft").setEnabled(true);
+                    that.byId("save").setEnabled(true);
+                }
+                else {
+                    that.byId("saveDraft").setEnabled(false);
+                    that.byId("save").setEnabled(false);
+                }
 
                 var oModel = new sap.ui.model.json.JSONModel(masterModel);
                 this.getView().setModel(oModel, "masterModel");
@@ -73,9 +83,82 @@ sap.ui.define([
 
             });
         },
-        selectBranch: function (oEvent) {
-            this.byId("flightTable").removeSelections()
+        getCountryFactor: function (selectText) {
+            var factors = {
+                "Argentina": 77.08,
+                "Australia": 51.47,
+                "Austria": 18.73,
+                "Belgium": 16.04,
+                "Brazil": 16.77,
+                "Canada": 23.00,
+                "Chile": 38.50,
+                "China": 76.74,
+                "Colombia": 18.69,
+                "Costa Rica": 11.10,
+                "Czech Republic": 53.04,
+                "Egypt": 65.38,
+                "Fiji": 48.99,
+                "France": 8.01,
+                "Germany": 22.57,
+                "Greece": 56.63,
+                "Hong Kong, China": 84.43,
+                "India": 93.20,
+                "Indonesia": 110.37,
+                "Ireland": 31.78,
+                "Israel": 72.60,
+                "Italy": 26.20,
+                "Japan": 81.86,
+                "Jordan": 80.48,
+                "Korea": 85.19,
+                "Macau, China": 109.01,
+                "Malaysia": 95.94,
+                "Maldives": 218.68,
+                "Mexico": 30.52,
+                "Netherlands": 23.78,
+                "New Zealand": 11.57,
+                "Panama": 31.72,
+                "Peru": 28.65,
+                "Philippines": 66.54,
+                "Poland": 39.12,
+                "Portugal": 36.47,
+                "Qatar": 165.18,
+                "Romania": 34.16,
+                "Russian Federation": 37.98,
+                "Saudi Arabia": 156.64,
+                "Singapore": 51.33,
+                "Slovak Republic": 21.34,
+                "South Africa": 82.36,
+                "Spain": 20.07,
+                "Switzerland": 10.75,
+                "Taiwan, China": 117.82,
+                "Thailand": 59.05,
+                "Turkey": 41.77,
+                "United Arab Emirates": 145.46,
+                "United Kingdom": 18.41,
+                "United States": 23.04,
+                "Vietnam": 60.12,
+                "Others": 57.81,
+            };
+            return factors[selectText];
 
+        },
+        selectCountry: function (oEvent) {
+            var selectText = oEvent.getParameter("selectedItem").getText();
+            var selectedFactor = this.getCountryFactor(selectText);
+            oEvent.getSource().getParent().getBindingContext("variantModel").setProperty("Factor", selectedFactor)
+        },
+        selectCountrydataModel: function (oEvent) {
+            var selectText = oEvent.getParameter("selectedItem").getText();
+            var selectedFactor = this.getCountryFactor(selectText);
+            oEvent.getSource().getParent().getBindingContext("dataModel").setProperty("Factor", selectedFactor)
+        },
+        selectCountryvariantDataModel: function (oEvent) {
+            var selectText = oEvent.getParameter("selectedItem").getText();
+            var selectedFactor = this.getCountryFactor(selectText);
+            oEvent.getSource().getParent().getBindingContext("variantDataModel").setProperty("Factor", selectedFactor)
+        },
+        selectBranch: function (oEvent) {
+            this.byId("flightTable").removeSelections();
             this.byId("headToolbar").setVisible(true)
             var that = this;
             var userData = this.userData;
@@ -292,7 +375,7 @@ sap.ui.define([
         },
         _initializeTable: function (aRows, status) {
             var that = this;
-            that.getView().getModel("dataModel").setProperty("/results", aRows);
+            that.getView().getModel("dataModel").setProperty("/results", JSON.parse(JSON.stringify(aRows)));
             that.getView().getModel("dataModel").setProperty("/editable", status ? status : false);
             that.getView().getModel("dataModel").refresh(true)
         },
@@ -308,9 +391,9 @@ sap.ui.define([
             // Add a new empty row
             aFlights.push({
                 country: "IN",
-                noo: "",
-                non: "",
-                factor: "93.20",
+                "Number of occupied rooms": "",
+                "Number of nights per room": "",
+                Factor: "93.20",
             });
 
             // Update the model with the new row
@@ -324,9 +407,9 @@ sap.ui.define([
             // Add a new empty row
             aFlights.push({
                 country: "IN",
-                noo: "",
-                non: "",
-                factor: "93.20",
+                "Number of occupied rooms": "",
+                "Number of nights per room": "",
+                Factor: "93.20",
             });
 
             // Update the model with the new row
@@ -417,7 +500,7 @@ sap.ui.define([
         },
         _initializeTableVariant: function (aRows) {
             var that = this;
-            that.getView().getModel("variantDataModel").setProperty("/results", aRows);
+            that.getView().getModel("variantDataModel").setProperty("/results", JSON.parse(JSON.stringify(aRows)));
             that.getView().getModel("variantDataModel").refresh(true)
 
         },
@@ -446,193 +529,216 @@ sap.ui.define([
         createCellTemplateVariant: function (rowData, oColumnData) {
             return new Input({
                 value: rowData[oColumnData.title] ? rowData[oColumnData.title] : "",
-                editable: oColumnData.editable
+                editable: oColumnData.editable,
+                type: oColumnData.type
             });
 
         },
         onSubmit: function () {
             var that = this;
-            var oTable = this.byId("flightTable");
-            var data = oTable.getSelectedItems();
-            var selectData = [];
-            if (data.length > 0) {
+            var text = that.byId("status").getText();
+            if (text !== "Submitted") {
+                var oTable = this.byId("flightTable");
+                var data = oTable.getSelectedItems();
+                var selectData = [];
+                if (data.length > 0) {
 
-                data.map(val => {
-                    selectData.push(val.getBindingContext("dataModel").getObject());
-                })
-            }
-            else {
-                MessageToast.show("No Values selected");
-                return;
-            }
-            var monthYear = this.getView().getModel("masterModel").getProperty("/currentReportingCycle");
-            var branch = this.getView().getModel("masterModel").getProperty("/EmployeeBranch");
-            if (!branch) {
-                MessageBox.warning("Kindly select branch");
-                return;
-            }
-            console.log(selectData);
-            var aFilteredData = []
-            selectData.map(val => {
-                if (val.factor) {
-                    aFilteredData.push(val)
+                    data.map(val => {
+                        selectData.push(val.getBindingContext("dataModel").getObject());
+                    })
                 }
-            });
-            if (aFilteredData.length !== selectData.length) {
-                MessageBox.confirm(
-                    "Columns with empty Amount would be ignored. Do you still want to proceed?", {
-                    title: "Confirmation",
-                    onClose: function (oAction) {
-                        if (oAction === "OK") {
-                            var user = that.userData;
-                            firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc(that.module).set({
-                                [branch]: {
-                                    data: aFilteredData,
-                                    status: "Draft",
-                                    updatedAt: new Date(),
-                                    updatedBy: user.userId,
-                                    dataType: that.custom ? "Custom" : "Variant"
-                                }
-
-                            }, { merge: true })
-                                .then(() => {
-                                    MessageBox.success("Data successfully saved as draft!");
-                                })
-                                .catch((error) => {
-                                    MessageBox.error("Error writing document: " + error);
-                                });
-                        }
+                else {
+                    MessageToast.show("No Values selected");
+                    return;
+                }
+                var monthYear = this.getView().getModel("masterModel").getProperty("/currentReportingCycle");
+                var branch = this.getView().getModel("masterModel").getProperty("/EmployeeBranch");
+                if (!branch) {
+                    MessageBox.warning("Kindly select branch");
+                    return;
+                }
+                console.log(selectData);
+                var aFilteredData = []
+                selectData.map(val => {
+                    if (val.Factor && val["Number of nights per room"] && val["Number of occupied rooms"]) {
+                        aFilteredData.push(val)
                     }
                 });
+                if (aFilteredData.length > 0) {
+                    if (aFilteredData.length !== selectData.length) {
+                        MessageBox.confirm(
+                            "Columns with empty Amount would be ignored. Do you still want to proceed?", {
+                            title: "Confirmation",
+                            onClose: function (oAction) {
+                                if (oAction === "OK") {
+                                    var user = that.userData;
+                                    firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc(that.module).set({
+                                        [branch]: {
+                                            data: aFilteredData,
+                                            status: "Draft",
+                                            updatedAt: new Date(),
+                                            updatedBy: user.userId,
+                                            dataType: that.custom ? "Custom" : "Variant"
+                                        }
+
+                                    }, { merge: true })
+                                        .then(() => {
+                                            MessageBox.success("Data successfully saved as draft!");
+                                        })
+                                        .catch((error) => {
+                                            MessageBox.error("Error writing document: " + error);
+                                        });
+                                }
+                            }
+                        });
+                    }
+                    else {
+                        var user = that.userData;
+                        firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc(that.module).set({
+                            [branch]: {
+                                data: aFilteredData,
+                                status: "Draft",
+                                updatedAt: new Date(),
+                                updatedBy: user.userId,
+                                dataType: that.custom ? "Custom" : "Variant"
+                            }
+
+                        }, { merge: true })
+                            .then(() => {
+                                MessageBox.success("Data successfully saved as draft!");
+                            })
+                            .catch((error) => {
+                                MessageBox.error("Error writing document: " + error);
+                            });
+                    }
+                }
+                else {
+                    MessageBox.error("No rows to submit");
+                }
             }
             else {
-                var user = that.userData;
-                firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc(that.module).set({
-                    [branch]: {
-                        data: aFilteredData,
-                        status: "Draft",
-                        updatedAt: new Date(),
-                        updatedBy: user.userId,
-                        dataType: that.custom ? "Custom" : "Variant"
-                    }
-
-                }, { merge: true })
-                    .then(() => {
-                        MessageBox.success("Data successfully saved as draft!");
-                    })
-                    .catch((error) => {
-                        MessageBox.error("Error writing document: " + error);
-                    });
+                MessageBox.warning("You cannot submit. Data for this branch is already submitted");
             }
 
         },
         onSave: function () {
             var that = this;
-            // Show confirmation dialog before deleting
-            var branch = that.getView().getModel("masterModel").getProperty("/EmployeeBranch");
-            var oTable = this.byId("flightTable");
-            var aData = that.getView().getModel("dataModel").getData().results;
-            if (!branch) {
-                MessageBox.warning("Kindly select branch");
-                return;
-            }
-            MessageBox.confirm(
-                "Are you sure you want to Submit?", {
-                title: "Submit Confirmation",
-                onClose: function (oAction) {
-                    if (oAction === "OK") {
-                        var monthYear = that.getView().getModel("masterModel").getProperty("/currentReportingCycle");
+            var text = that.byId("status").getText();
+            if (text !== "Submitted") {
+                // Show confirmation dialog before deleting
+                var branch = that.getView().getModel("masterModel").getProperty("/EmployeeBranch");
+                var oTable = this.byId("flightTable");
+                var aData = that.getView().getModel("dataModel").getData().results;
+                if (!branch) {
+                    MessageBox.warning("Kindly select branch");
+                    return;
+                }
+                MessageBox.confirm(
+                    "Are you sure you want to Submit?", {
+                    title: "Submit Confirmation",
+                    onClose: function (oAction) {
+                        if (oAction === "OK") {
+                            var monthYear = that.getView().getModel("masterModel").getProperty("/currentReportingCycle");
 
-                        console.log(aData);
-                        var aFilteredData = []
-                        aData.map(val => {
-                            if (val.factor) {
-                                aFilteredData.push(val)
+                            console.log(aData);
+                            var aFilteredData = []
+                            aData.map(val => {
+                                if (val.Factor && val["Number of nights per room"] && val["Number of occupied rooms"]) {
+                                    aFilteredData.push(val)
 
-                            }
+                                }
 
-                        });
-                        if (aFilteredData.length !== aData.length) {
-                            MessageBox.confirm(
-                                "Columns with empty Amount would be ignored. Do you still want to proceed?", {
-                                title: "Confirmation",
-                                onClose: function (oAction) {
-                                    if (oAction === "OK") {
-                                        var user = that.userData;
-                                        firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc(that.module).set({
-                                            [branch]: {
-                                                data: aFilteredData,
-                                                status: "Submitted",
-                                                updatedAt: new Date(),
-                                                updatedBy: user.userId,
-                                                dataType: that.custom ? "Custom" : "Variant"
-                                            }
-
-                                        }, { merge: true })
-                                            .then(() => {
-                                                firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc("Statistics").set({
+                            });
+                            if (aFilteredData.length > 0) {
+                                if (aFilteredData.length !== aData.length) {
+                                    MessageBox.confirm(
+                                        "Columns with empty Amount would be ignored. Do you still want to proceed?", {
+                                        title: "Confirmation",
+                                        onClose: function (oAction) {
+                                            if (oAction === "OK") {
+                                                var user = that.userData;
+                                                firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc(that.module).set({
                                                     [branch]: {
-                                                        [that.tile]: firebase.firestore.FieldValue.arrayUnion(that.module)
+                                                        data: aFilteredData,
+                                                        status: "Submitted",
+                                                        updatedAt: new Date(),
+                                                        updatedBy: user.userId,
+                                                        dataType: that.custom ? "Custom" : "Variant"
                                                     }
 
                                                 }, { merge: true })
                                                     .then(() => {
-                                                        // MessageBox.success("Data successfully saved as draft!");
+                                                        firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc("Statistics").set({
+                                                            [branch]: {
+                                                                [that.tile]: firebase.firestore.FieldValue.arrayUnion(that.module)
+                                                            }
+
+                                                        }, { merge: true })
+                                                            .then(() => {
+                                                                // MessageBox.success("Data successfully saved as draft!");
+
+                                                            })
+                                                            .catch((error) => {
+                                                                // MessageBox.error("Error writing document: " + error);
+                                                            });
+                                                        MessageBox.success("Data successfully submitted for reporting");
+                                                        that.byId("status").setText("Submitted");
 
                                                     })
                                                     .catch((error) => {
-                                                        // MessageBox.error("Error writing document: " + error);
+                                                        MessageBox.error("Error writing document: " + error);
                                                     });
-                                                MessageBox.success("Data successfully submitted for reporting");
-
-
-                                            })
-                                            .catch((error) => {
-                                                MessageBox.error("Error writing document: " + error);
-                                            });
-                                    }
+                                            }
+                                        }
+                                    });
                                 }
-                            });
-                        }
-                        else {
-                            var user = that.userData;
-                            firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc(that.module).set({
-                                [branch]: {
-                                    data: aFilteredData,
-                                    status: "Submitted",
-                                    updatedAt: new Date(),
-                                    updatedBy: user.userId,
-                                    dataType: that.custom ? "Custom" : "Variant"
-                                }
-
-                            }, { merge: true })
-                                .then(() => {
-                                    firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc("Statistics").set({
+                                else {
+                                    var user = that.userData;
+                                    firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc(that.module).set({
                                         [branch]: {
-                                            [that.tile]: firebase.firestore.FieldValue.arrayUnion(that.module)
+                                            data: aFilteredData,
+                                            status: "Submitted",
+                                            updatedAt: new Date(),
+                                            updatedBy: user.userId,
+                                            dataType: that.custom ? "Custom" : "Variant"
                                         }
 
                                     }, { merge: true })
                                         .then(() => {
-                                            // MessageBox.success("Data successfully saved as draft!");
+                                            firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc("Statistics").set({
+                                                [branch]: {
+                                                    [that.tile]: firebase.firestore.FieldValue.arrayUnion(that.module)
+                                                }
+
+                                            }, { merge: true })
+                                                .then(() => {
+                                                    // MessageBox.success("Data successfully saved as draft!");
+
+                                                })
+                                                .catch((error) => {
+                                                    // MessageBox.error("Error writing document: " + error);
+                                                });
+                                            MessageBox.success("Data successfully submitted for reporting");
+                                            that.byId("status").setText("Submitted");
 
                                         })
                                         .catch((error) => {
-                                            // MessageBox.error("Error writing document: " + error);
+                                            MessageBox.error("Error writing document: " + error);
                                         });
-                                    MessageBox.success("Data successfully submitted for reporting");
+                                }
+                            }
+                            else {
+                                MessageBox.error("No rows to submit");
+                            }
 
-
-                                })
-                                .catch((error) => {
-                                    MessageBox.error("Error writing document: " + error);
-                                });
                         }
-
                     }
                 }
+                );
             }
-            );
+            else {
+                MessageBox.warning("You cannot submit. Data for this branch is already submitted");
+            }
         },
         onSaveVariant: function () {
             var that = this;

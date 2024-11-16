@@ -7,13 +7,13 @@
             <OverflowToolbar>
                 <Button icon="sap-icon://navigation-left-arrow" tooltip="Back" press="onpressBack" />
                 <Image src="./assets/company_logo.png" class="sapUiMediumMargin"
-                    width="60px" />
+                    width="90px" />
                 <ToolbarSpacer />
                 <Title id="title" text="Accommodation" />
                 <ToolbarSpacer />
                 <HBox alignItems="Center">
                     <Button icon="sap-icon://log" tooltip="Log Out" press="onLogOut" />
-                    <Button icon="sap-icon://headset" tooltip="Support" press="" />
+                    <Button icon="sap-icon://headset" tooltip="Support" press="onOpenPopover" />
                 </HBox>
             </OverflowToolbar>
         </customHeader>
@@ -105,8 +105,8 @@
                                             enabled="{dataModel>/editable}" />
                                         <Button text="Delete Selected" press="onDeleteRow"
                                             enabled="{dataModel>/editable}" />
-                                        <Button text="Save as Draft" press="onSubmit" />
-                                        <Button text="Submit" press="onSave" />
+                                        <Button id="saveDraft" text="Save as Draft" press="onSubmit" />
+                                        <Button id="save" text="Submit" press="onSave" />
                                     </Toolbar>
                                 </headerToolbar>
 
@@ -130,11 +130,12 @@
                                         <cells>
 
                                             <!-- Class Dropdown -->
-                                            <Select selectedKey="{dataModel>country}"
+                                            <Select change="selectCountrydataModel"
+                                                selectedKey="{dataModel>country}"
                                                 editable="{dataModel>/editable}">
                                                 <items>
                                                     <core:Item key="IN" text="India" />
-                                                    <core:Item key="AF" text="Afghanistan" />
+                                                    <core:Item key="AR" text="Argentina" />
                                                     <core:Item key="AU" text="Australia" />
                                                     <core:Item key="AT" text="Austria" />
                                                     <core:Item key="BE" text="Belgium" />
@@ -190,16 +191,16 @@
                                             </Select>
                                             <!-- Single way / Return Dropdown -->
                                             <!-- Origin Input -->
-                                            <Input value="{dataModel>noo}"
+                                            <Input value="{dataModel>Number of occupied rooms}"
                                                 placeholder="Number of occupied rooms"
-                                                editable="{dataModel>/editable}" />
+                                                editable="{dataModel>/editable}" type="Number" />
                                             <!-- Origin Input -->
-                                            <Input value="{dataModel>non}"
+                                            <Input value="{dataModel>Number of nights per room}"
                                                 placeholder="Number of nights per room"
-                                                editable="{dataModel>/editable}" />
+                                                editable="{dataModel>/editable}" type="Number" />
                                             <!-- CO2e Input -->
-                                            <Input value="{dataModel>factor}"
-                                                placeholder="Factor" />
+                                            <Input value="{dataModel>Factor}"
+                                                placeholder="Factor" type="Number" />
                                         </cells>
                                     </ColumnListItem>
                                 </items>
@@ -257,11 +258,12 @@
                                     <cells>
 
                                         <!-- Class Dropdown -->
-                                        <Select selectedKey="{variantDataModel>country}"
+                                        <Select change="selectCountryvariantDataModel"
+                                            selectedKey="{variantDataModel>country}"
                                             editable="false">
                                             <items>
                                                 <core:Item key="IN" text="India" />
-                                                <core:Item key="AF" text="Afghanistan" />
+                                                <core:Item key="AR" text="Argentina" />
                                                 <core:Item key="AU" text="Australia" />
                                                 <core:Item key="AT" text="Austria" />
                                                 <core:Item key="BE" text="Belgium" />
@@ -317,15 +319,15 @@
                                         </Select>
                                         <!-- Single way / Return Dropdown -->
                                         <!-- Origin Input -->
-                                        <Input value="{variantDataModel>noo}"
-                                            placeholder="Number of occupied rooms"
+                                        <Input value="{variantDataModel>Number of occupied rooms}"
+                                            placeholder="Number of occupied rooms" type="Number"
                                             editable="false" />
                                         <!-- Origin Input -->
-                                        <Input value="{variantDataModel>non}"
-                                            placeholder="Number of nights per room"
+                                        <Input value="{variantDataModel>Number of nights per room}"
+                                            placeholder="Number of nights per room" type="Number"
                                             editable="false" />
                                         <!-- CO2e Input -->
-                                        <Input value="{variantDataModel>factor}"
+                                        <Input value="{variantDataModel>Factor}" type="Number"
                                             placeholder="Factor" />
                                     </cells>
                                 </ColumnListItem>
@@ -382,11 +384,13 @@
                                     <cells>
 
                                         <!-- Class Dropdown -->
-                                        <Select selectedKey="{variantModel>country}"
+                                        <Select change="selectCountry"
+                                            forcedSelection="false"
+                                            selectedKey="{variantModel>country}"
                                             editable="{variantModel>/editable}">
                                             <items>
                                                 <core:Item key="IN" text="India" />
-                                                <core:Item key="AF" text="Afghanistan" />
+                                                <core:Item key="AR" text="Argentina" />
                                                 <core:Item key="AU" text="Australia" />
                                                 <core:Item key="AT" text="Austria" />
                                                 <core:Item key="BE" text="Belgium" />
@@ -442,15 +446,15 @@
                                         </Select>
                                         <!-- Single way / Return Dropdown -->
                                         <!-- Origin Input -->
-                                        <Input value="{variantModel>noo}"
-                                            placeholder="Number of occupied rooms"
+                                        <Input value="{variantModel>Number of occupied rooms}"
+                                            placeholder="Number of occupied rooms" type="Number"
                                             editable="{variantModel>/editable}" />
                                         <!-- Origin Input -->
-                                        <Input value="{variantModel>non}"
-                                            placeholder="Number of nights per room"
+                                        <Input value="{variantModel>Number of nights per room}"
+                                            placeholder="Number of nights per room" type="Number"
                                             editable="{variantModel>/editable}" />
                                         <!-- CO2e Input -->
-                                        <Input value="{variantModel>factor}"
+                                        <Input value="{variantModel>Factor}" type="Number"
                                             placeholder="Factor" />
                                     </cells>
                                 </ColumnListItem>
@@ -464,7 +468,7 @@
         <footer>
             <OverflowToolbar>
                 <ToolbarSpacer />
-                <Text text="Koshish Sustainable Solutions Pvt.Ltd © 2024" />
+                <Text text="Sustrack Sustainable Solutions Pvt.Ltd © 2024" />
                 <ToolbarSpacer />
 
 

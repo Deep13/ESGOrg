@@ -2,8 +2,8 @@ sap.ui.define(
     ["../controller/BaseController", "sap/ui/model/json/JSONModel", "sap/m/Column",
         "sap/m/Label",
         "sap/m/Input",
-        "sap/m/MessageBox"],
-    function (Controller, JSONModel, Column, Label, Input, MessageBox) {
+        "sap/m/MessageBox", "sap/ui/core/CustomData"],
+    function (Controller, JSONModel, Column, Label, Input, MessageBox, CustomData) {
         "use strict";
         return Controller.extend("ESGOrg.ESGOrg.controller.ReportingSheet", {
             /**
@@ -25,8 +25,9 @@ sap.ui.define(
                 this.variantData = undefined;
                 this.moduleData = undefined;
                 this.checkgetUserLog().then(async user => {
+                    that.byId("Filters")?.removeAllItems();
                     that.byId("status").setText("");
-                    that.byId("title").setText(that.module);
+                    that.byId("title").setText(that.getTitle(that.module));
                     var oModel = new JSONModel({ results: [] });
                     this.getView().setModel(oModel, "moduleMaster");
                     var oModel = new sap.ui.model.json.JSONModel({
@@ -38,7 +39,16 @@ sap.ui.define(
 
                     // Convert unique officeType values to the desired format
                     var formattedOfficeTypes = uniqueOfficeTypes.map(type => ({ officeType: type }));
-                    var masterModel = { ...that.getMaster(), EmployeeBranches: user.branches, EmployeeOffices: formattedOfficeTypes };
+                    var oMaster = that.getMaster();
+                    if (oMaster.currentReportingCycle && oMaster.currentReportingCycle.status) {
+                        that.byId("saveDraft").setEnabled(true);
+                        that.byId("save").setEnabled(true);
+                    }
+                    else {
+                        that.byId("saveDraft").setEnabled(false);
+                        that.byId("save").setEnabled(false);
+                    }
+                    var masterModel = { ...oMaster, EmployeeBranches: user.branches, EmployeeOffices: formattedOfficeTypes };
 
                     var oModel = new sap.ui.model.json.JSONModel(masterModel);
                     oModel.setSizeLimit(20000);
@@ -64,8 +74,130 @@ sap.ui.define(
                         that.getView().byId("deleteVariantButton").setEnabled(false);
 
                     }
+                    // that.createDynamicFilters();
                 });
 
+            },
+            createDynamicFilters: function (filterData) {
+                var that = this;
+                this.byId("Filters")?.removeAllItems();
+                var filterData = this.getFilters(this.module);
+                var aItems = this.getView().byId("editableTable").getBinding("items").getContexts().map(context => context.getObject());
+                Object.keys(filterData).forEach(val => {
+                    filterData[val] = [...new Set(aItems.map(item => item[val]))]
+                })
+                Object.keys(filterData).forEach(function (key, index) {
+                    var filterContainer = new sap.m.VBox(); // Container for filter dropdowns
+                    // Label for each filter
+
+                    // var Label = new sap.m.Label({
+                    //     text: key
+                    // })
+                    // Dropdown for each filter key
+                    var oDataTemplate = new CustomData({ key: "title", value: key });
+                    var oDataTemplate1 = new CustomData({ key: "index", value: index });
+                    var select = new sap.m.Select({
+                        items: [
+                            new sap.ui.core.Item({
+                                key: "All",
+                                text: "All"
+                            }),
+                            ...filterData[key].map(function (value) {
+                                return new sap.ui.core.Item({
+                                    key: value,
+                                    text: value
+                                });
+                            })
+                        ],
+                        // enabled: false,
+                        maxWidth: "100px",
+                        change: function (oEvent) {
+                            that.applyFilters(oEvent);
+                        } // On change, apply the filters to the table
+                    });
+                    select.addCustomData(oDataTemplate);
+                    select.addCustomData(oDataTemplate1);
+                    select.addStyleClass("sapUiSmallMarginEnd")
+                    // filterContainer.addItem(Label)
+                    // filterContainer.addItem(select)
+                    that.byId("Filters").addItem(select);
+                });
+
+
+            },
+            enabledisableAllFilters: function (value) {
+                var filterContainerItems = this.byId("Filters").getItems(); // Assuming `filterContainer` holds the filters
+
+                filterContainerItems.forEach(function (item, index) {
+                    if (item instanceof sap.m.Select) {
+                        item.setEnabled(value);
+
+                    }
+                });
+            },
+            resetAllFilters: function () {
+                var filterContainerItems = this.byId("Filters").getItems(); // Assuming `filterContainer` holds the filters
+
+                filterContainerItems.forEach(function (item, index) {
+                    if (item instanceof sap.m.Select) {
+                        item.setSelectedKey("All");
+
+                    }
+                });
+            },
+            // Function to apply filters to the table
+            applyFilters: function (oEvent) {
+                var filterId = oEvent.getSource().getId();
+                var filterSelection = oEvent.getSource().getSelectedKey();
+                var filterContainerItems = this.byId("Filters").getItems();
+
+                var filterIndex = oEvent.getSource().data().index;
+                var filterData = this.getFilters(this.module);
+
+
+                if (this.byId("editableTable") && this.byId("editableTable").getBinding("items")) {
+                    var filters = [];
+                    // Assuming `filterContainer` holds the filters
+                    for (var i = filterIndex + 1; i < filterContainerItems.length; i++) {
+                        filterContainerItems[i].setSelectedKey("All");
+                    }
+                    filterContainerItems.forEach(function (item, index) {
+                        if (item instanceof sap.m.Select) {
+                            var selectedKey = item.getSelectedKey();
+                            if (selectedKey && selectedKey !== "All") {
+                                var filter = new sap.ui.model.Filter(
+                                    Object.keys(filterData)[index], // Filter key, e.g., "Fuels" or "type"
+                                    sap.ui.model.FilterOperator.EQ,
+                                    selectedKey // Selected value
+                                );
+                                filters.push(filter);
+                            }
+                        }
+                    });
+
+                    // Assuming `oTable` is your table control
+                    this.byId("editableTable").getBinding("items").filter(filters);
+                    var aItems = this.getView().byId("editableTable").getBinding("items").getContexts().map(context => context.getObject());
+                    Object.keys(filterData).forEach(val => {
+                        filterData[val] = [...new Set(aItems.map(item => item[val]))]
+                    })
+                    for (var i = filterIndex + 1; i < filterContainerItems.length; i++) {
+                        var title = filterContainerItems[i].data().title;
+                        filterContainerItems[i].removeAllItems();
+                        var data = filterData[title];
+                        filterContainerItems[i].addItem(new sap.ui.core.Item({
+                            key: "All",
+                            text: "All"
+                        }))
+                        for (var j = 0; j < data.length; j++) {
+                            filterContainerItems[i].addItem(new sap.ui.core.Item({
+                                key: data[j],
+                                text: data[j]
+                            }))
+                        }
+                        filterContainerItems[i].setSelectedKey("All");
+                    }
+                }
             },
             onItemSelect: function (oEvent) {
                 var oItem = oEvent.getParameter("item");
@@ -76,6 +208,7 @@ sap.ui.define(
                 this.byId("status").setText("");
                 var oTable = this.byId("editableTable");
                 oTable.removeAllColumns();
+                this.byId("Filters")?.removeAllItems();
                 oTable.removeAllItems();
                 oTable = this.byId("VariantTable");
                 oTable.removeAllColumns();
@@ -84,6 +217,21 @@ sap.ui.define(
             selectBranch: function (oEvent) {
                 var that = this;
                 var userData = this.userData;
+                // this.enabledisableAllFilters(true);
+                // this.resetAllFilters();
+                if (that.variantData) {
+                    var ovariant = Object.assign({}, that.variantData);
+                }
+                else {
+                    var ovariant = null;
+                }
+                var oTable = this.byId("editableTable");
+                var oBinding = oTable.getBinding("items");
+
+                // Refresh the binding to reload data
+                if (oBinding) {
+                    oBinding.refresh();
+                }
                 var monthYear = this.getView().getModel("masterModel").getProperty("/currentReportingCycle");
                 var officeType = oEvent.getParameter("selectedItem").getBindingContext("masterModel").getObject().officeType;
                 var branch = oEvent.getParameter("selectedItem").getBindingContext("masterModel").getObject().branch;
@@ -105,9 +253,10 @@ sap.ui.define(
                         }
                     }
                     else {
-                        if (that.variantData) {
-                            if (that.variantData[officeType] && that.variantData[officeType].length > 0) {
-                                that._initializeTable(that.variantData[officeType])
+                        if (ovariant) {
+
+                            if (ovariant[officeType] && ovariant[officeType].length > 0) {
+                                that._initializeTable(ovariant[officeType])
                             }
                             else {
                                 that.createModuleTable();
@@ -118,16 +267,17 @@ sap.ui.define(
                             docRef.get().then((doc) => {
                                 if (doc.exists) {
                                     console.log("Document data:", doc.data());
-                                    this.variantData = doc.data();
-                                    if (that.variantData[officeType] && that.variantData[officeType].length > 0) {
-                                        that._initializeTable(that.variantData[officeType])
+                                    that.variantData = doc.data();
+                                    ovariant = Object.assign({}, that.variantData)
+                                    if (ovariant[officeType] && ovariant[officeType].length > 0) {
+                                        that._initializeTable(ovariant[officeType])
                                     }
                                     else {
                                         that.createModuleTable();
                                     }
                                 }
                                 else {
-                                    this.variantData = undefined;
+                                    that.variantData = undefined;
                                     that.createModuleTable();
                                 }
                             }).catch((error) => {
@@ -161,9 +311,9 @@ sap.ui.define(
                                     }
                                 }
                                 else {
-                                    if (that.variantData) {
-                                        if (that.variantData[officeType] && that.variantData[officeType].length > 0) {
-                                            that._initializeTable(that.variantData[officeType])
+                                    if (ovariant) {
+                                        if (ovariant[officeType] && ovariant[officeType].length > 0) {
+                                            that._initializeTable(ovariant[officeType])
                                         }
                                         else {
                                             that.createModuleTable();
@@ -174,16 +324,17 @@ sap.ui.define(
                                         docRef.get().then((doc) => {
                                             if (doc.exists) {
                                                 console.log("Document data:", doc.data());
-                                                this.variantData = doc.data();
-                                                if (that.variantData[officeType] && that.variantData[officeType].length > 0) {
-                                                    that._initializeTable(that.variantData[officeType])
+                                                that.variantData = doc.data();
+                                                ovariant = Object.assign({}, that.variantData)
+                                                if (ovariant[officeType] && ovariant[officeType].length > 0) {
+                                                    that._initializeTable(ovariant[officeType])
                                                 }
                                                 else {
                                                     that.createModuleTable();
                                                 }
                                             }
                                             else {
-                                                this.variantData = undefined;
+                                                that.variantData = undefined;
                                                 that.createModuleTable();
                                             }
                                         }).catch((error) => {
@@ -192,9 +343,9 @@ sap.ui.define(
                                     }
                                 }
                             } else {
-                                if (that.variantData) {
-                                    if (that.variantData[officeType] && that.variantData[officeType].length > 0) {
-                                        that._initializeTable(that.variantData[officeType])
+                                if (ovariant) {
+                                    if (ovariant[officeType] && ovariant[officeType].length > 0) {
+                                        that._initializeTable(ovariant[officeType])
                                     }
                                     else {
                                         that.createModuleTable();
@@ -205,16 +356,17 @@ sap.ui.define(
                                     docRef.get().then((doc) => {
                                         if (doc.exists) {
                                             console.log("Document data:", doc.data());
-                                            this.variantData = doc.data();
-                                            if (that.variantData[officeType] && that.variantData[officeType].length > 0) {
-                                                that._initializeTable(that.variantData[officeType])
+                                            that.variantData = doc.data();
+                                            ovariant = Object.assign({}, that.variantData)
+                                            if (ovariant[officeType] && ovariant[officeType].length > 0) {
+                                                that._initializeTable(ovariant[officeType])
                                             }
                                             else {
                                                 that.createModuleTable();
                                             }
                                         }
                                         else {
-                                            this.variantData = undefined;
+                                            that.variantData = undefined;
                                             that.createModuleTable();
                                         }
                                     }).catch((error) => {
@@ -230,9 +382,9 @@ sap.ui.define(
                         });
                     }
                     else {
-                        if (that.variantData) {
-                            if (that.variantData[officeType] && that.variantData[officeType].length > 0) {
-                                that._initializeTable(that.variantData[officeType])
+                        if (ovariant) {
+                            if (ovariant[officeType] && ovariant[officeType].length > 0) {
+                                that._initializeTable(ovariant[officeType])
                             }
                             else {
                                 that.createModuleTable();
@@ -243,16 +395,17 @@ sap.ui.define(
                             docRef.get().then((doc) => {
                                 if (doc.exists) {
                                     console.log("Document data:", doc.data());
-                                    this.variantData = doc.data();
-                                    if (that.variantData[officeType] && that.variantData[officeType].length > 0) {
-                                        that._initializeTable(that.variantData[officeType])
+                                    that.variantData = doc.data();
+                                    ovariant = Object.assign({}, that.variantData)
+                                    if (ovariant[officeType] && ovariant[officeType].length > 0) {
+                                        that._initializeTable(ovariant[officeType])
                                     }
                                     else {
                                         that.createModuleTable();
                                     }
                                 }
                                 else {
-                                    this.variantData = undefined;
+                                    that.variantData = undefined;
                                     that.createModuleTable();
                                 }
                             }).catch((error) => {
@@ -273,6 +426,7 @@ sap.ui.define(
                 // Get table reference
                 // this.getView().getModel("moduleMaster").setProperty("/results", this.structData);
                 this.getView().getModel("moduleMaster").setData({ results: this.structData });
+                this.getView().getModel("moduleMaster").setSizeLimit(20000);
                 // Dynamically create columns based on JSON keys
                 var aKeys = this.getColumns(that.module);
                 aKeys.forEach(function (sKey) {
@@ -287,6 +441,7 @@ sap.ui.define(
                         if (sKey.editable) {
                             return new Input({
                                 value: "{moduleMaster>" + sKey.title + "}",
+                                type: sKey.type
 
                             });
                         }
@@ -301,21 +456,27 @@ sap.ui.define(
                     path: "moduleMaster>/results",
                     template: oTemplate
                 });
-
+                that.createDynamicFilters();
             },
             selectBranchVariant: function (oEvent) {
                 var that = this;
                 var userData = this.userData;
                 var officeType = oEvent.getParameter("selectedItem").getBindingContext("masterModel").getObject().officeType;
-
-                if (!this.variantData) {
+                if (that.variantData) {
+                    var ovariant = Object.assign({}, that.variantData);
+                }
+                else {
+                    var ovariant = null;
+                }
+                if (!ovariant) {
                     const docRef = firebase.firestore().collection(userData.domain).doc("Master Data").collection("Reporting Variant").doc(that.module);
                     docRef.get().then((doc) => {
                         if (doc.exists) {
                             console.log("Document data:", doc.data());
-                            this.variantData = doc.data();
-                            if (that.variantData[officeType]) {
-                                that._initializeTableVariant(that.variantData[officeType]);
+                            that.variantData = doc.data();
+                            ovariant = Object.assign({}, that.variantData)
+                            if (ovariant[officeType]) {
+                                that._initializeTableVariant(ovariant[officeType]);
                             }
                             else {
                                 that._initializeTableVariant([]);
@@ -329,13 +490,20 @@ sap.ui.define(
                     });
                 }
                 else {
-                    that._initializeTableVariant(that.variantData[officeType]);
+                    that._initializeTableVariant(ovariant[officeType]);
                 }
             },
             _initializeTable: function (aRows, status) {
                 var that = this;
                 this.custom = false;
                 var oTable = this.byId("editableTable");
+                var oBinding = oTable.getBinding("items");
+
+                // Refresh the binding to reload data
+                if (oBinding) {
+                    oBinding.refresh();
+                }
+                var aData = JSON.parse(JSON.stringify(aRows));
                 oTable.removeAllColumns();
                 oTable.removeAllItems();
                 // Dynamically create columns based on aColumns array
@@ -346,18 +514,21 @@ sap.ui.define(
                     }));
                 }, this);
 
-                if (aRows && aRows.length > 0) {
-                    // this._prefillRows(aRows, columns);
+                if (aData && aData.length > 0) {
+                    // this._prefillRows(aData, columns);
                     this.createCellTemplate(columns, status);
+
                     var oModel = new sap.ui.model.json.JSONModel({
-                        results: aRows  // Prefill with backend data or start empty
+                        results: aData  // Prefill with backend data or start empty
                     });
                     oModel.setSizeLimit(20000);
                     this.getView().setModel(oModel, "moduleMaster");
                 }
+                that.createDynamicFilters();
             },
 
             _initializeTableCustom: function (data) {
+                var that = this;
                 this.custom = true;
                 var oTable = this.byId("editableTable");
                 oTable.removeAllColumns();
@@ -384,6 +555,7 @@ sap.ui.define(
                         if (sKey.editable) {
                             return new Input({
                                 value: "{moduleMaster>" + sKey.title + "}",
+                                type: sKey.type
 
                             });
                         }
@@ -398,181 +570,197 @@ sap.ui.define(
                     path: "moduleMaster>/results",
                     template: oTemplate
                 });
-
+                that.createDynamicFilters();
             },
 
             onSubmit: function () {
                 var that = this;
-                var aData = this.getView().getModel("moduleMaster").getData().results;
-                var monthYear = this.getView().getModel("masterModel").getProperty("/currentReportingCycle");
-                var branch = this.getView().getModel("masterModel").getProperty("/EmployeeBranch");
-                if (!branch) {
-                    MessageBox.warning("Kindly select branch");
-                    return;
-                }
-                var columns = that.getColumns(that.module);
-                var checkCol = [];
-                columns.map(val => {
-                    if (val.editable) {
-                        checkCol.push(val.title)
+                var text = that.byId("status").getText();
+                if (text !== "Submitted") {
+                    var aData = this.getView().getModel("moduleMaster").getData().results;
+                    var monthYear = this.getView().getModel("masterModel").getProperty("/currentReportingCycle");
+                    var branch = this.getView().getModel("masterModel").getProperty("/EmployeeBranch");
+                    if (!branch) {
+                        MessageBox.warning("Kindly select branch");
+                        return;
                     }
-                })
-                console.log(aData);
-                var aFilteredData = [];
-                aFilteredData = aData.filter(row => {
-                    return checkCol.every(key => row[key] && row[key] !== '');
-                });
-                var user = that.userData;
-                firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc(that.module).set({
-                    [branch]: {
-                        data: aFilteredData,
-                        status: "Draft",
-                        updatedAt: new Date(),
-                        updatedBy: user.userId,
-                        dataType: that.custom ? "Custom" : "Variant"
-                    }
-
-                }, { merge: true })
-                    .then(() => {
-                        MessageBox.success("Data successfully saved as draft!");
+                    var columns = that.getColumns(that.module);
+                    var checkCol = [];
+                    columns.map(val => {
+                        if (val.editable) {
+                            checkCol.push(val.title)
+                        }
                     })
-                    .catch((error) => {
-                        MessageBox.error("Error writing document: " + error);
+                    console.log(aData);
+                    var aFilteredData = [];
+                    aFilteredData = aData.filter(row => {
+                        return checkCol.every(key => row[key] && row[key] !== '');
                     });
+                    var user = that.userData;
+                    firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc(that.module).set({
+                        [branch]: {
+                            data: aData,
+                            status: "Draft",
+                            updatedAt: new Date(),
+                            updatedBy: user.userId,
+                            dataType: that.custom ? "Custom" : "Variant"
+                        }
 
+                    }, { merge: true })
+                        .then(() => {
+                            MessageBox.success("Data successfully saved as draft!");
+                        })
+                        .catch((error) => {
+                            MessageBox.error("Error writing document: " + error);
+                        });
+                }
+                else {
+                    MessageBox.warning("You cannot submit. Data for this branch is already submitted");
+                }
             },
             onSave: function () {
                 var that = this;
                 // Show confirmation dialog before deleting
-                var branch = that.getView().getModel("masterModel").getProperty("/EmployeeBranch");
-                if (!branch) {
-                    MessageBox.warning("Kindly select branch");
-                    return;
-                }
-                var columns = that.getColumns(that.module);
-                var checkCol = [];
-                columns.map(val => {
-                    if (val.editable) {
-                        checkCol.push(val.title)
+                var text = that.byId("status").getText();
+                if (text !== "Submitted") {
+                    var branch = that.getView().getModel("masterModel").getProperty("/EmployeeBranch");
+                    if (!branch) {
+                        MessageBox.warning("Kindly select branch");
+                        return;
                     }
-                })
-                MessageBox.confirm(
-                    "Are you sure you want to Submit?", {
-                    title: "Submit Confirmation",
-                    onClose: function (oAction) {
-                        if (oAction === "OK") {
-                            var aData = that.getView().getModel("moduleMaster").getData().results;
-                            var monthYear = that.getView().getModel("masterModel").getProperty("/currentReportingCycle");
+                    var columns = that.getColumns(that.module);
+                    var checkCol = [];
+                    columns.map(val => {
+                        if (val.editable) {
+                            checkCol.push(val.title)
+                        }
+                    })
+                    MessageBox.confirm(
+                        "Are you sure you want to Submit?", {
+                        title: "Submit Confirmation",
+                        onClose: function (oAction) {
+                            if (oAction === "OK") {
+                                var aData = that.getView().getModel("moduleMaster").getData().results;
+                                var monthYear = that.getView().getModel("masterModel").getProperty("/currentReportingCycle");
 
-                            console.log(aData);
-                            var aFilteredData = [];
-                            aFilteredData = aData.filter(row => {
-                                return checkCol.every(key => row[key] && row[key] !== '');
-                            });
+                                console.log(aData);
+                                var aFilteredData = [];
+                                aFilteredData = aData.filter(row => {
+                                    return checkCol.every(key => row[key] && row[key] !== '');
+                                });
 
-                            if (aFilteredData.length !== aData.length) {
-                                MessageBox.confirm(
-                                    "Columns with empty Amount would be ignored. Do you still want to proceed?", {
-                                    title: "Confirmation",
-                                    onClose: function (oAction) {
-                                        if (oAction === "OK") {
-                                            var user = that.userData;
-                                            firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc(that.module).set({
-                                                [branch]: {
-                                                    data: aFilteredData,
-                                                    status: "Submitted",
-                                                    updatedAt: new Date(),
-                                                    updatedBy: user.userId,
-                                                    dataType: "Variant"
-                                                }
-
-                                            }, { merge: true })
-                                                .then(() => {
-                                                    firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc("Statistics").set({
+                                if (aFilteredData.length > 0) {
+                                    if (aFilteredData.length !== aData.length) {
+                                        MessageBox.confirm(
+                                            "Columns with empty values would be ignored. Do you still want to proceed?", {
+                                            title: "Confirmation",
+                                            onClose: function (oAction) {
+                                                if (oAction === "OK") {
+                                                    var user = that.userData;
+                                                    firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc(that.module).set({
                                                         [branch]: {
-                                                            [that.tile]: firebase.firestore.FieldValue.arrayUnion(that.module)
+                                                            data: aFilteredData,
+                                                            status: "Submitted",
+                                                            updatedAt: new Date(),
+                                                            updatedBy: user.userId,
+                                                            dataType: "Variant"
                                                         }
 
                                                     }, { merge: true })
                                                         .then(() => {
-                                                            // MessageBox.success("Data successfully saved as draft!");
+                                                            firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc("Statistics").set({
+                                                                [branch]: {
+                                                                    [that.tile]: firebase.firestore.FieldValue.arrayUnion(that.module)
+                                                                }
+
+                                                            }, { merge: true })
+                                                                .then(() => {
+                                                                    // MessageBox.success("Data successfully saved as draft!");
+
+                                                                })
+                                                                .catch((error) => {
+                                                                    // MessageBox.error("Error writing document: " + error);
+                                                                });
+                                                            MessageBox.success("Data successfully submitted for reporting");
+                                                            that.byId("status").setText("Submitted");
 
                                                         })
                                                         .catch((error) => {
-                                                            // MessageBox.error("Error writing document: " + error);
+                                                            MessageBox.error("Error writing document: " + error);
                                                         });
-                                                    MessageBox.success("Data successfully submitted for reporting");
-                                                    that.byId("status").setText("Submitted");
-
-                                                })
-                                                .catch((error) => {
-                                                    MessageBox.error("Error writing document: " + error);
-                                                });
-                                        }
+                                                }
+                                            }
+                                        });
                                     }
-                                });
-                            }
-                            else {
-                                var user = that.userData;
-                                firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc(that.module).set({
-                                    [branch]: {
-                                        data: aFilteredData,
-                                        status: "Submitted",
-                                        updatedAt: new Date(),
-                                        updatedBy: user.userId,
-                                        dataType: "Variant"
-                                    }
-
-                                }, { merge: true })
-                                    .then(() => {
-                                        firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc("Statistics").set({
+                                    else {
+                                        var user = that.userData;
+                                        firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc(that.module).set({
                                             [branch]: {
-                                                [that.tile]: firebase.firestore.FieldValue.arrayUnion(that.module)
+                                                data: aFilteredData,
+                                                status: "Submitted",
+                                                updatedAt: new Date(),
+                                                updatedBy: user.userId,
+                                                dataType: "Variant"
                                             }
 
                                         }, { merge: true })
                                             .then(() => {
-                                                // MessageBox.success("Data successfully saved as draft!");
+                                                firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc("Statistics").set({
+                                                    [branch]: {
+                                                        [that.tile]: firebase.firestore.FieldValue.arrayUnion(that.module)
+                                                    }
+
+                                                }, { merge: true })
+                                                    .then(() => {
+                                                        // MessageBox.success("Data successfully saved as draft!");
+
+                                                    })
+                                                    .catch((error) => {
+                                                        // MessageBox.error("Error writing document: " + error);
+                                                    });
+                                                MessageBox.success("Data successfully submitted for reporting");
+                                                that.byId("status").setText("Submitted");
+
 
                                             })
                                             .catch((error) => {
-                                                // MessageBox.error("Error writing document: " + error);
+                                                MessageBox.error("Error writing document: " + error);
                                             });
-                                        MessageBox.success("Data successfully submitted for reporting");
-                                        that.byId("status").setText("Submitted");
+                                    }
+                                }
+                                else {
+                                    MessageBox.error("No rows to submit");
+                                }
 
-
-                                    })
-                                    .catch((error) => {
-                                        MessageBox.error("Error writing document: " + error);
-                                    });
                             }
-
                         }
                     }
+                    );
                 }
-                );
+                else {
+                    MessageBox.warning("You cannot submit. Data for this branch is already submitted");
+                }
+
             },
             createCellTemplate: function (columns, status) {
                 var acolumns = [];
                 columns.map(val => {
                     if (status) {
-                        acolumns.push(new Input({
-                            value: "{moduleMaster>" + val.title + "}",
-                            editable: false
+                        acolumns.push(new sap.m.Text({
+                            text: "{moduleMaster>" + val.title + "}"
                         }))
                     }
                     else {
                         if (val.editable) {
                             acolumns.push(new Input({
                                 value: "{moduleMaster>" + val.title + "}",
-                                editable: true
+                                editable: true,
+                                type: val.type
                             }))
                         }
                         else {
-                            acolumns.push(new Input({
-                                value: "{moduleMaster>" + val.title + "}",
-                                editable: false
+                            acolumns.push(new sap.m.Text({
+                                text: "{moduleMaster>" + val.title + "}"
                             }))
                         }
                     }
@@ -588,10 +776,18 @@ sap.ui.define(
 
             },
             createCellTemplateVariant: function (rowData, oColumnData) {
-                return new Input({
-                    value: rowData[oColumnData.title] ? rowData[oColumnData.title] : "",
-                    editable: oColumnData.editable
-                });
+                if (oColumnData.editable) {
+                    return new Input({
+                        value: rowData[oColumnData.title] ? rowData[oColumnData.title] : "",
+                        editable: oColumnData.editable,
+                        type: oColumnData.type
+                    });
+                }
+                else {
+                    return new sap.m.Text({
+                        text: rowData[oColumnData.title] ? rowData[oColumnData.title] : "",
+                    });
+                }
 
             },
             _initializeTableVariant: function (aRows) {
@@ -599,6 +795,7 @@ sap.ui.define(
                 var oTable = this.byId("VariantTable");
                 oTable.removeAllColumns();
                 oTable.removeAllItems();
+                var aData = JSON.parse(JSON.stringify(aRows));
                 var columns = this.getColumns(that.module);
                 // Dynamically create columns based on aColumns array
                 columns.forEach(function (column) {
@@ -606,8 +803,8 @@ sap.ui.define(
                         header: new Label({ text: column.title })
                     }));
                 }, this);
-                if (aRows && aRows.length > 0) {
-                    this._prefillRowsVariant(aRows, columns);
+                if (aData && aData.length > 0) {
+                    this._prefillRowsVariant(aData, columns);
                 }
                 // Add initial row
 
@@ -631,13 +828,27 @@ sap.ui.define(
                 else {
                     var selectData = [];
                 }
+
+                var aColumns = this.getColumns(that.module);
+                const editableColumns = aColumns
+                    .filter(header => header.editable)
+                    .map(header => header.title);
+
+                // Loop through table data and set empty values to ""
+                selectData.forEach(row => {
+                    editableColumns.forEach(column => {
+                        if (row[column] === undefined || row[column] === null || row[column] === "") {
+                            row[column] = "";
+                        }
+                    });
+                });
                 var user = this.userData;
                 firebase.firestore().collection(user.domain).doc("Master Data").collection("Reporting Variant").doc(that.module).get()
                     .then((data) => {
                         if (data.exists && data.data()[branch]) {
-                            firebase.firestore().collection(user.domain).doc("Master Data").collection("Reporting Variant").doc(that.module).update({
+                            firebase.firestore().collection(user.domain).doc("Master Data").collection("Reporting Variant").doc(that.module).set({
                                 [branch]: firebase.firestore.FieldValue.arrayUnion(...selectData)
-                            })
+                            }, { merge: true })
                                 .then(() => {
                                     MessageBox.success("Variant successfully saved!");
                                     if (that.variantData) {
@@ -702,9 +913,7 @@ sap.ui.define(
                     var aSelectedIndices = aSelectedItems.map(function (item) {
                         return oTable.indexOfItem(item);
                     });
-                    aSelectedItems.map(function (item) {
-                        oTable.removeItem(item)
-                    });
+
                     // Remove selected rows from the flight data
 
 
@@ -713,15 +922,18 @@ sap.ui.define(
                     MessageBox.confirm(`Are you sure you want to delete these data for office ${branch}`, {
                         onClose: function (oAction) {
                             if (oAction === "OK") {
-
+                                aSelectedItems.map(function (item) {
+                                    oTable.removeItem(item)
+                                });
                                 var user = that.userData;
+                                aSelectedIndices.sort().reverse().forEach(function (index) {
+                                    that.variantData[branch].splice(index, 1);
+                                });
                                 firebase.firestore().collection(user.domain).doc("Master Data").collection("Reporting Variant").doc(that.module).update({
                                     [branch]: that.variantData[branch]
                                 })
                                     .then(() => {
-                                        aSelectedIndices.sort().reverse().forEach(function (index) {
-                                            that.variantData[branch].splice(index, 1);
-                                        });
+
                                         MessageBox.success("Variant successfully deleted!");
 
                                     })
@@ -786,8 +998,8 @@ sap.ui.define(
             _prefillRowsVariant: function (aRows, columns) {
                 var oTable = this.byId("VariantTable");
                 var aCells;
-
-                aRows.forEach(function (aRowData) {
+                var aData = JSON.parse(JSON.stringify(aRows));
+                aData.forEach(function (aRowData) {
                     aCells = [];
 
                     // Create cells for each column based on column type and prefill data
@@ -803,7 +1015,7 @@ sap.ui.define(
                     oTable.addItem(oNewItem);
                 }.bind(this));
                 // var oModel = this.getView().getModel("Variant");
-                // oModel.setProperty("/rows", aRows)
+                // oModel.setProperty("/rows", aData)
             },
             findGHGConversion: function (data1, data2) {
                 var that = this;
@@ -910,11 +1122,20 @@ sap.ui.define(
                         // Create template for the table rows (items)
                         var oTemplate = new sap.m.ColumnListItem({
                             cells: aKeys.map(function (sKey) {
-                                return new Input({
-                                    value: "{variantMaster>" + sKey.title + "}",
-                                    editable: sKey.editable
+                                if (sKey.editable) {
+                                    return new Input({
+                                        value: "{variantMaster>" + sKey.title + "}",
+                                        editable: sKey.editable,
+                                        type: sKey.type
 
-                                });
+                                    });
+                                }
+                                else {
+                                    return new sap.m.Text({
+                                        text: "{variantMaster>" + sKey.title + "}"
+
+                                    });
+                                }
                             })
                         });
 

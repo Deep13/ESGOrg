@@ -32,13 +32,13 @@ const viewContent = `<mvc:View controllerName="ESGOrg.ESGOrg.controller.Governan
 			<OverflowToolbar>
             <Button icon="sap-icon://navigation-left-arrow" tooltip="Back" press="onpressBack" />
 				<Image src="./assets/company_logo.png" class="sapUiMediumMargin"
-					width="60px" />
+					width="90px" />
 				<ToolbarSpacer />
 				<Title text="${clientName}" />
 				<ToolbarSpacer />
 				<HBox alignItems="Center">
 					<Button icon="sap-icon://log" tooltip="Log Out" press="onLogOut" />
-					<Button icon="sap-icon://headset" tooltip="Support" press="" />
+					<Button icon="sap-icon://headset" tooltip="Support" press="onOpenPopover" />
 				</HBox>
 			</OverflowToolbar>
 		</customHeader>
@@ -98,7 +98,7 @@ const viewContent = `<mvc:View controllerName="ESGOrg.ESGOrg.controller.Governan
 <footer>
     <OverflowToolbar>
         <ToolbarSpacer />
-        <Text text="Koshish Sustainable Solutions Pvt.Ltd © 2024" />
+        <Text text="Sustrack Sustainable Solutions Pvt.Ltd © 2024" />
         <ToolbarSpacer />
 
         <Button text="Save as Draft" press="onSubmit" />

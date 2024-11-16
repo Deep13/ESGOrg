@@ -1,5 +1,5 @@
 <mvc:View
-    controllerName="ESGOrg.ESGOrg.controller.BranchWiseProgress"
+    controllerName="ESGOrg.ESGOrg.controller.SupportPage"
     xmlns:mvc="sap.ui.core.mvc"
     xmlns:core="sap.ui.core"
     xmlns:object="sap.uxap"
@@ -12,7 +12,7 @@
                 <Image src="./assets/company_logo.png" class="sapUiMediumMargin"
                     width="90px" />
                 <ToolbarSpacer />
-                <Title text="Branchwise Progress" />
+                <Title text="Incident Tickets" />
                 <ToolbarSpacer />
                 <HBox alignItems="Center">
                     <Button icon="sap-icon://log" tooltip="Log Out" press="onLogOut" />
@@ -23,40 +23,28 @@
         <content>
             <HBox alignItems="End" class="sapUiSmallMargin">
                 <!-- Branch Filter -->
-                <VBox class="sapUiSmallMarginBeginEnd">
-                    <Label text="Branch" labelFor="branchFilter" />
-                    <ComboBox id="branchFilter" selectionChange="onBranchFilter"
-                        items="{branchModel>/branches}" selectedKey="All">
-                        <core:Item key="{branchModel>branchName}" text="{branchModel>branchName}" />
-                    </ComboBox>
-                </VBox>
 
-                <!-- Module Filter -->
-                <VBox class="sapUiSmallMarginEnd">
-                    <Label text="Module" labelFor="moduleFilter" />
-                    <ComboBox id="moduleFilter" selectionChange="onModuleFilter"
-                        items="{moduleModel>/modules}" selectedKey="All">
-                        <core:Item key="{moduleModel>moduleName}" text="{moduleModel>moduleName}" />
-                    </ComboBox>
-                </VBox>
-
-                <!-- Sub-Module Filter -->
-                <VBox class="sapUiSmallMarginEnd">
-                    <Label text="Sub-Module" labelFor="subModuleFilter" />
-                    <ComboBox id="subModuleFilter" selectionChange="onSubModuleFilter"
-                        items="{subModuleModel>/subModules}"
-                        selectedKey="All">
-                        <core:Item key="{subModuleModel>subModule}"
-                            text="{subModuleModel>subModule}" />
-                    </ComboBox>
-                </VBox>
 
                 <!-- Status Filter -->
                 <VBox class="sapUiSmallMarginEnd">
+                    <Label text="Priority" labelFor="priorityFilter" />
+                    <ComboBox id="priorityFilter" selectionChange="onPriorityFilter"
+                        selectedKey="All">
+                        <core:Item key="All" text="All" />
+                        <core:Item key="Low" text="Low" />
+                        <core:Item key="Medium" text="Medium" />
+                        <core:Item key="High" text="High" />
+                    </ComboBox>
+                </VBox>
+                <VBox class="sapUiSmallMarginEnd">
                     <Label text="Status" labelFor="statusFilter" />
                     <ComboBox id="statusFilter" selectionChange="onStatusFilter"
-                        items="{statusModel>/status}" selectedKey="All">
-                        <core:Item key="{statusModel>status}" text="{statusModel>status}" />
+                        selectedKey="All">
+                        <core:Item key="All" text="All" />
+                        <core:Item key="New" text="New" />
+                        <core:Item key="In Progress" text="In Progress" />
+                        <core:Item key="On Hold" text="On Hold" />
+                        <core:Item key="Resolved" text="Resolved" />
                     </ComboBox>
                 </VBox>
 
@@ -67,33 +55,49 @@
             </HBox>
 
             <!-- Table for displaying branch/module data -->
-            <Table id="branchTable" items="{/branches}">
+            <Table id="branchTable" items="{/results}">
                 <!-- Column Definitions -->
                 <columns>
                     <Column>
-                        <Text text="Branch Name" />
+                        <Text text="Incident Id" />
                     </Column>
                     <Column>
-                        <Text text="Module Name" />
+                        <Text text="Email" />
                     </Column>
                     <Column>
-                        <Text text="Sub-module" />
+                        <Text text="Phone" />
                     </Column>
                     <Column>
-                        <Text text="Completion Status" />
+                        <Text text="Title" />
+                    </Column>
+                    <Column>
+                        <Text text="Description" />
+                    </Column>
+                    <Column>
+                        <Text text="Created Date" />
+                    </Column>
+                    <Column>
+                        <Text text="Status" />
+                    </Column>
+                    <Column>
+                        <Text text="Priority" />
                     </Column>
                 </columns>
 
                 <!-- Binding Data for Each Row -->
                 <items>
-                    <ColumnListItem highlight="{= ${status} === 'Completed' ? 'Success' :'Error' }">
+                    <ColumnListItem>
                         <cells>
-                            <Text text="{branchName}" />
-                            <Text text="{moduleName}" />
-                            <Text text="{subModule}" />
-                            <ObjectStatus text="{status}"
+                            <Text text="{incidentID}" />
+                            <Text text="{email}" />
+                            <Text text="{phone}" />
+                            <Text text="{title}" />
+                            <Text text="{description}" />
+                            <Text text="{createdDate}" />
+                            <Text text="{status}" />
+                            <ObjectStatus text="{priority}"
                                 inverted="true"
-                                state="{=${status} === 'Completed' ? 'Success' : 'Error' }" />
+                                state="{=${priority} === 'Low' ? 'Indication03' : ${priority} === 'Medium' ? 'Indication02':'Indication01'}" />
                         </cells>
                     </ColumnListItem>
                 </items>

@@ -7,13 +7,13 @@
             <OverflowToolbar>
                 <Button icon="sap-icon://navigation-left-arrow" tooltip="Back" press="onpressBack" />
                 <Image src="./assets/company_logo.png" class="sapUiMediumMargin"
-                    width="60px" />
+                    width="90px" />
                 <ToolbarSpacer />
                 <Title id="title" text="Flight" />
                 <ToolbarSpacer />
                 <HBox alignItems="Center">
                     <Button icon="sap-icon://log" tooltip="Log Out" press="onLogOut" />
-                    <Button icon="sap-icon://headset" tooltip="Support" press="" />
+                    <Button icon="sap-icon://headset" tooltip="Support" press="onOpenPopover" />
                 </HBox>
             </OverflowToolbar>
         </customHeader>
@@ -105,8 +105,8 @@
                                             enabled="{dataModel>/editable}" />
                                         <Button text="Delete Selected" press="onDeleteRow"
                                             enabled="{dataModel>/editable}" />
-                                        <Button text="Save as Draft" press="onSubmit" />
-                                        <Button text="Submit" press="onSave" />
+                                        <Button id="saveDraft" text="Save as Draft" press="onSubmit" />
+                                        <Button id="save" text="Submit" press="onSave" />
                                     </Toolbar>
                                 </headerToolbar>
 
@@ -116,6 +116,9 @@
                                     </Column>
                                     <Column>
                                         <Text text="Destination (city or IATA code)" />
+                                    </Column>
+                                    <Column>
+                                        <Text text="Direct / Indirect" />
                                     </Column>
                                     <Column>
                                         <Text text="Class" />
@@ -139,6 +142,13 @@
                                             <Input value="{dataModel>destination}"
                                                 placeholder="Enter destination city or IATA code"
                                                 editable="{dataModel>/editable}" />
+                                            <Select selectedKey="{dataModel>directindirect}"
+                                                editable="{dataModel>/editable}">
+                                                <items>
+                                                    <core:Item key="Direct" text="Direct" />
+                                                    <core:Item key="Indirect" text="Indirect" />
+                                                </items>
+                                            </Select>
                                             <!-- Class Dropdown -->
                                             <Select selectedKey="{dataModel>class}"
                                                 editable="{dataModel>/editable}">
@@ -158,7 +168,7 @@
                                             </Select>
                                             <!-- CO2e Input -->
                                             <Input value="{dataModel>co2e}"
-                                                placeholder="Enter CO2e value" />
+                                                placeholder="Enter CO2e value" type="Number" />
                                         </cells>
                                     </ColumnListItem>
                                 </items>
@@ -204,6 +214,9 @@
                                     <Text text="Destination (city or IATA code)" />
                                 </Column>
                                 <Column>
+                                    <Text text="Direct / Indirect" />
+                                </Column>
+                                <Column>
                                     <Text text="Class" />
                                 </Column>
                                 <Column>
@@ -225,6 +238,13 @@
                                             value="{variantDataModel>destination}"
                                             placeholder="Enter destination city or IATA code" />
                                         <!-- Class Dropdown -->
+                                        <Select selectedKey="{dataModel>directindirect}"
+                                            editable="{dataModel>/editable}">
+                                            <items>
+                                                <core:Item key="Direct" text="Direct" />
+                                                <core:Item key="Indirect" text="Indirect" />
+                                            </items>
+                                        </Select>
                                         <Select editable="false"
                                             selectedKey="{variantDataModel>class}">
                                             <items>
@@ -243,7 +263,7 @@
                                         </Select>
                                         <!-- CO2e Input -->
                                         <Input editable="false" value="{variantDataModel>co2e}"
-                                            placeholder="Enter CO2e value" />
+                                            placeholder="Enter CO2e value" type="Number" />
                                     </cells>
                                 </ColumnListItem>
                             </items>
@@ -287,6 +307,9 @@
                                     <Text text="Destination (city or IATA code)" />
                                 </Column>
                                 <Column>
+                                    <Text text="Direct / Indirect" />
+                                </Column>
+                                <Column>
                                     <Text text="Class" />
                                 </Column>
                                 <Column>
@@ -307,6 +330,13 @@
                                         <Input value="{variantModel>destination}"
                                             placeholder="Enter destination city or IATA code" />
                                         <!-- Class Dropdown -->
+                                        <Select selectedKey="{dataModel>directindirect}"
+                                            editable="{dataModel>/editable}">
+                                            <items>
+                                                <core:Item key="Direct" text="Direct" />
+                                                <core:Item key="Indirect" text="Indirect" />
+                                            </items>
+                                        </Select>
                                         <Select selectedKey="{variantModel>class}">
                                             <items>
                                                 <core:Item key="Economy" text="Economy" />
@@ -323,7 +353,7 @@
                                         </Select>
                                         <!-- CO2e Input -->
                                         <Input value="{variantModel>co2e}"
-                                            placeholder="Enter CO2e value" />
+                                            placeholder="Enter CO2e value" type="Number" />
                                     </cells>
                                 </ColumnListItem>
                             </items>
@@ -336,7 +366,7 @@
         <footer>
             <OverflowToolbar>
                 <ToolbarSpacer />
-                <Text text="Koshish Sustainable Solutions Pvt.Ltd © 2024" />
+                <Text text="Sustrack Sustainable Solutions Pvt.Ltd © 2024" />
                 <ToolbarSpacer />
 
 

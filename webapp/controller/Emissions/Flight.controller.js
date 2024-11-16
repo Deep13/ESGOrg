@@ -51,8 +51,17 @@ sap.ui.define([
 
                 // Convert unique officeType values to the desired format
                 var formattedOfficeTypes = uniqueOfficeTypes.map(type => ({ officeType: type }));
-                var masterModel = { ...that.getMaster(), EmployeeBranches: user.branches, EmployeeOffices: formattedOfficeTypes };
+                var oMaster = that.getMaster();
+                var masterModel = { ...oMaster, EmployeeBranches: user.branches, EmployeeOffices: formattedOfficeTypes };
 
+                if (oMaster.currentReportingCycle && oMaster.currentReportingCycle.status) {
+                    that.byId("saveDraft").setEnabled(true);
+                    that.byId("save").setEnabled(true);
+                }
+                else {
+                    that.byId("saveDraft").setEnabled(false);
+                    that.byId("save").setEnabled(false);
+                }
                 var oModel = new sap.ui.model.json.JSONModel(masterModel);
                 this.getView().setModel(oModel, "masterModel");
                 if (user.role === "Admin") {
@@ -291,7 +300,7 @@ sap.ui.define([
         },
         _initializeTable: function (aRows, status) {
             var that = this;
-            that.getView().getModel("dataModel").setProperty("/results", aRows);
+            that.getView().getModel("dataModel").setProperty("/results", JSON.parse(JSON.stringify(aRows)));
             that.getView().getModel("dataModel").setProperty("/editable", status ? status : false);
             that.getView().getModel("dataModel").refresh(true)
         },
@@ -418,7 +427,7 @@ sap.ui.define([
         },
         _initializeTableVariant: function (aRows) {
             var that = this;
-            that.getView().getModel("variantDataModel").setProperty("/results", aRows);
+            that.getView().getModel("variantDataModel").setProperty("/results", JSON.parse(JSON.stringify(aRows)));
             that.getView().getModel("variantDataModel").refresh(true)
 
         },
@@ -447,7 +456,8 @@ sap.ui.define([
         createCellTemplateVariant: function (rowData, oColumnData) {
             return new Input({
                 value: rowData[oColumnData.title] ? rowData[oColumnData.title] : "",
-                editable: oColumnData.editable
+                editable: oColumnData.editable,
+                type: oColumnData.type
             });
 
         },
@@ -486,187 +496,208 @@ sap.ui.define([
         },
         onSubmit: function () {
             var that = this;
-            var oTable = this.byId("flightTable");
-            var data = oTable.getSelectedItems();
-            var selectData = [];
-            if (data.length > 0) {
+            var text = that.byId("status").getText();
+            if (text !== "Submitted") {
+                var oTable = this.byId("flightTable");
+                var data = oTable.getSelectedItems();
+                var selectData = [];
+                if (data.length > 0) {
 
-                data.map(val => {
-                    selectData.push(val.getBindingContext("dataModel").getObject());
-                })
-            }
-            else {
-                MessageToast.show("No Values selected");
-                return;
-            }
-            var monthYear = this.getView().getModel("masterModel").getProperty("/currentReportingCycle");
-            var branch = this.getView().getModel("masterModel").getProperty("/EmployeeBranch");
-            if (!branch) {
-                MessageBox.warning("Kindly select branch");
-                return;
-            }
-            console.log(selectData);
-            var aFilteredData = []
-            selectData.map(val => {
-                if (val.co2e) {
-                    aFilteredData.push(val)
+                    data.map(val => {
+                        selectData.push(val.getBindingContext("dataModel").getObject());
+                    })
                 }
-            });
-            if (aFilteredData.length !== selectData.length) {
-                MessageBox.confirm(
-                    "Columns with empty Amount would be ignored. Do you still want to proceed?", {
-                    title: "Confirmation",
-                    onClose: function (oAction) {
-                        if (oAction === "OK") {
-                            var user = that.userData;
-                            firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc(that.module).set({
-                                [branch]: {
-                                    data: aFilteredData,
-                                    status: "Draft",
-                                    updatedAt: new Date(),
-                                    updatedBy: user.userId,
-                                    dataType: that.custom ? "Custom" : "Variant"
-                                }
-
-                            }, { merge: true })
-                                .then(() => {
-                                    MessageBox.success("Data successfully saved as draft!");
-                                })
-                                .catch((error) => {
-                                    MessageBox.error("Error writing document: " + error);
-                                });
-                        }
+                else {
+                    MessageToast.show("No Values selected");
+                    return;
+                }
+                var monthYear = this.getView().getModel("masterModel").getProperty("/currentReportingCycle");
+                var branch = this.getView().getModel("masterModel").getProperty("/EmployeeBranch");
+                if (!branch) {
+                    MessageBox.warning("Kindly select branch");
+                    return;
+                }
+                console.log(selectData);
+                var aFilteredData = []
+                selectData.map(val => {
+                    if (val.co2e && val.origin && val.destination) {
+                        aFilteredData.push(val)
                     }
                 });
+                if (aFilteredData.length > 0) {
+                    if (aFilteredData.length !== selectData.length) {
+                        MessageBox.confirm(
+                            "Columns with empty Amount would be ignored. Do you still want to proceed?", {
+                            title: "Confirmation",
+                            onClose: function (oAction) {
+                                if (oAction === "OK") {
+                                    var user = that.userData;
+                                    firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc(that.module).set({
+                                        [branch]: {
+                                            data: aFilteredData,
+                                            status: "Draft",
+                                            updatedAt: new Date(),
+                                            updatedBy: user.userId,
+                                            dataType: that.custom ? "Custom" : "Variant"
+                                        }
+
+                                    }, { merge: true })
+                                        .then(() => {
+                                            MessageBox.success("Data successfully saved as draft!");
+                                        })
+                                        .catch((error) => {
+                                            MessageBox.error("Error writing document: " + error);
+                                        });
+                                }
+                            }
+                        });
+                    }
+                    else {
+                        var user = that.userData;
+                        firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc(that.module).set({
+                            [branch]: {
+                                data: aFilteredData,
+                                status: "Draft",
+                                updatedAt: new Date(),
+                                updatedBy: user.userId,
+                                dataType: that.custom ? "Custom" : "Variant"
+                            }
+
+                        }, { merge: true })
+                            .then(() => {
+                                MessageBox.success("Data successfully saved as draft!");
+                            })
+                            .catch((error) => {
+                                MessageBox.error("Error writing document: " + error);
+                            });
+                    }
+                }
+                else {
+                    MessageBox.error("No rows to submit");
+                }
             }
             else {
-                var user = that.userData;
-                firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc(that.module).set({
-                    [branch]: {
-                        data: aFilteredData,
-                        status: "Draft",
-                        updatedAt: new Date(),
-                        updatedBy: user.userId,
-                        dataType: that.custom ? "Custom" : "Variant"
-                    }
-
-                }, { merge: true })
-                    .then(() => {
-                        MessageBox.success("Data successfully saved as draft!");
-                    })
-                    .catch((error) => {
-                        MessageBox.error("Error writing document: " + error);
-                    });
+                MessageBox.warning("You cannot submit. Data for this branch is already submitted");
             }
 
         },
         onSave: function () {
             var that = this;
             // Show confirmation dialog before deleting
-            var branch = that.getView().getModel("masterModel").getProperty("/EmployeeBranch");
-            var oTable = this.byId("flightTable");
-            var aData = that.getView().getModel("dataModel").getData().results;
-            if (!branch) {
-                MessageBox.warning("Kindly select branch");
-                return;
-            }
-            MessageBox.confirm(
-                "Are you sure you want to Submit?", {
-                title: "Submit Confirmation",
-                onClose: function (oAction) {
-                    if (oAction === "OK") {
-                        var monthYear = that.getView().getModel("masterModel").getProperty("/currentReportingCycle");
+            var text = that.byId("status").getText();
+            if (text !== "Submitted") {
+                var branch = that.getView().getModel("masterModel").getProperty("/EmployeeBranch");
+                var oTable = this.byId("flightTable");
+                var aData = that.getView().getModel("dataModel").getData().results;
+                if (!branch) {
+                    MessageBox.warning("Kindly select branch");
+                    return;
+                }
+                MessageBox.confirm(
+                    "Are you sure you want to Submit?", {
+                    title: "Submit Confirmation",
+                    onClose: function (oAction) {
+                        if (oAction === "OK") {
+                            var monthYear = that.getView().getModel("masterModel").getProperty("/currentReportingCycle");
 
-                        console.log(aData);
-                        var aFilteredData = []
-                        aData.map(val => {
-                            if (val.co2e) {
-                                aFilteredData.push(val)
+                            console.log(aData);
+                            var aFilteredData = []
+                            aData.map(val => {
+                                if (val.co2e && val.origin && val.destination) {
+                                    aFilteredData.push(val)
 
-                            }
+                                }
 
-                        });
-                        if (aFilteredData.length !== aData.length) {
-                            MessageBox.confirm(
-                                "Columns with empty Amount would be ignored. Do you still want to proceed?", {
-                                title: "Confirmation",
-                                onClose: function (oAction) {
-                                    if (oAction === "OK") {
-                                        var user = that.userData;
-                                        firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc(that.module).set({
-                                            [branch]: {
-                                                data: aFilteredData,
-                                                status: "Submitted",
-                                                updatedAt: new Date(),
-                                                updatedBy: user.userId,
-                                                dataType: that.custom ? "Custom" : "Variant"
-                                            }
-
-                                        }, { merge: true })
-                                            .then(() => {
-                                                firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc("Statistics").set({
+                            });
+                            if (aFilteredData.length > 0) {
+                                if (aFilteredData.length !== aData.length) {
+                                    MessageBox.confirm(
+                                        "Columns with empty Amount would be ignored. Do you still want to proceed?", {
+                                        title: "Confirmation",
+                                        onClose: function (oAction) {
+                                            if (oAction === "OK") {
+                                                var user = that.userData;
+                                                firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc(that.module).set({
                                                     [branch]: {
-                                                        [that.tile]: firebase.firestore.FieldValue.arrayUnion(that.module)
+                                                        data: aFilteredData,
+                                                        status: "Submitted",
+                                                        updatedAt: new Date(),
+                                                        updatedBy: user.userId,
+                                                        dataType: that.custom ? "Custom" : "Variant"
                                                     }
 
                                                 }, { merge: true })
                                                     .then(() => {
-                                                        // MessageBox.success("Data successfully saved as draft!");
+                                                        firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc("Statistics").set({
+                                                            [branch]: {
+                                                                [that.tile]: firebase.firestore.FieldValue.arrayUnion(that.module)
+                                                            }
+
+                                                        }, { merge: true })
+                                                            .then(() => {
+                                                                // MessageBox.success("Data successfully saved as draft!");
+
+                                                            })
+                                                            .catch((error) => {
+                                                                // MessageBox.error("Error writing document: " + error);
+                                                            });
+                                                        MessageBox.success("Data successfully submitted for reporting");
+                                                        that.byId("status").setText("Submitted");
 
                                                     })
                                                     .catch((error) => {
-                                                        // MessageBox.error("Error writing document: " + error);
+                                                        MessageBox.error("Error writing document: " + error);
                                                     });
-                                                MessageBox.success("Data successfully submitted for reporting");
-
-
-                                            })
-                                            .catch((error) => {
-                                                MessageBox.error("Error writing document: " + error);
-                                            });
-                                    }
+                                            }
+                                        }
+                                    });
                                 }
-                            });
-                        }
-                        else {
-                            var user = that.userData;
-                            firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc(that.module).set({
-                                [branch]: {
-                                    data: aFilteredData,
-                                    status: "Submitted",
-                                    updatedAt: new Date(),
-                                    updatedBy: user.userId,
-                                    dataType: that.custom ? "Custom" : "Variant"
-                                }
-
-                            }, { merge: true })
-                                .then(() => {
-                                    firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc("Statistics").set({
+                                else {
+                                    var user = that.userData;
+                                    firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc(that.module).set({
                                         [branch]: {
-                                            [that.tile]: firebase.firestore.FieldValue.arrayUnion(that.module)
+                                            data: aFilteredData,
+                                            status: "Submitted",
+                                            updatedAt: new Date(),
+                                            updatedBy: user.userId,
+                                            dataType: that.custom ? "Custom" : "Variant"
                                         }
 
                                     }, { merge: true })
                                         .then(() => {
-                                            // MessageBox.success("Data successfully saved as draft!");
+                                            firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc("Statistics").set({
+                                                [branch]: {
+                                                    [that.tile]: firebase.firestore.FieldValue.arrayUnion(that.module)
+                                                }
+
+                                            }, { merge: true })
+                                                .then(() => {
+                                                    // MessageBox.success("Data successfully saved as draft!");
+
+                                                })
+                                                .catch((error) => {
+                                                    // MessageBox.error("Error writing document: " + error);
+                                                });
+                                            MessageBox.success("Data successfully submitted for reporting");
+                                            that.byId("status").setText("Submitted");
 
                                         })
                                         .catch((error) => {
-                                            // MessageBox.error("Error writing document: " + error);
+                                            MessageBox.error("Error writing document: " + error);
                                         });
-                                    MessageBox.success("Data successfully submitted for reporting");
-
-
-                                })
-                                .catch((error) => {
-                                    MessageBox.error("Error writing document: " + error);
-                                });
+                                }
+                            }
+                            else {
+                                MessageBox.error("No rows to submit");
+                            }
                         }
-
                     }
                 }
+                );
             }
-            );
+            else {
+                MessageBox.warning("You cannot submit. Data for this branch is already submitted");
+            }
         },
         createVariantMaster: function () {
             var that = this;
@@ -701,7 +732,8 @@ sap.ui.define([
                         cells: aKeys.map(function (sKey) {
                             return new Input({
                                 value: "{variantMaster>" + sKey.title + "}",
-                                editable: sKey.editable
+                                editable: sKey.editable,
+                                type: sKey.type
 
                             });
                         })

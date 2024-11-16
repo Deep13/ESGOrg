@@ -9,26 +9,147 @@
             <OverflowToolbar>
                 <Button icon="sap-icon://navigation-left-arrow" tooltip="Back" press="onpressBack" />
                 <Image src="./assets/company_logo.png" class="sapUiMediumMargin"
-                    width="60px" />
+                    width="90px" />
                 <ToolbarSpacer />
-                <Title text="ESG" />
+                <Title text="ESG Overview" />
                 <ToolbarSpacer />
                 <HBox alignItems="Center">
                     <Button icon="sap-icon://log" tooltip="Log Out" press="onLogOut" />
-                    <Button icon="sap-icon://headset" tooltip="Support" press="" />
+                    <Button icon="sap-icon://headset" tooltip="Support" press="onOpenPopover" />
                 </HBox>
             </OverflowToolbar>
         </customHeader>
         <content>
-            <object:ObjectPageLayout id="objectPageLayout">
+            <object:ObjectPageLayout>
+                <object:ObjectPageSection titleUppercase="false" title="Overview">
+                    <object:subSections>
+                        <object:ObjectPageSubSection titleUppercase="false">
+                            <object:blocks>
+                                <VBox>
+                                    <HBox id="graphCycleFilters"></HBox>
+                                    <HBox id="graphFilters"></HBox>
+                                    <HBox justifyContent="End">
+                                        <!-- <VBox>
+                                            <Label text="Year" />
+                                            <Select
+                                                class="sapUiSmallMarginEnd"
+                                                change="onYearChange"
+                                                id="yearId"
+                                                items="{
+                        path: 'yearModel>/results'
+                    }">
+                                                <core:Item key="{yearModel>title}"
+                                                    text="{yearModel>title}" />
+                                            </Select>
+                                        </VBox>
+                                        <VBox>
+                                            <Label text="Month" />
+                                            <Select
+                                                class="sapUiSmallMarginEnd"
+                                                change="onMonthChange"
+                                                id="monthId"
+                                                items="{
+                        path: 'monthModel>/results'
+                    }">
+                                                <core:Item key="{monthModel>title}"
+                                                    text="{monthModel>title}" />
+                                            </Select>
+                                        </VBox> -->
+                                        <Select
+                                            class="sapUiSmallMarginEnd"
+                                            change="onBranchChange"
+                                            id="branchId"
+                                            items="{
+                    path: 'branchModel>/results'
+                }">
+                                            <core:Item key="{branchModel>title}"
+                                                text="{branchModel>title}" />
+                                        </Select>
+                                        <!-- <VBox>
+                                            <Label text="Country" />
+                                            <Select
+                                                class="sapUiSmallMarginEnd"
+                                                change="onCountryChange"
+                                                forceSelection="false"
+                                                id="countryId"
+                                                items="{
+                        path: 'countryModel>/results'
+                    }">
+                                                <core:Item key="{countryModel>title}"
+                                                    text="{countryModel>title}" />
+                                            </Select>
+                                        </VBox>
+                                        <VBox>
+                                            <Label text="State" />
+                                            <Select
+                                                class="sapUiSmallMarginEnd"
+                                                change="onStateChange"
+                                                forceSelection="false"
+                                                id="stateId"
+                                                items="{
+                        path: 'stateModel>/results'
+                    }">
+                                                <core:Item key="{stateModel>title}"
+                                                    text="{stateModel>title}" />
+                                            </Select>
+                                        </VBox>
+                                        <VBox>
+                                            <Label text="District" />
+                                            <Select
+                                                class="sapUiSmallMarginEnd"
+                                                change="onDistrictChange"
+                                                forceSelection="false"
+                                                id="districtId"
+                                                items="{
+                        path: 'districtModel>/results'
+                    }">
+                                                <core:Item key="{districtModel>title}"
+                                                    text="{districtModel>title}" />
+                                            </Select>
+                                        </VBox>
+                                        <VBox>
+                                            <Label text="Block" />
+                                            <Select
+                                                class="sapUiSmallMarginEnd"
+                                                change="onBlockChange"
+                                                forceSelection="false"
+                                                id="blockId"
+                                                items="{
+                        path: 'blockModel>/results'
+                    }">
+                                                <core:Item key="{blockModel>title}"
+                                                    text="{blockModel>title}" />
+                                            </Select>
+                                        </VBox> -->
 
+                                        <!-- <VBox>
+                                            <Label text="Cycle" /> -->
+                                        <Select
+                                            change="onCycleChange"
+                                            id="cycleId"
+                                            items="{
+							path: 'cycleModel>/results'
+						}">
+                                            <core:Item key="{cycleModel>title}"
+                                                text="{cycleModel>title}" />
+                                        </Select>
+                                        <!-- </VBox> -->
+                                    </HBox>
+                                    <HBox id="KPIData">
+                                    </HBox>
+                                    <HBox id="chartData"></HBox>
+                                </VBox>
+                            </object:blocks>
+                        </object:ObjectPageSubSection>
+                    </object:subSections>
+                </object:ObjectPageSection>
             </object:ObjectPageLayout>
         </content>
         <footer>
             <OverflowToolbar>
                 <HBox alignItems="Center" alignContent="Center" justifyContent="Center"
                     width="100%">
-                    <Text text="Koshish Sustainable Solutions Pvt.Ltd © 2024" />
+                    <Text text="Sustrack Sustainable Solutions Pvt.Ltd © 2024" />
                 </HBox>
             </OverflowToolbar>
         </footer>

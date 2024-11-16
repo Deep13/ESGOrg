@@ -8,13 +8,13 @@
             <OverflowToolbar>
                 <Button icon="sap-icon://navigation-left-arrow" tooltip="Back" press="onpressBack" />
                 <Image src="./assets/company_logo.png" class="sapUiMediumMargin"
-                    width="60px" />
+                    width="90px" />
                 <ToolbarSpacer />
                 <Title id="title" text="" />
                 <ToolbarSpacer />
                 <HBox alignItems="Center">
                     <Button icon="sap-icon://log" tooltip="Log Out" press="onLogOut" />
-                    <Button icon="sap-icon://headset" tooltip="Support" press="" />
+                    <Button icon="sap-icon://headset" tooltip="Support" press="onOpenPopover" />
                 </HBox>
             </OverflowToolbar>
         </customHeader>
@@ -92,18 +92,21 @@
                                         text="{masterModel>branch}"
                                         additionalText="{masterModel>officeType}" />
                                 </Select>
+
                             </VBox>
+                            <OverflowToolbar class="sapUiMediumMarginBottom">
+                                <content>
+                                    <!-- <Title text="Editable Table" /> -->
+                                    <ToolbarSpacer />
+                                    <HBox id="Filters"></HBox>
+                                    <Button id="saveDraft" text="Save as Draft"
+                                        press="onSubmit" />
+                                    <Button id="save" text="Submit" press="onSave" />
+                                </content>
+                            </OverflowToolbar>
                             <Table id="editableTable" inset="false"
                                 noDataText="Select branch to see some data" sticky="ColumnHeaders"
                             >
-                                <headerToolbar>
-                                    <Toolbar>
-                                        <Title text="Editable Table" />
-                                        <ToolbarSpacer />
-                                        <Button text="Save as Draft" press="onSubmit" />
-                                        <Button text="Submit" press="onSave" />
-                                    </Toolbar>
-                                </headerToolbar>
                             </Table>
 
                         </VBox>
@@ -178,7 +181,7 @@
         <footer>
             <OverflowToolbar>
                 <ToolbarSpacer />
-                <Text text="Koshish Sustainable Solutions Pvt.Ltd © 2024" />
+                <Text text="Sustrack Sustainable Solutions Pvt.Ltd © 2024" />
                 <ToolbarSpacer />
 
 

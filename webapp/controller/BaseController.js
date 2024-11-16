@@ -1,6 +1,11 @@
 sap.ui.define(
-  ["sap/ui/core/mvc/Controller", "sap/ui/model/json/JSONModel", "sap/ui/core/routing/History"],
-  function (Controller, JSONModel, History) {
+  ["sap/ui/core/mvc/Controller", "sap/ui/model/json/JSONModel", "sap/ui/core/routing/History", "sap/m/Popover",
+    "sap/m/Input",
+    "sap/m/TextArea",
+    "sap/m/Select",
+    "sap/m/Button",
+    "sap/ui/core/Item", "sap/m/MessageBox"],
+  function (Controller, JSONModel, History, Popover, Input, TextArea, Select, Button, Item, MessageBox) {
     "use strict";
 
     return Controller.extend("ESGOrg.ESGOrg.controller.BaseController", {
@@ -17,77 +22,213 @@ sap.ui.define(
       },
       checkgetUserLog: function () {
         var that = this;
-        return new Promise((resolve, reject) => {
+        var isMobileDevice = /Mobi|Android|iPhone|iPad|iPod|BlackBerry|Windows Phone/i.test(navigator.userAgent);
+        if (isMobileDevice) {
+          var msg = 'Application Not Supported on Mobile Devices, Please open this application on a laptop or desktop for the best experience.';
+          sap.m.MessageBox.error(
+            msg,
+            {
+              title: "Unsupported Device",
+              onClose: function () {
+                // Navigate to the specified website on close of the message box
+                window.location.href = "https://www.koshishindia.in/";
+              }
+            }
+          );
+        } else {
+          return new Promise((resolve, reject) => {
+            sap.ui.core.BusyIndicator.show();
+            firebase.auth().onAuthStateChanged(async (user) => {
+              if (user) {
+                console.log("Document data:", user);
 
-
-          sap.ui.core.BusyIndicator.show();
-          firebase.auth().onAuthStateChanged(async (user) => {
-            if (user) {
-              console.log("Document data:", user);
-
-              var domain = user.email.split("@");
-              const docMasterRef = firebase.firestore().collection(domain[1]).doc("Master Data");
-              docMasterRef.get().then((doc) => {
-                if (doc.exists) {
-                  that.setMaster(doc.data());
-                  const docRef = firebase.firestore().collection(domain[1]).doc("Master Data").collection("Employees").doc(user.uid);
-                  docRef.get().then((doc) => {
-                    if (doc.exists) {
-                      console.log("Document data:", doc.data());
-                      that.setUser(doc.data());
-                      resolve(doc.data());
-                      sap.ui.core.BusyIndicator.hide();
-                    } else {
-                      // doc.data() will be undefined in this case
+                var domain = user.email.split("@");
+                const docMasterRef = firebase.firestore().collection(domain[1]).doc("Master Data");
+                docMasterRef.get().then((doc) => {
+                  if (doc.exists) {
+                    that.setMaster(doc.data());
+                    const docRef = firebase.firestore().collection(domain[1]).doc("Master Data").collection("Employees").where("userId", "==", user.uid);
+                    docRef.get().then((querySnapshot) => {
+                      querySnapshot.forEach(function (doc) {
+                        if (doc.exists) {
+                          console.log("Document data:", doc.data());
+                          that.setUser(doc.data());
+                          resolve(doc.data());
+                          sap.ui.core.BusyIndicator.hide();
+                        } else {
+                          // doc.data() will be undefined in this case
+                          that.setUser(undefined)
+                          console.log("No such document!");
+                          that.getRouter().navTo("Login");
+                          sap.ui.core.BusyIndicator.hide();
+                          reject();
+                        }
+                      });
+                    }).catch((error) => {
                       that.setUser(undefined)
-                      console.log("No such document!");
+
+                      console.log("Error getting document:", error);
                       that.getRouter().navTo("Login");
                       sap.ui.core.BusyIndicator.hide();
                       reject();
-                    }
-                  }).catch((error) => {
-                    that.setUser(undefined)
-
+                    });
+                  } else {
+                    // doc.data() will be undefined in this case
+                    that.setMaster(undefined);
                     console.log("Error getting document:", error);
                     that.getRouter().navTo("Login");
                     sap.ui.core.BusyIndicator.hide();
                     reject();
-                  });
-                } else {
-                  // doc.data() will be undefined in this case
+                  }
+                }).catch((error) => {
                   that.setMaster(undefined);
                   console.log("Error getting document:", error);
                   that.getRouter().navTo("Login");
                   sap.ui.core.BusyIndicator.hide();
                   reject();
-                }
-              }).catch((error) => {
-                that.setMaster(undefined);
-                console.log("Error getting document:", error);
+                });
+
+
+
+                // ...
+              } else {
+                that.setMaster(undefined)
+                that.setUser(undefined)
+
                 that.getRouter().navTo("Login");
                 sap.ui.core.BusyIndicator.hide();
                 reject();
-              });
+              }
+            });
 
 
+          })
+        }
 
-              // ...
-            } else {
-              that.setMaster(undefined)
-              that.setUser(undefined)
-
-              that.getRouter().navTo("Login");
-              sap.ui.core.BusyIndicator.hide();
-              reject();
-            }
-          });
-
-
-        })
 
 
       },
+      onOpenPopover: function (oEvent) {
+        // Create a new Popover
+        if (this._oPopover) {
+          this._oPopover.destroy();
 
+        }
+        if (sap.ui.getCore().byId("incidentId")) {
+          sap.ui.getCore().byId("incidentId").destroy()
+
+        }
+        var user = this.userData;
+
+
+        this._oPopover = new Popover({
+          id: "incidentId",
+          title: "Raise Incident",
+          contentWidth: "300px",
+          placement: "Bottom",
+          modal: true,
+          contentPadding: true,
+          content: [
+            new Input({
+              placeholder: "Enter Title",
+              width: "100%",
+              value: "{/title}"
+            }),
+            new TextArea({
+              placeholder: "Enter Description",
+              width: "100%",
+              rows: 3,
+              value: "{/description}"
+            }),
+            new Input({
+              placeholder: "Enter Phone Number",
+              width: "100%",
+              type: "Tel",
+              value: "{/phone}"
+            }),
+            new Input({
+              placeholder: "Enter Email Address",
+              width: "100%",
+              type: "Email",
+              value: "{/email}"
+            }),
+            new Select({
+              width: "100%",
+              forceSelection: false,
+              items: [
+                new Item({ text: "Low", key: "Low" }),
+                new Item({ text: "Medium", key: "Medium" }),
+                new Item({ text: "High", key: "High" })
+              ],
+              selectedKey: "{/priority}"
+            })
+          ],
+          footer: new sap.m.Bar({
+            contentRight: [
+              new Button({
+                text: "Submit",
+                type: "Emphasized",
+                press: this.onSubmit.bind(this)
+              }),
+              new Button({
+                text: "Close",
+                type: "Transparent",
+                press: this.closePopover.bind(this)
+              })
+            ]
+          })
+        });
+        this._oPopover.addStyleClass("sapUiResponsivePadding")
+        // Bind popover to the current view model
+        this.getView().addDependent(this._oPopover);
+        var ajson = new JSONModel({ phone: user.phone, email: user.email });
+        this._oPopover.setModel(ajson)
+
+        // Open the popover next to the triggering button
+        this._oPopover.openBy(oEvent.getSource());
+      },
+      onSubmit: function () {
+        // Get the data entered in the popover
+        // var oModel = this.getView().getModel();
+        var that = this;
+        var oData = sap.ui.getCore().byId("incidentId").getModel().getData();
+        var user = this.userData;
+        var master = this.MasterData;
+        var incidentID = this.generateIncidentIdWithKeyword();
+        if (oData.title && oData.description && oData.phone && oData.email) {
+          var sendData = { incidentID: incidentID, "priority": oData.priority, "orgID": user.domain, "email": oData.email, "status": "New", "title": oData.title, "description": oData.description, "orgName": master.organisationName, "createdDate": new Date().toLocaleDateString(), "phone": oData.phone };
+          sap.ui.core.BusyIndicator.show();
+          firebase.firestore().collection("Incidents").doc().set(sendData, { merge: true })
+            .then(() => {
+              MessageBox.success("Incident Report sent");
+              sap.ui.core.BusyIndicator.hide();
+              that._oPopover.destroy();
+            })
+            .catch((error) => {
+              sap.ui.core.BusyIndicator.hide();
+
+              MessageBox.error("Error writing document: " + error);
+            });
+        }
+        else {
+          MessageBox.error("All fields are mandatory");
+        }
+
+      },
+      closePopover: function () {
+        this._oPopover.destroy();
+      },
+      generateIncidentIdWithKeyword: function () {
+        var now = new Date();
+        var timestamp = now.getFullYear() +
+          ("0" + (now.getMonth() + 1)).slice(-2) +  // Month with leading zero
+          ("0" + now.getDate()).slice(-2) +         // Day with leading zero
+          ("0" + now.getHours()).slice(-2) +        // Hours with leading zero
+          ("0" + now.getMinutes()).slice(-2) +      // Minutes with leading zero
+          ("0" + now.getSeconds()).slice(-2);       // Seconds with leading zero
+
+        return "ESGKOSH-" + timestamp;  // Generate ID like 'ESGKOSH-20241012123045'
+      },
       setUser: function (val) {
         this.userData = val
       },
@@ -119,15 +260,15 @@ sap.ui.define(
                 // Iterate through the data array
                 data.complianceData.forEach(function (item) {
                   // Check if enabled is true, and push the sheetName to the respective array based on complianceType
-                  if (item.enabled) {
-                    if (item.complianceType === "Environment") {
-                      Environment.push(item.sheetName);
-                    } else if (item.complianceType === "Social") {
-                      Social.push(item.sheetName);
-                    } else if (item.complianceType === "Governance") {
-                      Governance.push(item.sheetName);
-                    }
+                  // if (item.enabled) {
+                  if (item.complianceType === "Environment") {
+                    Environment.push(item.sheetName);
+                  } else if (item.complianceType === "Social") {
+                    Social.push(item.sheetName);
+                  } else if (item.complianceType === "Governance") {
+                    Governance.push(item.sheetName);
                   }
+                  // }
                 });
                 that.reportingSheets = { Environment, Social, Governance }
                 return resolve(that.reportingSheets)
@@ -190,40 +331,36 @@ sap.ui.define(
       getColumns: function (module) {
         var columns = {
           "Fuel": [
-            { "title": "Scope", "editable": false },
             { "title": "Fuels", "editable": false },
             { "title": "Type", "editable": false },
             { "title": "Fuel", "editable": false },
             { "title": "Unit", "editable": false },
-            { "title": "Amount", "editable": true },
-            { "title": "Factor", "editable": true }
+            { "title": "Amount", "editable": true, "type": "Number" },
+            { "title": "Factor", "editable": true, "type": "Number" }
           ],
           "Bioenergy": [
-            { "title": "Scope", "editable": false },
             { "title": "Fuels", "editable": false },
             { "title": "Type", "editable": false },
             { "title": "Fuel", "editable": false },
             { "title": "Unit", "editable": false },
-            { "title": "Amount", "editable": true },
-            { "title": "Factor", "editable": true }
+            { "title": "Amount", "editable": true, "type": "Number" },
+            { "title": "Factor", "editable": true, "type": "Number" }
           ],
           "Refrigerant and other": [
-            { "title": "Scope", "editable": false },
             { "title": "Fuels", "editable": false },
             { "title": "Type", "editable": false },
             { "title": "Fuel", "editable": false },
             { "title": "Unit", "editable": false },
-            { "title": "Amount", "editable": true },
-            { "title": "Factor", "editable": true }
+            { "title": "Amount", "editable": true, "type": "Number" },
+            { "title": "Factor", "editable": true, "type": "Number" }
           ],
           "Elec heat cooling": [
-            { "title": "Scope", "editable": false },
             { "title": "Activity", "editable": false },
             { "title": "Country-Type", "editable": false },
             { "title": "Unit", "editable": false },
-            { "title": "Amount", "editable": true },
-            { "title": "GEF Factors", "editable": true },
-            { "title": "T&D Factors", "editable": true }
+            { "title": "Amount", "editable": true, "type": "Number" },
+            { "title": "GEF Factors", "editable": true, "type": "Number" },
+            { "title": "T&D Factors", "editable": true, "type": "Number" }
           ],
           "Owned Vehicles": [
             { "title": "Scope", "editable": false },
@@ -232,193 +369,212 @@ sap.ui.define(
             { "title": "Level 3", "editable": false },
             { "title": "Fuel", "editable": false },
             { "title": "Unit", "editable": false },
-            { "title": "Distance (km)", "editable": true },
-            { "title": "Factor", "editable": true }
+            { "title": "Distance (km)", "editable": true, "type": "Number" },
+            { "title": "Factor", "editable": true, "type": "Number" }
           ],
           "Materials": [
-            { "title": "Scope", "editable": false },
             { "title": "Activity", "editable": false },
             { "title": "Waste type", "editable": false },
             { "title": "Unit", "editable": false },
-            { "title": "Amount (tonnes)", "editable": true },
-            { "title": "Factor", "editable": true }
+            { "title": "Amount (tonnes)", "editable": true, "type": "Number" },
+            { "title": "Factor", "editable": true, "type": "Number" }
           ],
           "WTT- fuels": [
-            { "title": "Scope", "editable": false },
             { "title": "Type", "editable": false },
             { "title": "Fuel", "editable": false },
             { "title": "Unit", "editable": false },
-            { "title": "Amount", "editable": true },
-            { "title": "Factor", "editable": true }
+            { "title": "Amount", "editable": true, "type": "Number" },
+            { "title": "Factor", "editable": true, "type": "Number" }
           ],
           "Waste Disposal": [
-            { "title": "Scope", "editable": false },
             { "title": "Activity", "editable": false },
             { "title": "Waste Material", "editable": false },
             { "title": "Unit", "editable": false },
             { "title": "Disposal Method", "editable": false },
             { "title": "Source Description", "editable": true },
-            { "title": "Weight", "editable": true },
-            { "title": "Factor", "editable": true }
+            { "title": "Weight", "editable": true, "type": "Number" },
+            { "title": "Factor", "editable": true, "type": "Number" }
           ],
           "Flight": [
-            { "title": "Scope", "editable": false },
-            { "title": "Origin (city or IATA code)", "editable": false },
-            { "title": "Destination (city or IATA code)", "editable": false },
-            { "title": "Class", "editable": false },
-            { "title": "Single way / return", "editable": false },
-            { "title": "kg CO2e", "editable": false }
+            { "title": "Origin (city or IATA code)", "editable": true },
+            { "title": "Destination (city or IATA code)", "editable": true },
+            { "title": "Direct / Indirect", "editable": true },
+            { "title": "Class", "editable": true },
+            { "title": "Single way / return", "editable": true },
+            { "title": "kg CO2e", "editable": true, "type": "Number" },
           ],
           "Accommodation": [
             { "title": "Country", "editable": false },
-            { "title": "Number of occupied rooms", "editable": true },
-            { "title": "Number of nights per room", "editable": true },
-            { "title": "Factor", "editable": true }
+            { "title": "Number of occupied rooms", "editable": true, "type": "Number" },
+            { "title": "Number of nights per room", "editable": true, "type": "Number" },
+            { "title": "Factor", "editable": true, "type": "Number" }
           ],
           "Business travel - land and sea": [
-            { "title": "Scope", "editable": false },
             { "title": "Vehicle", "editable": false },
             { "title": "Type", "editable": false },
             { "title": "Fuel", "editable": false },
             { "title": "Unit", "editable": false },
-            { "title": "Total distance", "editable": true },
-            { "title": "Factor", "editable": true }
+            { "title": "Total distance", "editable": true, "type": "Number" },
+            { "title": "Factor", "editable": true, "type": "Number" }
           ],
           "Freighting goods": [
-            { "title": "Scope", "editable": false },
             { "title": "Vehicle", "editable": false },
             { "title": "Type", "editable": false },
             { "title": "Fuel", "editable": false },
             { "title": "Unit", "editable": false },
-            { "title": "Weight (tonnes)", "editable": true },
-            { "title": "Distance (km)", "editable": true },
-            { "title": "Factor", "editable": true }
+            { "title": "Weight (tonnes)", "editable": true, "type": "Number" },
+            { "title": "Distance (km)", "editable": true, "type": "Number" },
+            { "title": "Factor", "editable": true, "type": "Number" }
           ],
           "Employees commuting": [
-            { "title": "Scope", "editable": false },
             { "title": "Vehicle", "editable": false },
             { "title": "Type", "editable": false },
             { "title": "Fuel", "editable": false },
             { "title": "Unit", "editable": false },
-            { "title": "Total distance", "editable": true },
-            { "title": "Factor", "editable": true }
+            { "title": "Total distance", "editable": true, "type": "Number" },
+            { "title": "Factor", "editable": true, "type": "Number" }
           ],
           "Food": [
             { "title": "Meal Type", "editable": false },
             { "title": "Unit", "editable": false },
-            { "title": "Amount", "editable": true },
-            { "title": "Factor", "editable": true }
+            { "title": "Amount", "editable": true, "type": "Number" },
+            { "title": "Factor", "editable": true, "type": "Number" }
           ],
           "Home Office": [
             { "title": "Type of home office", "editable": false },
-            { "title": "Number of employees", "editable": true },
-            { "title": "Working regime (For full-time: 100%)", "editable": true },
-            { "title": "% working from home (e.g. 50% from home)", "editable": true },
-            { "title": "Number of months", "editable": true },
-            { "title": "Factor", "editable": true }
+            { "title": "Number of employees", "editable": true, "type": "Number" },
+            { "title": "Working regime (For full-time)", "editable": true, "type": "Number" },
+            { "title": "Working from home", "editable": true, "type": "Number" },
+            { "title": "Factor", "editable": true, "type": "Number" }
           ],
           "Water": [
-            { "title": "Scope", "editable": false },
             { "title": "Type", "editable": false },
             { "title": "Unit", "editable": false },
             { "title": "Source", "editable": true },
-            { "title": "Amount", "editable": true },
-            { "title": "Factor", "editable": true }
+            { "title": "Amount", "editable": true, "type": "Number" },
+            { "title": "Factor", "editable": true, "type": "Number" }
           ],
           "Employment": [
             { "title": "Employment Type", "editable": false },
             { "title": "Category", "editable": false },
             { "title": "Gender", "editable": false },
             { "title": "Age", "editable": false },
-            { "title": "Count", "editable": true }
+            { "title": "Head Count", "editable": true, "type": "Number" }
           ],
           "Leave": [
-            { "title": "Framework", "editable": false },
             { "title": "Type of Leave", "editable": false },
-            { "title": "Duration in Days", "editable": true },
-            { "title": "Count of Employees", "editable": true }
+            { "title": "Duration in Days", "editable": true, "type": "Number" },
+            { "title": "Head Count", "editable": true, "type": "Number" }
           ],
           "Retention": [
             { "title": "Employee Type", "editable": false },
             { "title": "Gender", "editable": false },
             { "title": "Tenure", "editable": false },
             { "title": "Age", "editable": false },
-            { "title": "Count", "editable": true }
+            { "title": "Head Count", "editable": true, "type": "Number" }
           ],
           "OH and S": [
-            { "title": "Framework", "editable": false },
             { "title": "Injury Type", "editable": false },
-            { "title": "Number of Incidents", "editable": true },
             { "title": "Gender", "editable": false },
-            { "title": "Count of Persons", "editable": true }
+            { "title": "Number of Incidents", "editable": true, "type": "Number" },
+            { "title": "Head Count", "editable": true, "type": "Number" }
           ],
           "Training and Edu": [
-            { "title": "Framework", "editable": false },
             { "title": "Types of training", "editable": false },
             { "title": "Segment", "editable": false },
-            { "title": "Avg Hours per batch", "editable": true },
-            { "title": "No. of employees", "editable": true },
-            { "title": "Financial investment", "editable": true },
+            { "title": "Avg Hours per batch", "editable": true, "type": "Number" },
+            { "title": "Head Count", "editable": true, "type": "Number" },
+            { "title": "Financial investment", "editable": true, "type": "Number" },
           ],
           "Child Labor": [
-            { "title": "Framework", "editable": false },
             { "title": "Risk Level", "editable": false },
             { "title": "Supplier Name", "editable": true },
-            { "title": "No. of Incidents reported", "editable": true }
+            { "title": "No. of Incidents reported", "editable": true, "type": "Number" }
           ],
           "Customer Privacy": [
-            { "title": "Framework", "editable": false },
             { "title": "Nature of Complaints", "editable": false },
-            { "title": "No. of complaints received", "editable": true },
-            { "title": "No. of complaints solved", "editable": true }
+            { "title": "No. of complaints received", "editable": true, "type": "Number" },
+            { "title": "No. of complaints solved", "editable": true, "type": "Number" }
           ],
           "Mktg and Labelling": [
-            { "title": "Framework", "editable": false },
             { "title": "Incident", "editable": false },
-            { "title": "No. of non-compliance Incidents", "editable": true },
-            { "title": "No. of times regulation violated", "editable": true }
+            { "title": "No. of non-compliance Incidents", "editable": true, "type": "Number" },
+            { "title": "No. of times regulation violated", "editable": true, "type": "Number" }
           ],
           "CHS": [
-            { "title": "Framework", "editable": false },
             { "title": "Type of Incident", "editable": false },
-            { "title": "No. of non-compliance Incidents", "editable": true },
-            { "title": "Customers Impacted", "editable": true }
+            { "title": "No. of non-compliance Incidents", "editable": true, "type": "Number" },
+            { "title": "Customers Impacted", "editable": true, "type": "Number" }
           ],
           "Social Benefits": [
-            { "title": "Framework", "editable": false },
             { "title": "Domain", "editable": false },
             { "title": "Program name", "editable": true },
-            { "title": "No. of Beneficiaries", "editable": true },
-            { "title": "Expenditure", "editable": true }
+            { "title": "No. of Beneficiaries", "editable": true, "type": "Number" },
+            { "title": "Expenditure", "editable": true, "type": "Number" }
           ],
           "Entity": [
-            { "title": "Framework", "editable": false },
             { "title": "Entity Type", "editable": false },
             { "title": "Gender", "editable": false },
             { "title": "Age", "editable": false },
             { "title": "Tenure", "editable": false },
-            { "title": "Count", "editable": true }
+            { "title": "Head Count", "editable": true, "type": "Number" }
           ],
           "Eco. Performance": [
-            { "title": "Framework", "editable": false },
             { "title": "Data", "editable": false },
-            { "title": "Values", "editable": true }
+            { "title": "Values", "editable": true, "type": "Number" }
           ],
           "Market Presence": [
-            { "title": "Framework", "editable": false },
             { "title": "Data", "editable": false },
-            { "title": "Values", "editable": true }
+            { "title": "Values", "editable": true, "type": "Number" }
           ]
         };
 
         return columns[module];
+      },
+      getTitle: function (title) {
+        const aTitle = {
+          "Fuel": "Fuel",
+          "Bioenergy": "Bioenergy",
+          "Refrigerant and other": "Refrigerant and Other",
+          "Elec heat cooling": "Electricity Heat and Cooling",
+          "Owned Vehicles": "Company Owned Vehicle",
+          "Materials": "Materials",
+          "WTT- fuels": "WTT- Fuels",
+          "Waste Disposal": "Waste Disposal",
+          "Flight": "Flight",
+          "Accommodation": "Accommodation",
+          "Business travel - land and sea": "Business Travel - Land and Sea",
+          "Freighting goods": "Freighting Goods",
+          "Employees commuting": "Employees Commuting",
+          "Food": "Food",
+          "Home Office": "Home Office",
+          "Water": "Water",
+          "Employment": "Employment",
+          "Leave": "Leave",
+          "Retention": "Retention",
+          "OH and S": "Occupational Health and Safety",
+          "Training and Edu": "Training and Education",
+          "Child Labor": "Child Labor",
+          "Customer Privacy": "Customer Privacy",
+          "Mktg and Labelling": "Marketing and Labelling ",
+          "CHS": "Customer Health & Safety",
+          "Social Benefits": "Social Benefits",
+          "Entity": "Entity",
+          "Eco. Performance": "Economic Performance",
+          "Market Presence": "Market Presence",
+        }
+        if (aTitle[title]) {
+          return aTitle[title];
+        }
+        else {
+          return title
+        }
       },
       getVariantData: function (module) {
         var variantMap = {
           "Fuel": [
             {
               "Reference": 7,
-              "Scope": "Scope 1",
               "Fuels": "Fuels",
               "Type": "Gaseous fuels",
               "Fuel": "CNG",
@@ -428,7 +584,6 @@ sap.ui.define(
             },
             {
               "Reference": 11,
-              "Scope": "Scope 1",
               "Fuels": "Fuels",
               "Type": "Gaseous fuels",
               "Fuel": "LNG",
@@ -438,7 +593,6 @@ sap.ui.define(
             },
             {
               "Reference": 15,
-              "Scope": "Scope 1",
               "Fuels": "Fuels",
               "Type": "Gaseous fuels",
               "Fuel": "LPG",
@@ -448,7 +602,6 @@ sap.ui.define(
             },
             {
               "Reference": 19,
-              "Scope": "Scope 1",
               "Fuels": "Fuels",
               "Type": "Gaseous fuels",
               "Fuel": "Natural gas",
@@ -458,7 +611,6 @@ sap.ui.define(
             },
             {
               "Reference": 2779,
-              "Scope": "Scope 1",
               "Fuels": "Fuels",
               "Type": "Gaseous fuels",
               "Fuel": "Natural gas (100% mineral blend)",
@@ -468,7 +620,6 @@ sap.ui.define(
             },
             {
               "Reference": 23,
-              "Scope": "Scope 1",
               "Fuels": "Fuels",
               "Type": "Gaseous fuels",
               "Fuel": "Other petroleum gas",
@@ -478,7 +629,6 @@ sap.ui.define(
             },
             {
               "Reference": 31,
-              "Scope": "Scope 1",
               "Fuels": "Fuels",
               "Type": "Liquid fuels",
               "Fuel": "Aviation spirit",
@@ -488,7 +638,6 @@ sap.ui.define(
             },
             {
               "Reference": 35,
-              "Scope": "Scope 1",
               "Fuels": "Fuels",
               "Type": "Liquid fuels",
               "Fuel": "Aviation turbine fuel",
@@ -498,7 +647,6 @@ sap.ui.define(
             },
             {
               "Reference": 39,
-              "Scope": "Scope 1",
               "Fuels": "Fuels",
               "Type": "Liquid fuels",
               "Fuel": "Burning oil",
@@ -508,7 +656,6 @@ sap.ui.define(
             },
             {
               "Reference": 43,
-              "Scope": "Scope 1",
               "Fuels": "Fuels",
               "Type": "Liquid fuels",
               "Fuel": "Diesel (average biofuel blend)",
@@ -518,7 +665,6 @@ sap.ui.define(
             },
             {
               "Reference": 47,
-              "Scope": "Scope 1",
               "Fuels": "Fuels",
               "Type": "Liquid fuels",
               "Fuel": "Diesel (100% mineral diesel)",
@@ -528,7 +674,6 @@ sap.ui.define(
             },
             {
               "Reference": 51,
-              "Scope": "Scope 1",
               "Fuels": "Fuels",
               "Type": "Liquid fuels",
               "Fuel": "Fuel oil",
@@ -538,7 +683,6 @@ sap.ui.define(
             },
             {
               "Reference": 55,
-              "Scope": "Scope 1",
               "Fuels": "Fuels",
               "Type": "Liquid fuels",
               "Fuel": "Gas oil",
@@ -548,7 +692,6 @@ sap.ui.define(
             },
             {
               "Reference": 59,
-              "Scope": "Scope 1",
               "Fuels": "Fuels",
               "Type": "Liquid fuels",
               "Fuel": "Lubricants",
@@ -558,7 +701,6 @@ sap.ui.define(
             },
             {
               "Reference": 63,
-              "Scope": "Scope 1",
               "Fuels": "Fuels",
               "Type": "Liquid fuels",
               "Fuel": "Naphtha",
@@ -568,7 +710,6 @@ sap.ui.define(
             },
             {
               "Reference": 71,
-              "Scope": "Scope 1",
               "Fuels": "Fuels",
               "Type": "Liquid fuels",
               "Fuel": "Petrol (100% mineral petrol)",
@@ -578,7 +719,6 @@ sap.ui.define(
             },
             {
               "Reference": 75,
-              "Scope": "Scope 1",
               "Fuels": "Fuels",
               "Type": "Liquid fuels",
               "Fuel": "Processed fuel oils - residual oil",
@@ -588,7 +728,6 @@ sap.ui.define(
             },
             {
               "Reference": 79,
-              "Scope": "Scope 1",
               "Fuels": "Fuels",
               "Type": "Liquid fuels",
               "Fuel": "Processed fuel oils - distillate oil",
@@ -598,7 +737,6 @@ sap.ui.define(
             },
             {
               "Reference": 87,
-              "Scope": "Scope 1",
               "Fuels": "Fuels",
               "Type": "Liquid fuels",
               "Fuel": "Waste oils",
@@ -608,7 +746,6 @@ sap.ui.define(
             },
             {
               "Reference": 91,
-              "Scope": "Scope 1",
               "Fuels": "Fuels",
               "Type": "Liquid fuels",
               "Fuel": "Marine gas oil",
@@ -618,7 +755,6 @@ sap.ui.define(
             },
             {
               "Reference": 95,
-              "Scope": "Scope 1",
               "Fuels": "Fuels",
               "Type": "Liquid fuels",
               "Fuel": "Marine fuel oil",
@@ -628,7 +764,6 @@ sap.ui.define(
             },
             {
               "Reference": 99,
-              "Scope": "Scope 1",
               "Fuels": "Fuels",
               "Type": "Solid fuels",
               "Fuel": "Coal (industrial)",
@@ -638,7 +773,6 @@ sap.ui.define(
             },
             {
               "Reference": 102,
-              "Scope": "Scope 1",
               "Fuels": "Fuels",
               "Type": "Solid fuels",
               "Fuel": "Coal (electricity generation)",
@@ -648,7 +782,6 @@ sap.ui.define(
             },
             {
               "Reference": 105,
-              "Scope": "Scope 1",
               "Fuels": "Fuels",
               "Type": "Solid fuels",
               "Fuel": "Coal (domestic)",
@@ -658,7 +791,6 @@ sap.ui.define(
             },
             {
               "Reference": 108,
-              "Scope": "Scope 1",
               "Fuels": "Fuels",
               "Type": "Solid fuels",
               "Fuel": "Coking coal",
@@ -668,7 +800,6 @@ sap.ui.define(
             },
             {
               "Reference": 111,
-              "Scope": "Scope 1",
               "Fuels": "Fuels",
               "Type": "Solid fuels",
               "Fuel": "Petroleum coke",
@@ -678,7 +809,6 @@ sap.ui.define(
             },
             {
               "Reference": 114,
-              "Scope": "Scope 1",
               "Fuels": "Fuels",
               "Type": "Solid fuels",
               "Fuel": "Coal (electricity generation - home produced coal only)",
@@ -692,7 +822,6 @@ sap.ui.define(
               "Amount": "",
               "Factor": "",
               "Reference": 117,
-              "Scope": "Scope 1",
               "Fuels": "Bioenergy",
               "Type": "Biofuel",
               "Fuel": "Bioethanol",
@@ -702,7 +831,6 @@ sap.ui.define(
               "Amount": "",
               "Factor": "",
               "Reference": 120,
-              "Scope": "Scope 1",
               "Fuels": "Bioenergy",
               "Type": "Biofuel",
               "Fuel": "Biodiesel ME",
@@ -712,7 +840,6 @@ sap.ui.define(
               "Amount": "",
               "Factor": "",
               "Reference": 126,
-              "Scope": "Scope 1",
               "Fuels": "Bioenergy",
               "Type": "Biofuel",
               "Fuel": "Biodiesel ME (from used cooking oil)",
@@ -722,7 +849,6 @@ sap.ui.define(
               "Amount": "",
               "Factor": "",
               "Reference": 129,
-              "Scope": "Scope 1",
               "Fuels": "Bioenergy",
               "Type": "Biofuel",
               "Fuel": "Biodiesel ME (from tallow)",
@@ -732,7 +858,6 @@ sap.ui.define(
               "Amount": "",
               "Factor": "",
               "Reference": 143,
-              "Scope": "Scope 1",
               "Fuels": "Bioenergy",
               "Type": "Biomass",
               "Fuel": "Wood logs",
@@ -742,7 +867,6 @@ sap.ui.define(
               "Amount": "",
               "Factor": "",
               "Reference": 145,
-              "Scope": "Scope 1",
               "Fuels": "Bioenergy",
               "Type": "Biomass",
               "Fuel": "Wood chips",
@@ -752,7 +876,6 @@ sap.ui.define(
               "Amount": "",
               "Factor": "",
               "Reference": 147,
-              "Scope": "Scope 1",
               "Fuels": "Bioenergy",
               "Type": "Biomass",
               "Fuel": "Wood pellets",
@@ -762,7 +885,6 @@ sap.ui.define(
               "Amount": "",
               "Factor": "",
               "Reference": 149,
-              "Scope": "Scope 1",
               "Fuels": "Bioenergy",
               "Type": "Biomass",
               "Fuel": "Grass/straw",
@@ -772,7 +894,6 @@ sap.ui.define(
               "Amount": "",
               "Factor": "",
               "Reference": 151,
-              "Scope": "Scope 1",
               "Fuels": "Bioenergy",
               "Type": "Biogas",
               "Fuel": "Biogas",
@@ -782,7 +903,6 @@ sap.ui.define(
               "Amount": "",
               "Factor": "",
               "Reference": 153,
-              "Scope": "Scope 1",
               "Fuels": "Bioenergy",
               "Type": "Biogas",
               "Fuel": "Landfill gas",
@@ -792,7 +912,6 @@ sap.ui.define(
           "Refrigerant and other": [
             {
               "Reference": "154",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol - standard",
               "Fuel": "Carbon dioxide",
@@ -802,7 +921,6 @@ sap.ui.define(
             },
             {
               "Reference": "155",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol - standard",
               "Fuel": "Methane",
@@ -812,7 +930,6 @@ sap.ui.define(
             },
             {
               "Reference": "156",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol - standard",
               "Fuel": "Nitrous oxide",
@@ -822,7 +939,6 @@ sap.ui.define(
             },
             {
               "Reference": "157",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol - standard",
               "Fuel": "HFC-23",
@@ -832,7 +948,6 @@ sap.ui.define(
             },
             {
               "Reference": "158",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol - standard",
               "Fuel": "HFC-32",
@@ -842,7 +957,6 @@ sap.ui.define(
             },
             {
               "Reference": "159",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol - standard",
               "Fuel": "HFC-41",
@@ -852,7 +966,6 @@ sap.ui.define(
             },
             {
               "Reference": "160",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol - standard",
               "Fuel": "HFC-125",
@@ -862,7 +975,6 @@ sap.ui.define(
             },
             {
               "Reference": "161",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol - standard",
               "Fuel": "HFC-134",
@@ -872,7 +984,6 @@ sap.ui.define(
             },
             {
               "Reference": "162",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol - standard",
               "Fuel": "HFC-134a",
@@ -882,7 +993,6 @@ sap.ui.define(
             },
             {
               "Reference": "163",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol - standard",
               "Fuel": "HFC-143",
@@ -892,7 +1002,6 @@ sap.ui.define(
             },
             {
               "Reference": "164",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol - standard",
               "Fuel": "HFC-143a",
@@ -902,7 +1011,6 @@ sap.ui.define(
             },
             {
               "Reference": "165",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol - standard",
               "Fuel": "HFC-152a",
@@ -912,7 +1020,6 @@ sap.ui.define(
             },
             {
               "Reference": "166",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol - standard",
               "Fuel": "HFC-227ea",
@@ -922,7 +1029,6 @@ sap.ui.define(
             },
             {
               "Reference": "167",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol - standard",
               "Fuel": "HFC-236fa",
@@ -932,7 +1038,6 @@ sap.ui.define(
             },
             {
               "Reference": "168",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol - standard",
               "Fuel": "HFC-245fa",
@@ -942,7 +1047,6 @@ sap.ui.define(
             },
             {
               "Reference": "169",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol - standard",
               "Fuel": "HFC-43-I0mee",
@@ -952,7 +1056,6 @@ sap.ui.define(
             },
             {
               "Reference": "170",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol - standard",
               "Fuel": "Perfluoromethane (PFC-14)",
@@ -962,7 +1065,6 @@ sap.ui.define(
             },
             {
               "Reference": "171",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol - standard",
               "Fuel": "Perfluoroethane (PFC-116)",
@@ -972,7 +1074,6 @@ sap.ui.define(
             },
             {
               "Reference": "172",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol - standard",
               "Fuel": "Perfluoropropane (PFC-218)",
@@ -982,7 +1083,6 @@ sap.ui.define(
             },
             {
               "Reference": "173",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol - standard",
               "Fuel": "Perfluorocyclobutane (PFC-318)",
@@ -992,7 +1092,6 @@ sap.ui.define(
             },
             {
               "Reference": "174",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol - standard",
               "Fuel": "Perfluorobutane (PFC-3-1-10)",
@@ -1002,7 +1101,6 @@ sap.ui.define(
             },
             {
               "Reference": "175",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol - standard",
               "Fuel": "Perfluoropentane (PFC-4-1-12)",
@@ -1012,7 +1110,6 @@ sap.ui.define(
             },
             {
               "Reference": "176",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol - standard",
               "Fuel": "Perfluorohexane (PFC-5-1-14)",
@@ -1022,7 +1119,6 @@ sap.ui.define(
             },
             {
               "Reference": "177",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol - standard",
               "Fuel": "Sulphur hexafluoride (SF6)",
@@ -1032,7 +1128,6 @@ sap.ui.define(
             },
             {
               "Reference": "178",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol - standard",
               "Fuel": "HFC-152",
@@ -1042,7 +1137,6 @@ sap.ui.define(
             },
             {
               "Reference": "179",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol - standard",
               "Fuel": "HFC-161",
@@ -1052,7 +1146,6 @@ sap.ui.define(
             },
             {
               "Reference": "180",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol - standard",
               "Fuel": "HFC-236cb",
@@ -1062,7 +1155,6 @@ sap.ui.define(
             },
             {
               "Reference": "181",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol - standard",
               "Fuel": "HFC-236ea",
@@ -1072,7 +1164,6 @@ sap.ui.define(
             },
             {
               "Reference": "182",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol - standard",
               "Fuel": "HFC-245ca",
@@ -1082,7 +1173,6 @@ sap.ui.define(
             },
             {
               "Reference": "183",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol - standard",
               "Fuel": "HFC-365mfc",
@@ -1092,7 +1182,6 @@ sap.ui.define(
             },
             {
               "Reference": "184",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol- blends",
               "Fuel": "R404A",
@@ -1102,7 +1191,6 @@ sap.ui.define(
             },
             {
               "Reference": "185",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol- blends",
               "Fuel": "R407A",
@@ -1112,7 +1200,6 @@ sap.ui.define(
             },
             {
               "Reference": "186",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol- blends",
               "Fuel": "R407C",
@@ -1122,7 +1209,6 @@ sap.ui.define(
             },
             {
               "Reference": "187",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol- blends",
               "Fuel": "R407F",
@@ -1132,7 +1218,6 @@ sap.ui.define(
             },
             {
               "Reference": "188",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol- blends",
               "Fuel": "R408A",
@@ -1142,7 +1227,6 @@ sap.ui.define(
             },
             {
               "Reference": "189",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol- blends",
               "Fuel": "R410A",
@@ -1152,7 +1236,6 @@ sap.ui.define(
             },
             {
               "Reference": "190",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol- blends",
               "Fuel": "R507A",
@@ -1162,7 +1245,6 @@ sap.ui.define(
             },
             {
               "Reference": "191",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol- blends",
               "Fuel": "R508B",
@@ -1172,7 +1254,6 @@ sap.ui.define(
             },
             {
               "Reference": "192",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Kyoto protocol- blends",
               "Fuel": "R403A",
@@ -1182,7 +1263,6 @@ sap.ui.define(
             },
             {
               "Reference": "193",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Montreal protocol - standard",
               "Fuel": "CFC-11/R11 = trichlorofluoromethane",
@@ -1192,7 +1272,6 @@ sap.ui.define(
             },
             {
               "Reference": "194",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Montreal protocol - standard",
               "Fuel": "CFC-12/R12 = dichlorodifluoromethane",
@@ -1202,7 +1281,6 @@ sap.ui.define(
             },
             {
               "Reference": "195",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Montreal protocol - standard",
               "Fuel": "CFC-13",
@@ -1212,7 +1290,6 @@ sap.ui.define(
             },
             {
               "Reference": "196",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Montreal protocol - standard",
               "Fuel": "CFC-113",
@@ -1222,7 +1299,6 @@ sap.ui.define(
             },
             {
               "Reference": "197",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Montreal protocol - standard",
               "Fuel": "CFC-114",
@@ -1232,7 +1308,6 @@ sap.ui.define(
             },
             {
               "Reference": "198",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Montreal protocol - standard",
               "Fuel": "CFC-115",
@@ -1242,7 +1317,6 @@ sap.ui.define(
             },
             {
               "Reference": "199",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Montreal protocol - standard",
               "Fuel": "Halon-1211",
@@ -1252,7 +1326,6 @@ sap.ui.define(
             },
             {
               "Reference": "200",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Montreal protocol - standard",
               "Fuel": "Halon-1301",
@@ -1262,7 +1335,6 @@ sap.ui.define(
             },
             {
               "Reference": "201",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Montreal protocol - standard",
               "Fuel": "Halon-2402",
@@ -1272,7 +1344,6 @@ sap.ui.define(
             },
             {
               "Reference": "202",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Montreal protocol - standard",
               "Fuel": "Carbon tetrachloride",
@@ -1282,7 +1353,6 @@ sap.ui.define(
             },
             {
               "Reference": "203",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Montreal protocol - standard",
               "Fuel": "Methyl bromide",
@@ -1292,7 +1362,6 @@ sap.ui.define(
             },
             {
               "Reference": "204",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Montreal protocol - standard",
               "Fuel": "Methyl chloroform",
@@ -1302,7 +1371,6 @@ sap.ui.define(
             },
             {
               "Reference": "205",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Montreal protocol - standard",
               "Fuel": "HCFC-22/R22 = chlorodifluoromethane",
@@ -1312,7 +1380,6 @@ sap.ui.define(
             },
             {
               "Reference": "206",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Montreal protocol - standard",
               "Fuel": "HCFC-123",
@@ -1322,7 +1389,6 @@ sap.ui.define(
             },
             {
               "Reference": "207",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Montreal protocol - standard",
               "Fuel": "HCFC-124",
@@ -1332,7 +1398,6 @@ sap.ui.define(
             },
             {
               "Reference": "208",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Montreal protocol - standard",
               "Fuel": "HCFC-141b",
@@ -1342,7 +1407,6 @@ sap.ui.define(
             },
             {
               "Reference": "209",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Montreal protocol - standard",
               "Fuel": "HCFC-142b",
@@ -1352,7 +1416,6 @@ sap.ui.define(
             },
             {
               "Reference": "210",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Montreal protocol - standard",
               "Fuel": "HCFC-225ca",
@@ -1362,7 +1425,6 @@ sap.ui.define(
             },
             {
               "Reference": "211",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Montreal protocol - standard",
               "Fuel": "HCFC-225cb",
@@ -1372,7 +1434,6 @@ sap.ui.define(
             },
             {
               "Reference": "212",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Montreal protocol - standard",
               "Fuel": "HCFC-21",
@@ -1382,7 +1443,6 @@ sap.ui.define(
             },
             {
               "Reference": "213",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Other perfluorinated gases",
               "Fuel": "Nitrogen trifluoride",
@@ -1392,7 +1452,6 @@ sap.ui.define(
             },
             {
               "Reference": "214",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Other perfluorinated gases",
               "Fuel": "PFC-9-1-18",
@@ -1402,7 +1461,6 @@ sap.ui.define(
             },
             {
               "Reference": "215",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Other perfluorinated gases",
               "Fuel": "Trifluoromethyl sulphur pentafluoride",
@@ -1412,7 +1470,6 @@ sap.ui.define(
             },
             {
               "Reference": "216",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Other perfluorinated gases",
               "Fuel": "Perfluorocyclopropane",
@@ -1422,7 +1479,6 @@ sap.ui.define(
             },
             {
               "Reference": "217",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Fluorinated ethers",
               "Fuel": "HFE-125",
@@ -1432,7 +1488,6 @@ sap.ui.define(
             },
             {
               "Reference": "218",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Fluorinated ethers",
               "Fuel": "HFE-134",
@@ -1442,7 +1497,6 @@ sap.ui.define(
             },
             {
               "Reference": "219",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Fluorinated ethers",
               "Fuel": "HFE-143a",
@@ -1452,7 +1506,6 @@ sap.ui.define(
             },
             {
               "Reference": "220",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Fluorinated ethers",
               "Fuel": "HCFE-235da2",
@@ -1462,7 +1515,6 @@ sap.ui.define(
             },
             {
               "Reference": "221",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Fluorinated ethers",
               "Fuel": "HFE-245cb2",
@@ -1472,7 +1524,6 @@ sap.ui.define(
             },
             {
               "Reference": "222",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Fluorinated ethers",
               "Fuel": "HFE-245fa2",
@@ -1482,7 +1533,6 @@ sap.ui.define(
             },
             {
               "Reference": "223",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Fluorinated ethers",
               "Fuel": "HFE-254cb2",
@@ -1492,7 +1542,6 @@ sap.ui.define(
             },
             {
               "Reference": "224",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Fluorinated ethers",
               "Fuel": "HFE-347mcc3",
@@ -1502,7 +1551,6 @@ sap.ui.define(
             },
             {
               "Reference": "225",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Fluorinated ethers",
               "Fuel": "HFE-347pcf2",
@@ -1512,7 +1560,6 @@ sap.ui.define(
             },
             {
               "Reference": "226",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Fluorinated ethers",
               "Fuel": "HFE-356pcc3",
@@ -1522,7 +1569,6 @@ sap.ui.define(
             },
             {
               "Reference": "227",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Fluorinated ethers",
               "Fuel": "HFE-449sl (HFE-7100)",
@@ -1532,7 +1578,6 @@ sap.ui.define(
             },
             {
               "Reference": "228",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Fluorinated ethers",
               "Fuel": "HFE-569sf2 (HFE-7200)",
@@ -1542,7 +1587,6 @@ sap.ui.define(
             },
             {
               "Reference": "229",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Fluorinated ethers",
               "Fuel": "HFE-43-10pccc124 (H-Galden1040x)",
@@ -1552,7 +1596,6 @@ sap.ui.define(
             },
             {
               "Reference": "230",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Fluorinated ethers",
               "Fuel": "HFE-236ca12 (HG-10)",
@@ -1562,7 +1605,6 @@ sap.ui.define(
             },
             {
               "Reference": "231",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Fluorinated ethers",
               "Fuel": "HFE-338pcc13 (HG-01)",
@@ -1572,7 +1614,6 @@ sap.ui.define(
             },
             {
               "Reference": "232",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Other refrigerants",
               "Fuel": "PFPMIE",
@@ -1582,7 +1623,6 @@ sap.ui.define(
             },
             {
               "Reference": "233",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Other refrigerants",
               "Fuel": "Dimethylether",
@@ -1592,7 +1632,6 @@ sap.ui.define(
             },
             {
               "Reference": "234",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Other refrigerants",
               "Fuel": "Methylene chloride",
@@ -1602,7 +1641,6 @@ sap.ui.define(
             },
             {
               "Reference": "235",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Other refrigerants",
               "Fuel": "Methyl chloride",
@@ -1612,7 +1650,6 @@ sap.ui.define(
             },
             {
               "Reference": "236",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Other refrigerants",
               "Fuel": "R290 = propane",
@@ -1622,7 +1659,6 @@ sap.ui.define(
             },
             {
               "Reference": "237",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Other refrigerants",
               "Fuel": "R600A = isobutane",
@@ -1632,7 +1668,6 @@ sap.ui.define(
             },
             {
               "Reference": "240",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Montreal protocol - blends",
               "Fuel": "R406A",
@@ -1642,7 +1677,6 @@ sap.ui.define(
             },
             {
               "Reference": "241",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Montreal protocol - blends",
               "Fuel": "R409A",
@@ -1652,7 +1686,6 @@ sap.ui.define(
             },
             {
               "Reference": "242",
-              "Scope": "Scope 1",
               "Fuels": "Refrigerant & other",
               "Type": "Montreal protocol - blends",
               "Fuel": "R502",
@@ -1666,7 +1699,6 @@ sap.ui.define(
             {
               "Reference": 2938,
               "Reference 2": 814,
-              "Scope": "Scope 2",
               "Activity": "Electricity",
               "Country-Type": "India",
               "Unit": "kWh",
@@ -1677,7 +1709,6 @@ sap.ui.define(
             {
               "Reference": 667,
               "Reference 2": 815,
-              "Scope": "Scope 2",
               "Activity": "Heat and steam",
               "Country-Type": "District heat and steam",
               "Unit": "kWh",
@@ -1688,7 +1719,6 @@ sap.ui.define(
             {
               "Reference": 3172,
               "Reference 2": null,
-              "Scope": "Scope 2",
               "Activity": "District cooling",
               "Country-Type": "India",
               "Unit": "Ton of refrigeration",
@@ -1699,7 +1729,6 @@ sap.ui.define(
             {
               "Reference": 2938,
               "Reference 2": 814,
-              "Scope": "Scope 2",
               "Activity": "Electricity - Backup",
               "Country-Type": "India",
               "Unit": "kWh",
@@ -1710,8 +1739,8 @@ sap.ui.define(
           ],
           "Owned Vehicles": [
             {
-              "Reference": "626",
-              "Scope": "Scope 2",
+              "Scope": "Scope 1",
+              "Reference": "345",
               "Level 1": "Passenger vehicles",
               "Level 2": "Cars (by size)",
               "Level 3": "Small car",
@@ -1720,20 +1749,10 @@ sap.ui.define(
               "Distance (km)": "",
               "Factor": ""
             },
+
             {
-              "Reference": "628",
-              "Scope": "Scope 2",
-              "Level 1": "Passenger vehicles",
-              "Level 2": "Cars (by size)",
-              "Level 3": "Small car",
-              "Fuel": "Battery Electric Vehicle",
-              "Unit": "km",
-              "Distance (km)": "",
-              "Factor": ""
-            },
-            {
-              "Reference": "630",
-              "Scope": "Scope 2",
+              "Scope": "Scope 1",
+              "Reference": "361",
               "Level 1": "Passenger vehicles",
               "Level 2": "Cars (by size)",
               "Level 3": "Medium car",
@@ -1742,20 +1761,10 @@ sap.ui.define(
               "Distance (km)": "",
               "Factor": ""
             },
+
             {
-              "Reference": "632",
-              "Scope": "Scope 2",
-              "Level 1": "Passenger vehicles",
-              "Level 2": "Cars (by size)",
-              "Level 3": "Medium car",
-              "Fuel": "Battery Electric Vehicle",
-              "Unit": "km",
-              "Distance (km)": "",
-              "Factor": ""
-            },
-            {
-              "Reference": "634",
-              "Scope": "Scope 2",
+              "Scope": "Scope 1",
+              "Reference": "377",
               "Level 1": "Passenger vehicles",
               "Level 2": "Cars (by size)",
               "Level 3": "Large car",
@@ -1764,20 +1773,10 @@ sap.ui.define(
               "Distance (km)": "",
               "Factor": ""
             },
+
             {
-              "Reference": "636",
-              "Scope": "Scope 2",
-              "Level 1": "Passenger vehicles",
-              "Level 2": "Cars (by size)",
-              "Level 3": "Large car",
-              "Fuel": "Battery Electric Vehicle",
-              "Unit": "km",
-              "Distance (km)": "",
-              "Factor": ""
-            },
-            {
-              "Reference": "638",
-              "Scope": "Scope 2",
+              "Scope": "Scope 1",
+              "Reference": "393",
               "Level 1": "Passenger vehicles",
               "Level 2": "Cars (by size)",
               "Level 3": "Average car",
@@ -1786,20 +1785,10 @@ sap.ui.define(
               "Distance (km)": "",
               "Factor": ""
             },
+
             {
-              "Reference": "640",
-              "Scope": "Scope 2",
-              "Level 1": "Passenger vehicles",
-              "Level 2": "Cars (by size)",
-              "Level 3": "Average car",
-              "Fuel": "Battery Electric Vehicle",
-              "Unit": "km",
-              "Distance (km)": "",
-              "Factor": ""
-            },
-            {
+              "Scope": "Scope 1",
               "Reference": "333",
-              "Scope": "Scope 1",
               "Level 1": "Passenger vehicles",
               "Level 2": "Cars (by size)",
               "Level 3": "Small car",
@@ -1809,8 +1798,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
+              "Scope": "Scope 1",
               "Reference": "335",
-              "Scope": "Scope 1",
               "Level 1": "Passenger vehicles",
               "Level 2": "Cars (by size)",
               "Level 3": "Small car",
@@ -1820,8 +1809,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
+              "Scope": "Scope 1",
               "Reference": "337",
-              "Scope": "Scope 1",
               "Level 1": "Passenger vehicles",
               "Level 2": "Cars (by size)",
               "Level 3": "Small car",
@@ -1831,8 +1820,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
+              "Scope": "Scope 1",
               "Reference": "343",
-              "Scope": "Scope 1",
               "Level 1": "Passenger vehicles",
               "Level 2": "Cars (by size)",
               "Level 3": "Small car",
@@ -1842,8 +1831,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
+              "Scope": "Scope 1",
               "Reference": "349",
-              "Scope": "Scope 1",
               "Level 1": "Passenger vehicles",
               "Level 2": "Cars (by size)",
               "Level 3": "Medium car",
@@ -1853,8 +1842,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
+              "Scope": "Scope 1",
               "Reference": "351",
-              "Scope": "Scope 1",
               "Level 1": "Passenger vehicles",
               "Level 2": "Cars (by size)",
               "Level 3": "Medium car",
@@ -1864,8 +1853,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
+              "Scope": "Scope 1",
               "Reference": "353",
-              "Scope": "Scope 1",
               "Level 1": "Passenger vehicles",
               "Level 2": "Cars (by size)",
               "Level 3": "Medium car",
@@ -1875,8 +1864,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
+              "Scope": "Scope 1",
               "Reference": "355",
-              "Scope": "Scope 1",
               "Level 1": "Passenger vehicles",
               "Level 2": "Cars (by size)",
               "Level 3": "Medium car",
@@ -1886,8 +1875,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
+              "Scope": "Scope 1",
               "Reference": "357",
-              "Scope": "Scope 1",
               "Level 1": "Passenger vehicles",
               "Level 2": "Cars (by size)",
               "Level 3": "Medium car",
@@ -1897,8 +1886,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
+              "Scope": "Scope 1",
               "Reference": "359",
-              "Scope": "Scope 1",
               "Level 1": "Passenger vehicles",
               "Level 2": "Cars (by size)",
               "Level 3": "Medium car",
@@ -1908,8 +1897,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
+              "Scope": "Scope 1",
               "Reference": "365",
-              "Scope": "Scope 1",
               "Level 1": "Passenger vehicles",
               "Level 2": "Cars (by size)",
               "Level 3": "Large car",
@@ -1919,8 +1908,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
+              "Scope": "Scope 1",
               "Reference": "367",
-              "Scope": "Scope 1",
               "Level 1": "Passenger vehicles",
               "Level 2": "Cars (by size)",
               "Level 3": "Large car",
@@ -1930,8 +1919,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
-              "Reference": "369",
               "Scope": "Scope 1",
+              "Reference": "369",
               "Level 1": "Passenger vehicles",
               "Level 2": "Cars (by size)",
               "Level 3": "Large car",
@@ -1941,8 +1930,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
-              "Reference": "371",
               "Scope": "Scope 1",
+              "Reference": "371",
               "Level 1": "Passenger vehicles",
               "Level 2": "Cars (by size)",
               "Level 3": "Large car",
@@ -1952,8 +1941,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
-              "Reference": "373",
               "Scope": "Scope 1",
+              "Reference": "373",
               "Level 1": "Passenger vehicles",
               "Level 2": "Cars (by size)",
               "Level 3": "Large car",
@@ -1963,8 +1952,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
-              "Reference": "375",
               "Scope": "Scope 1",
+              "Reference": "375",
               "Level 1": "Passenger vehicles",
               "Level 2": "Cars (by size)",
               "Level 3": "Large car",
@@ -1974,8 +1963,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
-              "Reference": "381",
               "Scope": "Scope 1",
+              "Reference": "381",
               "Level 1": "Passenger vehicles",
               "Level 2": "Cars (by size)",
               "Level 3": "Average car",
@@ -1985,8 +1974,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
-              "Reference": "383",
               "Scope": "Scope 1",
+              "Reference": "383",
               "Level 1": "Passenger vehicles",
               "Level 2": "Cars (by size)",
               "Level 3": "Average car",
@@ -1996,8 +1985,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
-              "Reference": "385",
               "Scope": "Scope 1",
+              "Reference": "385",
               "Level 1": "Passenger vehicles",
               "Level 2": "Cars (by size)",
               "Level 3": "Average car",
@@ -2007,8 +1996,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
-              "Reference": "387",
               "Scope": "Scope 1",
+              "Reference": "387",
               "Level 1": "Passenger vehicles",
               "Level 2": "Cars (by size)",
               "Level 3": "Average car",
@@ -2018,8 +2007,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
-              "Reference": "389",
               "Scope": "Scope 1",
+              "Reference": "389",
               "Level 1": "Passenger vehicles",
               "Level 2": "Cars (by size)",
               "Level 3": "Average car",
@@ -2029,8 +2018,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
-              "Reference": "391",
               "Scope": "Scope 1",
+              "Reference": "391",
               "Level 1": "Passenger vehicles",
               "Level 2": "Cars (by size)",
               "Level 3": "Average car",
@@ -2040,8 +2029,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
-              "Reference": "397",
               "Scope": "Scope 1",
+              "Reference": "397",
               "Level 1": "Passenger vehicles",
               "Level 2": "Motorbike",
               "Level 3": "Small",
@@ -2051,8 +2040,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
-              "Reference": "399",
               "Scope": "Scope 1",
+              "Reference": "399",
               "Level 1": "Passenger vehicles",
               "Level 2": "Motorbike",
               "Level 3": "Medium",
@@ -2062,8 +2051,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
-              "Reference": "401",
               "Scope": "Scope 1",
+              "Reference": "401",
               "Level 1": "Passenger vehicles",
               "Level 2": "Motorbike",
               "Level 3": "Large",
@@ -2073,8 +2062,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
-              "Reference": "403",
               "Scope": "Scope 1",
+              "Reference": "403",
               "Level 1": "Passenger vehicles",
               "Level 2": "Motorbike",
               "Level 3": "Average",
@@ -2083,53 +2072,11 @@ sap.ui.define(
               "Distance (km)": "",
               "Factor": ""
             },
+
+
             {
-              "Reference": "645",
-              "Scope": "Scope 2",
-              "Level 1": "Delivery vehicles",
-              "Level 2": "Vans",
-              "Level 3": "Class I (up to 1.305 tonnes)",
-              "Fuel": "Battery Electric Vehicle",
-              "Unit": "km",
-              "Distance (km)": "",
-              "Factor": ""
-            },
-            {
-              "Reference": "651",
-              "Scope": "Scope 2",
-              "Level 1": "Delivery vehicles",
-              "Level 2": "Vans",
-              "Level 3": "Class II (1.305 to 1.74 tonnes)",
-              "Fuel": "Battery Electric Vehicle",
-              "Unit": "km",
-              "Distance (km)": "",
-              "Factor": ""
-            },
-            {
-              "Reference": "657",
-              "Scope": "Scope 2",
-              "Level 1": "Delivery vehicles",
-              "Level 2": "Vans",
-              "Level 3": "Class III (1.74 to 3.5 tonnes)",
-              "Fuel": "Battery Electric Vehicle",
-              "Unit": "km",
-              "Distance (km)": "",
-              "Factor": ""
-            },
-            {
-              "Reference": "663",
-              "Scope": "Scope 2",
-              "Level 1": "Delivery vehicles",
-              "Level 2": "Vans",
-              "Level 3": "Average (up to 3.5 tonnes)",
-              "Fuel": "Battery Electric Vehicle",
-              "Unit": "km",
-              "Distance (km)": "",
-              "Factor": ""
-            },
-            {
+              "Scope": "Scope 1",
               "Reference": "405",
-              "Scope": "Scope 1",
               "Level 1": "Delivery vehicles",
               "Level 2": "Vans",
               "Level 3": "Class I (up to 1.305 tonnes)",
@@ -2139,8 +2086,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
+              "Scope": "Scope 1",
               "Reference": "407",
-              "Scope": "Scope 1",
               "Level 1": "Delivery vehicles",
               "Level 2": "Vans",
               "Level 3": "Class I (up to 1.305 tonnes)",
@@ -2150,8 +2097,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
+              "Scope": "Scope 1",
               "Reference": "409",
-              "Scope": "Scope 1",
               "Level 1": "Delivery vehicles",
               "Level 2": "Vans",
               "Level 3": "Class I (up to 1.305 tonnes)",
@@ -2161,8 +2108,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
+              "Scope": "Scope 1",
               "Reference": "411",
-              "Scope": "Scope 1",
               "Level 1": "Delivery vehicles",
               "Level 2": "Vans",
               "Level 3": "Class I (up to 1.305 tonnes)",
@@ -2172,8 +2119,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
+              "Scope": "Scope 1",
               "Reference": "413",
-              "Scope": "Scope 1",
               "Level 1": "Delivery vehicles",
               "Level 2": "Vans",
               "Level 3": "Class I (up to 1.305 tonnes)",
@@ -2183,8 +2130,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
+              "Scope": "Scope 1",
               "Reference": "419",
-              "Scope": "Scope 1",
               "Level 1": "Delivery vehicles",
               "Level 2": "Vans",
               "Level 3": "Class II (1.305 to 1.74 tonnes)",
@@ -2194,8 +2141,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
+              "Scope": "Scope 1",
               "Reference": "421",
-              "Scope": "Scope 1",
               "Level 1": "Delivery vehicles",
               "Level 2": "Vans",
               "Level 3": "Class II (1.305 to 1.74 tonnes)",
@@ -2205,8 +2152,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
+              "Scope": "Scope 1",
               "Reference": "423",
-              "Scope": "Scope 1",
               "Level 1": "Delivery vehicles",
               "Level 2": "Vans",
               "Level 3": "Class II (1.305 to 1.74 tonnes)",
@@ -2216,8 +2163,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
+              "Scope": "Scope 1",
               "Reference": "425",
-              "Scope": "Scope 1",
               "Level 1": "Delivery vehicles",
               "Level 2": "Vans",
               "Level 3": "Class II (1.305 to 1.74 tonnes)",
@@ -2227,8 +2174,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
+              "Scope": "Scope 1",
               "Reference": "427",
-              "Scope": "Scope 1",
               "Level 1": "Delivery vehicles",
               "Level 2": "Vans",
               "Level 3": "Class II (1.305 to 1.74 tonnes)",
@@ -2238,8 +2185,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
+              "Scope": "Scope 1",
               "Reference": "433",
-              "Scope": "Scope 1",
               "Level 1": "Delivery vehicles",
               "Level 2": "Vans",
               "Level 3": "Class III (1.74 to 3.5 tonnes)",
@@ -2249,8 +2196,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
+              "Scope": "Scope 1",
               "Reference": "435",
-              "Scope": "Scope 1",
               "Level 1": "Delivery vehicles",
               "Level 2": "Vans",
               "Level 3": "Class III (1.74 to 3.5 tonnes)",
@@ -2260,8 +2207,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
-              "Reference": "437",
               "Scope": "Scope 1",
+              "Reference": "437",
               "Level 1": "Delivery vehicles",
               "Level 2": "Vans",
               "Level 3": "Class III (1.74 to 3.5 tonnes)",
@@ -2271,8 +2218,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
-              "Reference": "439",
               "Scope": "Scope 1",
+              "Reference": "439",
               "Level 1": "Delivery vehicles",
               "Level 2": "Vans",
               "Level 3": "Class III (1.74 to 3.5 tonnes)",
@@ -2282,8 +2229,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
-              "Reference": "441",
               "Scope": "Scope 1",
+              "Reference": "441",
               "Level 1": "Delivery vehicles",
               "Level 2": "Vans",
               "Level 3": "Class III (1.74 to 3.5 tonnes)",
@@ -2293,8 +2240,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
-              "Reference": "447",
               "Scope": "Scope 1",
+              "Reference": "447",
               "Level 1": "Delivery vehicles",
               "Level 2": "Vans",
               "Level 3": "Average (up to 3.5 tonnes)",
@@ -2304,8 +2251,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
-              "Reference": "449",
               "Scope": "Scope 1",
+              "Reference": "449",
               "Level 1": "Delivery vehicles",
               "Level 2": "Vans",
               "Level 3": "Average (up to 3.5 tonnes)",
@@ -2315,8 +2262,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
-              "Reference": "451",
               "Scope": "Scope 1",
+              "Reference": "451",
               "Level 1": "Delivery vehicles",
               "Level 2": "Vans",
               "Level 3": "Average (up to 3.5 tonnes)",
@@ -2326,8 +2273,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
-              "Reference": "453",
               "Scope": "Scope 1",
+              "Reference": "453",
               "Level 1": "Delivery vehicles",
               "Level 2": "Vans",
               "Level 3": "Average (up to 3.5 tonnes)",
@@ -2337,8 +2284,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
-              "Reference": "455",
               "Scope": "Scope 1",
+              "Reference": "455",
               "Level 1": "Delivery vehicles",
               "Level 2": "Vans",
               "Level 3": "Average (up to 3.5 tonnes)",
@@ -2348,8 +2295,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
+              "Scope": "Scope 1",
               "Reference": "467",
-              "Scope": "Scope 1",
               "Level 1": "Delivery vehicles",
               "Level 2": "HGV (all diesel)",
               "Level 3": "Rigid (>3.5 - 7.5 tonnes)",
@@ -2359,8 +2306,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
+              "Scope": "Scope 1",
               "Reference": "475",
-              "Scope": "Scope 1",
               "Level 1": "Delivery vehicles",
               "Level 2": "HGV (all diesel)",
               "Level 3": "Rigid (>7.5 tonnes-17 tonnes)",
@@ -2370,8 +2317,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
-              "Reference": "483",
               "Scope": "Scope 1",
+              "Reference": "483",
               "Level 1": "Delivery vehicles",
               "Level 2": "HGV (all diesel)",
               "Level 3": "Rigid (>17 tonnes)",
@@ -2381,8 +2328,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
-              "Reference": "491",
               "Scope": "Scope 1",
+              "Reference": "491",
               "Level 1": "Delivery vehicles",
               "Level 2": "HGV (all diesel)",
               "Level 3": "All rigids",
@@ -2392,8 +2339,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
-              "Reference": "499",
               "Scope": "Scope 1",
+              "Reference": "499",
               "Level 1": "Delivery vehicles",
               "Level 2": "HGV (all diesel)",
               "Level 3": "Articulated (>3.5 - 33t)",
@@ -2403,8 +2350,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
-              "Reference": "507",
               "Scope": "Scope 1",
+              "Reference": "507",
               "Level 1": "Delivery vehicles",
               "Level 2": "HGV (all diesel)",
               "Level 3": "Articulated (>33t)",
@@ -2414,8 +2361,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
-              "Reference": "515",
               "Scope": "Scope 1",
+              "Reference": "515",
               "Level 1": "Delivery vehicles",
               "Level 2": "HGV (all diesel)",
               "Level 3": "All artics",
@@ -2425,8 +2372,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
-              "Reference": "523",
               "Scope": "Scope 1",
+              "Reference": "523",
               "Level 1": "Delivery vehicles",
               "Level 2": "HGV (all diesel)",
               "Level 3": "All HGVs",
@@ -2436,8 +2383,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
-              "Reference": "531",
               "Scope": "Scope 1",
+              "Reference": "531",
               "Level 1": "Delivery vehicles",
               "Level 2": "HGVs refrigerated (all diesel)",
               "Level 3": "Rigid (>3.5 - 7.5 tonnes)",
@@ -2447,8 +2394,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
-              "Reference": "539",
               "Scope": "Scope 1",
+              "Reference": "539",
               "Level 1": "Delivery vehicles",
               "Level 2": "HGVs refrigerated (all diesel)",
               "Level 3": "Rigid (>7.5 tonnes-17 tonnes)",
@@ -2458,8 +2405,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
-              "Reference": "547",
               "Scope": "Scope 1",
+              "Reference": "547",
               "Level 1": "Delivery vehicles",
               "Level 2": "HGVs refrigerated (all diesel)",
               "Level 3": "Rigid (>17 tonnes)",
@@ -2469,8 +2416,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
-              "Reference": "555",
               "Scope": "Scope 1",
+              "Reference": "555",
               "Level 1": "Delivery vehicles",
               "Level 2": "HGVs refrigerated (all diesel)",
               "Level 3": "All rigids",
@@ -2480,8 +2427,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
-              "Reference": "563",
               "Scope": "Scope 1",
+              "Reference": "563",
               "Level 1": "Delivery vehicles",
               "Level 2": "HGVs refrigerated (all diesel)",
               "Level 3": "Articulated (>3.5 - 33t)",
@@ -2491,8 +2438,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
-              "Reference": "571",
               "Scope": "Scope 1",
+              "Reference": "571",
               "Level 1": "Delivery vehicles",
               "Level 2": "HGVs refrigerated (all diesel)",
               "Level 3": "Articulated (>33t)",
@@ -2502,8 +2449,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
-              "Reference": "579",
               "Scope": "Scope 1",
+              "Reference": "579",
               "Level 1": "Delivery vehicles",
               "Level 2": "HGVs refrigerated (all diesel)",
               "Level 3": "All artics",
@@ -2513,8 +2460,8 @@ sap.ui.define(
               "Factor": ""
             },
             {
-              "Reference": "587",
               "Scope": "Scope 1",
+              "Reference": "587",
               "Level 1": "Delivery vehicles",
               "Level 2": "HGVs refrigerated (all diesel)",
               "Level 3": "All HGVs",
@@ -2522,12 +2469,99 @@ sap.ui.define(
               "Unit": "km",
               "Distance (km)": "",
               "Factor": ""
-            }
+            },
+            {
+              "Scope": "Scope 2",
+              "Reference": "628",
+              "Level 1": "Passenger vehicles",
+              "Level 2": "Cars (by size)",
+              "Level 3": "Small car",
+              "Fuel": "Battery Electric Vehicle",
+              "Unit": "km",
+              "Distance (km)": "",
+              "Factor": ""
+            },
+            {
+              "Scope": "Scope 2",
+              "Reference": "632",
+              "Level 1": "Passenger vehicles",
+              "Level 2": "Cars (by size)",
+              "Level 3": "Medium car",
+              "Fuel": "Battery Electric Vehicle",
+              "Unit": "km",
+              "Distance (km)": "",
+              "Factor": ""
+            },
+            {
+              "Scope": "Scope 2",
+              "Reference": "636",
+              "Level 1": "Passenger vehicles",
+              "Level 2": "Cars (by size)",
+              "Level 3": "Large car",
+              "Fuel": "Battery Electric Vehicle",
+              "Unit": "km",
+              "Distance (km)": "",
+              "Factor": ""
+            },
+            {
+              "Scope": "Scope 2",
+              "Reference": "640",
+              "Level 1": "Passenger vehicles",
+              "Level 2": "Cars (by size)",
+              "Level 3": "Average car",
+              "Fuel": "Battery Electric Vehicle",
+              "Unit": "km",
+              "Distance (km)": "",
+              "Factor": ""
+            },
+            {
+              "Scope": "Scope 2",
+              "Reference": "645",
+              "Level 1": "Delivery vehicles",
+              "Level 2": "Vans",
+              "Level 3": "Class I (up to 1.305 tonnes)",
+              "Fuel": "Battery Electric Vehicle",
+              "Unit": "km",
+              "Distance (km)": "",
+              "Factor": ""
+            },
+            {
+              "Scope": "Scope 2",
+              "Reference": "651",
+              "Level 1": "Delivery vehicles",
+              "Level 2": "Vans",
+              "Level 3": "Class II (1.305 to 1.74 tonnes)",
+              "Fuel": "Battery Electric Vehicle",
+              "Unit": "km",
+              "Distance (km)": "",
+              "Factor": ""
+            },
+            {
+              "Scope": "Scope 2",
+              "Reference": "657",
+              "Level 1": "Delivery vehicles",
+              "Level 2": "Vans",
+              "Level 3": "Class III (1.74 to 3.5 tonnes)",
+              "Fuel": "Battery Electric Vehicle",
+              "Unit": "km",
+              "Distance (km)": "",
+              "Factor": ""
+            },
+            {
+              "Scope": "Scope 2",
+              "Reference": "663",
+              "Level 1": "Delivery vehicles",
+              "Level 2": "Vans",
+              "Level 3": "Average (up to 3.5 tonnes)",
+              "Fuel": "Battery Electric Vehicle",
+              "Unit": "km",
+              "Distance (km)": "",
+              "Factor": ""
+            },
           ],
           "Materials": [
             {
               "Reference": "672",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste type": "Aggregates",
               "Unit": "tonnes",
@@ -2536,7 +2570,6 @@ sap.ui.define(
             },
             {
               "Reference": "676",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste type": "Average construction",
               "Unit": "tonnes",
@@ -2545,7 +2578,6 @@ sap.ui.define(
             },
             {
               "Reference": "680",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste type": "Asbestos",
               "Unit": "tonnes",
@@ -2554,7 +2586,6 @@ sap.ui.define(
             },
             {
               "Reference": "684",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste type": "Asphalt",
               "Unit": "tonnes",
@@ -2563,7 +2594,6 @@ sap.ui.define(
             },
             {
               "Reference": "688",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste type": "Bricks",
               "Unit": "tonnes",
@@ -2572,7 +2602,6 @@ sap.ui.define(
             },
             {
               "Reference": "692",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste type": "Concrete",
               "Unit": "tonnes",
@@ -2581,7 +2610,6 @@ sap.ui.define(
             },
             {
               "Reference": "696",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste type": "Insulation",
               "Unit": "tonnes",
@@ -2590,7 +2618,6 @@ sap.ui.define(
             },
             {
               "Reference": "700",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste type": "Metals",
               "Unit": "tonnes",
@@ -2599,7 +2626,6 @@ sap.ui.define(
             },
             {
               "Reference": "708",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste type": "Mineral oil",
               "Unit": "tonnes",
@@ -2608,7 +2634,6 @@ sap.ui.define(
             },
             {
               "Reference": "712",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste type": "Plasterboard",
               "Unit": "tonnes",
@@ -2617,7 +2642,6 @@ sap.ui.define(
             },
             {
               "Reference": "716",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste type": "Tyres",
               "Unit": "tonnes",
@@ -2626,7 +2650,6 @@ sap.ui.define(
             },
             {
               "Reference": "720",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste type": "Wood",
               "Unit": "tonnes",
@@ -2635,7 +2658,6 @@ sap.ui.define(
             },
             {
               "Reference": "728",
-              "Scope": "Scope 3",
               "Activity": "Other",
               "Waste type": "Glass",
               "Unit": "tonnes",
@@ -2644,7 +2666,6 @@ sap.ui.define(
             },
             {
               "Reference": "732",
-              "Scope": "Scope 3",
               "Activity": "Other",
               "Waste type": "Clothing",
               "Unit": "tonnes",
@@ -2653,7 +2674,6 @@ sap.ui.define(
             },
             {
               "Reference": "736",
-              "Scope": "Scope 3",
               "Activity": "Other",
               "Waste type": "Food and drink",
               "Unit": "tonnes",
@@ -2662,7 +2682,6 @@ sap.ui.define(
             },
             {
               "Reference": "740",
-              "Scope": "Scope 3",
               "Activity": "Organic",
               "Waste type": "Compost derived from garden waste",
               "Unit": "tonnes",
@@ -2671,7 +2690,6 @@ sap.ui.define(
             },
             {
               "Reference": "741",
-              "Scope": "Scope 3",
               "Activity": "Organic",
               "Waste type": "Compost derived from food and garden waste",
               "Unit": "tonnes",
@@ -2680,7 +2698,6 @@ sap.ui.define(
             },
             {
               "Reference": "742",
-              "Scope": "Scope 3",
               "Activity": "Electrical items",
               "Waste type": "Electrical items - fridges and freezers",
               "Unit": "tonnes",
@@ -2689,7 +2706,6 @@ sap.ui.define(
             },
             {
               "Reference": "746",
-              "Scope": "Scope 3",
               "Activity": "Electrical items",
               "Waste type": "Electrical items - large",
               "Unit": "tonnes",
@@ -2698,7 +2714,6 @@ sap.ui.define(
             },
             {
               "Reference": "750",
-              "Scope": "Scope 3",
               "Activity": "Electrical items",
               "Waste type": "Electrical items - IT",
               "Unit": "tonnes",
@@ -2707,7 +2722,6 @@ sap.ui.define(
             },
             {
               "Reference": "754",
-              "Scope": "Scope 3",
               "Activity": "Electrical items",
               "Waste type": "Electrical items - small",
               "Unit": "tonnes",
@@ -2716,7 +2730,6 @@ sap.ui.define(
             },
             {
               "Reference": "758",
-              "Scope": "Scope 3",
               "Activity": "Electrical items",
               "Waste type": "Batteries - Alkaline",
               "Unit": "tonnes",
@@ -2725,7 +2738,6 @@ sap.ui.define(
             },
             {
               "Reference": "762",
-              "Scope": "Scope 3",
               "Activity": "Electrical items",
               "Waste type": "Batteries - Li ion",
               "Unit": "tonnes",
@@ -2734,7 +2746,6 @@ sap.ui.define(
             },
             {
               "Reference": "766",
-              "Scope": "Scope 3",
               "Activity": "Electrical items",
               "Waste type": "Batteries - NiMh",
               "Unit": "tonnes",
@@ -2743,7 +2754,6 @@ sap.ui.define(
             },
             {
               "Reference": "770",
-              "Scope": "Scope 3",
               "Activity": "Metal",
               "Waste type": "Metal: aluminium cans and foil (excl. forming)",
               "Unit": "tonnes",
@@ -2752,7 +2762,6 @@ sap.ui.define(
             },
             {
               "Reference": "772",
-              "Scope": "Scope 3",
               "Activity": "Metal",
               "Waste type": "Metal: mixed cans",
               "Unit": "tonnes",
@@ -2761,7 +2770,6 @@ sap.ui.define(
             },
             {
               "Reference": "774",
-              "Scope": "Scope 3",
               "Activity": "Metal",
               "Waste type": "Metal: scrap metal",
               "Unit": "tonnes",
@@ -2770,7 +2778,6 @@ sap.ui.define(
             },
             {
               "Reference": "776",
-              "Scope": "Scope 3",
               "Activity": "Metal",
               "Waste type": "Metal: steel cans",
               "Unit": "tonnes",
@@ -2779,7 +2786,6 @@ sap.ui.define(
             },
             {
               "Reference": "778",
-              "Scope": "Scope 3",
               "Activity": "Plastic",
               "Waste type": "Plastics: average plastics",
               "Unit": "tonnes",
@@ -2788,7 +2794,6 @@ sap.ui.define(
             },
             {
               "Reference": "781",
-              "Scope": "Scope 3",
               "Activity": "Plastic",
               "Waste type": "Plastics: average plastic film",
               "Unit": "tonnes",
@@ -2797,7 +2802,6 @@ sap.ui.define(
             },
             {
               "Reference": "784",
-              "Scope": "Scope 3",
               "Activity": "Plastic",
               "Waste type": "Plastics: average plastic rigid",
               "Unit": "tonnes",
@@ -2806,7 +2810,6 @@ sap.ui.define(
             },
             {
               "Reference": "787",
-              "Scope": "Scope 3",
               "Activity": "Plastic",
               "Waste type": "Plastics: HDPE (incl. forming)",
               "Unit": "tonnes",
@@ -2815,7 +2818,6 @@ sap.ui.define(
             },
             {
               "Reference": "790",
-              "Scope": "Scope 3",
               "Activity": "Plastic",
               "Waste type": "Plastics: LDPE and LLDPE (incl. forming)",
               "Unit": "tonnes",
@@ -2824,7 +2826,6 @@ sap.ui.define(
             },
             {
               "Reference": "793",
-              "Scope": "Scope 3",
               "Activity": "Plastic",
               "Waste type": "Plastics: PET (incl. forming)",
               "Unit": "tonnes",
@@ -2833,7 +2834,6 @@ sap.ui.define(
             },
             {
               "Reference": "796",
-              "Scope": "Scope 3",
               "Activity": "Plastic",
               "Waste type": "Plastics: PP (incl. forming)",
               "Unit": "tonnes",
@@ -2842,7 +2842,6 @@ sap.ui.define(
             },
             {
               "Reference": "799",
-              "Scope": "Scope 3",
               "Activity": "Plastic",
               "Waste type": "Plastics: PS (incl. forming)",
               "Unit": "tonnes",
@@ -2851,7 +2850,6 @@ sap.ui.define(
             },
             {
               "Reference": "802",
-              "Scope": "Scope 3",
               "Activity": "Plastic",
               "Waste type": "Plastics: PVC (incl. forming)",
               "Unit": "tonnes",
@@ -2860,7 +2858,6 @@ sap.ui.define(
             },
             {
               "Reference": "805",
-              "Scope": "Scope 3",
               "Activity": "Paper",
               "Waste type": "Paper and board: board",
               "Unit": "tonnes",
@@ -2869,7 +2866,6 @@ sap.ui.define(
             },
             {
               "Reference": "808",
-              "Scope": "Scope 3",
               "Activity": "Paper",
               "Waste type": "Paper and board: mixed",
               "Unit": "tonnes",
@@ -2878,7 +2874,6 @@ sap.ui.define(
             },
             {
               "Reference": "811",
-              "Scope": "Scope 3",
               "Activity": "Paper",
               "Waste type": "Paper and board: paper",
               "Unit": "tonnes",
@@ -2889,7 +2884,6 @@ sap.ui.define(
           "WTT- fuels": [
             {
               "Reference": "894",
-              "Scope": "Scope 3",
               "Type": "WTT- gaseous fuels",
               "Fuel": "Butane",
               "Unit": "litres",
@@ -2898,7 +2892,6 @@ sap.ui.define(
             },
             {
               "Reference": "898",
-              "Scope": "Scope 3",
               "Type": "WTT- gaseous fuels",
               "Fuel": "CNG",
               "Unit": "litres",
@@ -2907,7 +2900,6 @@ sap.ui.define(
             },
             {
               "Reference": "902",
-              "Scope": "Scope 3",
               "Type": "WTT- gaseous fuels",
               "Fuel": "LNG",
               "Unit": "litres",
@@ -2916,7 +2908,6 @@ sap.ui.define(
             },
             {
               "Reference": "906",
-              "Scope": "Scope 3",
               "Type": "WTT- gaseous fuels",
               "Fuel": "LPG",
               "Unit": "litres",
@@ -2925,7 +2916,6 @@ sap.ui.define(
             },
             {
               "Reference": "910",
-              "Scope": "Scope 3",
               "Type": "WTT- gaseous fuels",
               "Fuel": "Natural Gas",
               "Unit": "cubic metres",
@@ -2934,7 +2924,6 @@ sap.ui.define(
             },
             {
               "Reference": "914",
-              "Scope": "Scope 3",
               "Type": "WTT- gaseous fuels",
               "Fuel": "Other Petroleum Gas",
               "Unit": "litres",
@@ -2943,7 +2932,6 @@ sap.ui.define(
             },
             {
               "Reference": "918",
-              "Scope": "Scope 3",
               "Type": "WTT- gaseous fuels",
               "Fuel": "Propane",
               "Unit": "litres",
@@ -2952,7 +2940,6 @@ sap.ui.define(
             },
             {
               "Reference": "922",
-              "Scope": "Scope 3",
               "Type": "WTT- liquid fuels",
               "Fuel": "Aviation Spirit",
               "Unit": "litres",
@@ -2961,7 +2948,6 @@ sap.ui.define(
             },
             {
               "Reference": "926",
-              "Scope": "Scope 3",
               "Type": "WTT- liquid fuels",
               "Fuel": "Aviation Turbine Fuel",
               "Unit": "litres",
@@ -2970,7 +2956,6 @@ sap.ui.define(
             },
             {
               "Reference": "930",
-              "Scope": "Scope 3",
               "Type": "WTT- liquid fuels",
               "Fuel": "Burning Oil",
               "Unit": "litres",
@@ -2979,7 +2964,6 @@ sap.ui.define(
             },
             {
               "Reference": "934",
-              "Scope": "Scope 3",
               "Type": "WTT- liquid fuels",
               "Fuel": "Diesel (average biofuel blend)",
               "Unit": "litres",
@@ -2988,7 +2972,6 @@ sap.ui.define(
             },
             {
               "Reference": "938",
-              "Scope": "Scope 3",
               "Type": "WTT- liquid fuels",
               "Fuel": "Diesel (100% mineral diesel)",
               "Unit": "litres",
@@ -2997,7 +2980,6 @@ sap.ui.define(
             },
             {
               "Reference": "942",
-              "Scope": "Scope 3",
               "Type": "WTT- liquid fuels",
               "Fuel": "Fuel Oil",
               "Unit": "litres",
@@ -3006,7 +2988,6 @@ sap.ui.define(
             },
             {
               "Reference": "946",
-              "Scope": "Scope 3",
               "Type": "WTT- liquid fuels",
               "Fuel": "Gas Oil",
               "Unit": "litres",
@@ -3015,7 +2996,6 @@ sap.ui.define(
             },
             {
               "Reference": "950",
-              "Scope": "Scope 3",
               "Type": "WTT- liquid fuels",
               "Fuel": "Lubricants",
               "Unit": "litres",
@@ -3024,7 +3004,6 @@ sap.ui.define(
             },
             {
               "Reference": "954",
-              "Scope": "Scope 3",
               "Type": "WTT- liquid fuels",
               "Fuel": "Naphtha",
               "Unit": "litres",
@@ -3033,7 +3012,6 @@ sap.ui.define(
             },
             {
               "Reference": "958",
-              "Scope": "Scope 3",
               "Type": "WTT- liquid fuels",
               "Fuel": "Petrol (average biofuel blend)",
               "Unit": "litres",
@@ -3042,7 +3020,6 @@ sap.ui.define(
             },
             {
               "Reference": "962",
-              "Scope": "Scope 3",
               "Type": "WTT- liquid fuels",
               "Fuel": "Petrol (100% mineral petrol)",
               "Unit": "litres",
@@ -3051,7 +3028,6 @@ sap.ui.define(
             },
             {
               "Reference": "966",
-              "Scope": "Scope 3",
               "Type": "WTT- liquid fuels",
               "Fuel": "Processed fuel oils - residual oil",
               "Unit": "litres",
@@ -3060,7 +3036,6 @@ sap.ui.define(
             },
             {
               "Reference": "970",
-              "Scope": "Scope 3",
               "Type": "WTT- liquid fuels",
               "Fuel": "Processed fuel oils - distillate oil",
               "Unit": "litres",
@@ -3069,7 +3044,6 @@ sap.ui.define(
             },
             {
               "Reference": "974",
-              "Scope": "Scope 3",
               "Type": "WTT- liquid fuels",
               "Fuel": "Refinery Miscellaneous",
               "Unit": "litres",
@@ -3078,7 +3052,6 @@ sap.ui.define(
             },
             {
               "Reference": "978",
-              "Scope": "Scope 3",
               "Type": "WTT- liquid fuels",
               "Fuel": "Waste oils",
               "Unit": "litres",
@@ -3087,7 +3060,6 @@ sap.ui.define(
             },
             {
               "Reference": "982",
-              "Scope": "Scope 3",
               "Type": "WTT- liquid fuels",
               "Fuel": "Marine gas oil",
               "Unit": "litres",
@@ -3096,7 +3068,6 @@ sap.ui.define(
             },
             {
               "Reference": "986",
-              "Scope": "Scope 3",
               "Type": "WTT- liquid fuels",
               "Fuel": "Marine fuel oil",
               "Unit": "litres",
@@ -3105,7 +3076,6 @@ sap.ui.define(
             },
             {
               "Reference": "2783",
-              "Scope": "Scope 3",
               "Type": "WTT- gaseous fuels",
               "Fuel": "Natural gas (100% mineral blend)",
               "Unit": "cubic metres",
@@ -3116,7 +3086,6 @@ sap.ui.define(
           "Waste Disposal": [
             {
               "Reference": "2518",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Aggregates",
               "Source Description": "",
@@ -3127,7 +3096,6 @@ sap.ui.define(
             },
             {
               "Reference": "2518",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Aggregates",
               "Source Description": "",
@@ -3138,7 +3106,6 @@ sap.ui.define(
             },
             {
               "Reference": "2518",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Aggregates",
               "Source Description": "",
@@ -3149,7 +3116,6 @@ sap.ui.define(
             },
             {
               "Reference": "2524",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Average construction",
               "Source Description": "",
@@ -3160,7 +3126,6 @@ sap.ui.define(
             },
             {
               "Reference": "2524",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Average construction",
               "Source Description": "",
@@ -3171,7 +3136,6 @@ sap.ui.define(
             },
             {
               "Reference": "2524",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Average construction",
               "Source Description": "",
@@ -3182,7 +3146,6 @@ sap.ui.define(
             },
             {
               "Reference": "2530",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Asbestos",
               "Source Description": "",
@@ -3193,7 +3156,6 @@ sap.ui.define(
             },
             {
               "Reference": "2530",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Asbestos",
               "Source Description": "",
@@ -3204,7 +3166,6 @@ sap.ui.define(
             },
             {
               "Reference": "2530",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Asbestos",
               "Source Description": "",
@@ -3215,7 +3176,6 @@ sap.ui.define(
             },
             {
               "Reference": "2536",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Asphalt",
               "Source Description": "",
@@ -3226,7 +3186,6 @@ sap.ui.define(
             },
             {
               "Reference": "2536",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Asphalt",
               "Source Description": "",
@@ -3237,7 +3196,6 @@ sap.ui.define(
             },
             {
               "Reference": "2536",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Asphalt",
               "Source Description": "",
@@ -3248,7 +3206,6 @@ sap.ui.define(
             },
             {
               "Reference": "2542",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Bricks",
               "Source Description": "",
@@ -3259,7 +3216,6 @@ sap.ui.define(
             },
             {
               "Reference": "2542",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Bricks",
               "Source Description": "",
@@ -3270,7 +3226,6 @@ sap.ui.define(
             },
             {
               "Reference": "2542",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Bricks",
               "Source Description": "",
@@ -3281,7 +3236,6 @@ sap.ui.define(
             },
             {
               "Reference": "2548",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Concrete",
               "Source Description": "",
@@ -3292,7 +3246,6 @@ sap.ui.define(
             },
             {
               "Reference": "2548",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Concrete",
               "Source Description": "",
@@ -3303,7 +3256,6 @@ sap.ui.define(
             },
             {
               "Reference": "2548",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Concrete",
               "Source Description": "",
@@ -3314,7 +3266,6 @@ sap.ui.define(
             },
             {
               "Reference": "2554",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Insulation",
               "Source Description": "",
@@ -3325,7 +3276,6 @@ sap.ui.define(
             },
             {
               "Reference": "2554",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Insulation",
               "Source Description": "",
@@ -3336,7 +3286,6 @@ sap.ui.define(
             },
             {
               "Reference": "2554",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Insulation",
               "Source Description": "",
@@ -3347,7 +3296,6 @@ sap.ui.define(
             },
             {
               "Reference": "2560",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Metals",
               "Source Description": "",
@@ -3358,7 +3306,6 @@ sap.ui.define(
             },
             {
               "Reference": "2560",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Metals",
               "Source Description": "",
@@ -3369,7 +3316,6 @@ sap.ui.define(
             },
             {
               "Reference": "2560",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Metals",
               "Source Description": "",
@@ -3380,7 +3326,6 @@ sap.ui.define(
             },
             {
               "Reference": "2566",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Soils",
               "Source Description": "",
@@ -3391,7 +3336,6 @@ sap.ui.define(
             },
             {
               "Reference": "2566",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Soils",
               "Source Description": "",
@@ -3402,7 +3346,6 @@ sap.ui.define(
             },
             {
               "Reference": "2566",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Soils",
               "Source Description": "",
@@ -3413,7 +3356,6 @@ sap.ui.define(
             },
             {
               "Reference": "2572",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Mineral oil",
               "Source Description": "",
@@ -3424,7 +3366,6 @@ sap.ui.define(
             },
             {
               "Reference": "2572",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Mineral oil",
               "Source Description": "",
@@ -3435,7 +3376,6 @@ sap.ui.define(
             },
             {
               "Reference": "2572",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Mineral oil",
               "Source Description": "",
@@ -3446,7 +3386,6 @@ sap.ui.define(
             },
             {
               "Reference": "2578",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Plasterboard",
               "Source Description": "",
@@ -3457,7 +3396,6 @@ sap.ui.define(
             },
             {
               "Reference": "2578",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Plasterboard",
               "Source Description": "",
@@ -3468,7 +3406,6 @@ sap.ui.define(
             },
             {
               "Reference": "2578",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Plasterboard",
               "Source Description": "",
@@ -3479,7 +3416,6 @@ sap.ui.define(
             },
             {
               "Reference": "2584",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Tyres",
               "Source Description": "",
@@ -3490,7 +3426,6 @@ sap.ui.define(
             },
             {
               "Reference": "2584",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Tyres",
               "Source Description": "",
@@ -3501,7 +3436,6 @@ sap.ui.define(
             },
             {
               "Reference": "2584",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Tyres",
               "Source Description": "",
@@ -3512,7 +3446,6 @@ sap.ui.define(
             },
             {
               "Reference": "2590",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Wood",
               "Source Description": "",
@@ -3523,7 +3456,6 @@ sap.ui.define(
             },
             {
               "Reference": "2590",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Wood",
               "Source Description": "",
@@ -3534,7 +3466,6 @@ sap.ui.define(
             },
             {
               "Reference": "2590",
-              "Scope": "Scope 3",
               "Activity": "Construction",
               "Waste Material": "Wood",
               "Source Description": "",
@@ -3545,7 +3476,6 @@ sap.ui.define(
             },
             {
               "Reference": "2596",
-              "Scope": "Scope 3",
               "Activity": "Other",
               "Waste Material": "Books",
               "Source Description": "",
@@ -3556,7 +3486,6 @@ sap.ui.define(
             },
             {
               "Reference": "2596",
-              "Scope": "Scope 3",
               "Activity": "Other",
               "Waste Material": "Books",
               "Source Description": "",
@@ -3567,7 +3496,6 @@ sap.ui.define(
             },
             {
               "Reference": "2596",
-              "Scope": "Scope 3",
               "Activity": "Other",
               "Waste Material": "Books",
               "Source Description": "",
@@ -3578,7 +3506,6 @@ sap.ui.define(
             },
             {
               "Reference": "2602",
-              "Scope": "Scope 3",
               "Activity": "Other",
               "Waste Material": "Glass",
               "Source Description": "",
@@ -3589,7 +3516,6 @@ sap.ui.define(
             },
             {
               "Reference": "2602",
-              "Scope": "Scope 3",
               "Activity": "Other",
               "Waste Material": "Glass",
               "Source Description": "",
@@ -3600,7 +3526,6 @@ sap.ui.define(
             },
             {
               "Reference": "2602",
-              "Scope": "Scope 3",
               "Activity": "Other",
               "Waste Material": "Glass",
               "Source Description": "",
@@ -3611,7 +3536,6 @@ sap.ui.define(
             },
             {
               "Reference": "2608",
-              "Scope": "Scope 3",
               "Activity": "Other",
               "Waste Material": "Clothing",
               "Source Description": "",
@@ -3622,7 +3546,6 @@ sap.ui.define(
             },
             {
               "Reference": "2608",
-              "Scope": "Scope 3",
               "Activity": "Other",
               "Waste Material": "Clothing",
               "Source Description": "",
@@ -3633,7 +3556,6 @@ sap.ui.define(
             },
             {
               "Reference": "2608",
-              "Scope": "Scope 3",
               "Activity": "Other",
               "Waste Material": "Clothing",
               "Source Description": "",
@@ -3644,7 +3566,6 @@ sap.ui.define(
             },
             {
               "Reference": "2614",
-              "Scope": "Scope 3",
               "Activity": "Refuse",
               "Waste Material": "Household residual waste",
               "Source Description": "",
@@ -3655,7 +3576,6 @@ sap.ui.define(
             },
             {
               "Reference": "2614",
-              "Scope": "Scope 3",
               "Activity": "Refuse",
               "Waste Material": "Household residual waste",
               "Source Description": "",
@@ -3666,7 +3586,6 @@ sap.ui.define(
             },
             {
               "Reference": "2614",
-              "Scope": "Scope 3",
               "Activity": "Refuse",
               "Waste Material": "Household residual waste",
               "Source Description": "",
@@ -3677,7 +3596,6 @@ sap.ui.define(
             },
             {
               "Reference": "2620",
-              "Scope": "Scope 3",
               "Activity": "Refuse",
               "Waste Material": "Organic: food and drink waste",
               "Source Description": "",
@@ -3688,7 +3606,6 @@ sap.ui.define(
             },
             {
               "Reference": "2620",
-              "Scope": "Scope 3",
               "Activity": "Refuse",
               "Waste Material": "Organic: food and drink waste",
               "Source Description": "",
@@ -3699,7 +3616,6 @@ sap.ui.define(
             },
             {
               "Reference": "2620",
-              "Scope": "Scope 3",
               "Activity": "Refuse",
               "Waste Material": "Organic: food and drink waste",
               "Source Description": "",
@@ -3710,7 +3626,6 @@ sap.ui.define(
             },
             {
               "Reference": "2626",
-              "Scope": "Scope 3",
               "Activity": "Refuse",
               "Waste Material": "Organic: garden waste",
               "Source Description": "",
@@ -3721,7 +3636,6 @@ sap.ui.define(
             },
             {
               "Reference": "2626",
-              "Scope": "Scope 3",
               "Activity": "Refuse",
               "Waste Material": "Organic: garden waste",
               "Source Description": "",
@@ -3732,7 +3646,6 @@ sap.ui.define(
             },
             {
               "Reference": "2626",
-              "Scope": "Scope 3",
               "Activity": "Refuse",
               "Waste Material": "Organic: garden waste",
               "Source Description": "",
@@ -3743,7 +3656,6 @@ sap.ui.define(
             },
             {
               "Reference": "2632",
-              "Scope": "Scope 3",
               "Activity": "Refuse",
               "Waste Material": "Organic: mixed food and garden waste",
               "Source Description": "",
@@ -3754,7 +3666,6 @@ sap.ui.define(
             },
             {
               "Reference": "2632",
-              "Scope": "Scope 3",
               "Activity": "Refuse",
               "Waste Material": "Organic: mixed food and garden waste",
               "Source Description": "",
@@ -3765,7 +3676,6 @@ sap.ui.define(
             },
             {
               "Reference": "2632",
-              "Scope": "Scope 3",
               "Activity": "Refuse",
               "Waste Material": "Organic: mixed food and garden waste",
               "Source Description": "",
@@ -3776,7 +3686,6 @@ sap.ui.define(
             },
             {
               "Reference": "2638",
-              "Scope": "Scope 3",
               "Activity": "Refuse",
               "Waste Material": "Commercial and industrial waste",
               "Source Description": "",
@@ -3787,7 +3696,6 @@ sap.ui.define(
             },
             {
               "Reference": "2638",
-              "Scope": "Scope 3",
               "Activity": "Refuse",
               "Waste Material": "Commercial and industrial waste",
               "Source Description": "",
@@ -3798,7 +3706,6 @@ sap.ui.define(
             },
             {
               "Reference": "2638",
-              "Scope": "Scope 3",
               "Activity": "Refuse",
               "Waste Material": "Commercial and industrial waste",
               "Source Description": "",
@@ -3809,7 +3716,6 @@ sap.ui.define(
             },
             {
               "Reference": "2642",
-              "Scope": "Scope 3",
               "Activity": "Electrical items",
               "Waste Material": "WEEE - fridges and freezers",
               "Source Description": "",
@@ -3820,7 +3726,6 @@ sap.ui.define(
             },
             {
               "Reference": "2642",
-              "Scope": "Scope 3",
               "Activity": "Electrical items",
               "Waste Material": "WEEE - fridges and freezers",
               "Source Description": "",
@@ -3831,7 +3736,6 @@ sap.ui.define(
             },
             {
               "Reference": "2642",
-              "Scope": "Scope 3",
               "Activity": "Electrical items",
               "Waste Material": "WEEE - fridges and freezers",
               "Source Description": "",
@@ -3842,7 +3746,6 @@ sap.ui.define(
             },
             {
               "Reference": "2646",
-              "Scope": "Scope 3",
               "Activity": "Electrical items",
               "Waste Material": "WEEE - large",
               "Source Description": "",
@@ -3853,7 +3756,6 @@ sap.ui.define(
             },
             {
               "Reference": "2646",
-              "Scope": "Scope 3",
               "Activity": "Electrical items",
               "Waste Material": "WEEE - large",
               "Source Description": "",
@@ -3864,7 +3766,6 @@ sap.ui.define(
             },
             {
               "Reference": "2646",
-              "Scope": "Scope 3",
               "Activity": "Electrical items",
               "Waste Material": "WEEE - large",
               "Source Description": "",
@@ -3875,7 +3776,6 @@ sap.ui.define(
             },
             {
               "Reference": "2650",
-              "Scope": "Scope 3",
               "Activity": "Electrical items",
               "Waste Material": "WEEE - mixed",
               "Source Description": "",
@@ -3886,7 +3786,6 @@ sap.ui.define(
             },
             {
               "Reference": "2650",
-              "Scope": "Scope 3",
               "Activity": "Electrical items",
               "Waste Material": "WEEE - mixed",
               "Source Description": "",
@@ -3897,7 +3796,6 @@ sap.ui.define(
             },
             {
               "Reference": "2650",
-              "Scope": "Scope 3",
               "Activity": "Electrical items",
               "Waste Material": "WEEE - mixed",
               "Source Description": "",
@@ -3908,7 +3806,6 @@ sap.ui.define(
             },
             {
               "Reference": "2654",
-              "Scope": "Scope 3",
               "Activity": "Electrical items",
               "Waste Material": "WEEE - small",
               "Source Description": "",
@@ -3919,7 +3816,6 @@ sap.ui.define(
             },
             {
               "Reference": "2654",
-              "Scope": "Scope 3",
               "Activity": "Electrical items",
               "Waste Material": "WEEE - small",
               "Source Description": "",
@@ -3930,7 +3826,6 @@ sap.ui.define(
             },
             {
               "Reference": "2654",
-              "Scope": "Scope 3",
               "Activity": "Electrical items",
               "Waste Material": "WEEE - small",
               "Source Description": "",
@@ -3941,7 +3836,6 @@ sap.ui.define(
             },
             {
               "Reference": "2658",
-              "Scope": "Scope 3",
               "Activity": "Electrical items",
               "Waste Material": "Batteries",
               "Source Description": "",
@@ -3952,7 +3846,6 @@ sap.ui.define(
             },
             {
               "Reference": "2658",
-              "Scope": "Scope 3",
               "Activity": "Electrical items",
               "Waste Material": "Batteries",
               "Source Description": "",
@@ -3963,7 +3856,6 @@ sap.ui.define(
             },
             {
               "Reference": "2658",
-              "Scope": "Scope 3",
               "Activity": "Electrical items",
               "Waste Material": "Batteries",
               "Source Description": "",
@@ -3974,7 +3866,6 @@ sap.ui.define(
             },
             {
               "Reference": "2662",
-              "Scope": "Scope 3",
               "Activity": "Metal",
               "Waste Material": "Metal: aluminium cans and foil (excl. forming)",
               "Source Description": "",
@@ -3985,7 +3876,6 @@ sap.ui.define(
             },
             {
               "Reference": "2662",
-              "Scope": "Scope 3",
               "Activity": "Metal",
               "Waste Material": "Metal: aluminium cans and foil (excl. forming)",
               "Source Description": "",
@@ -3996,7 +3886,6 @@ sap.ui.define(
             },
             {
               "Reference": "2662",
-              "Scope": "Scope 3",
               "Activity": "Metal",
               "Waste Material": "Metal: aluminium cans and foil (excl. forming)",
               "Source Description": "",
@@ -4007,7 +3896,6 @@ sap.ui.define(
             },
             {
               "Reference": "2666",
-              "Scope": "Scope 3",
               "Activity": "Metal",
               "Waste Material": "Metal: mixed cans",
               "Source Description": "",
@@ -4018,7 +3906,6 @@ sap.ui.define(
             },
             {
               "Reference": "2666",
-              "Scope": "Scope 3",
               "Activity": "Metal",
               "Waste Material": "Metal: mixed cans",
               "Source Description": "",
@@ -4029,7 +3916,6 @@ sap.ui.define(
             },
             {
               "Reference": "2666",
-              "Scope": "Scope 3",
               "Activity": "Metal",
               "Waste Material": "Metal: mixed cans",
               "Source Description": "",
@@ -4040,7 +3926,6 @@ sap.ui.define(
             },
             {
               "Reference": "2670",
-              "Scope": "Scope 3",
               "Activity": "Metal",
               "Waste Material": "Metal: scrap metal",
               "Source Description": "",
@@ -4051,7 +3936,6 @@ sap.ui.define(
             },
             {
               "Reference": "2670",
-              "Scope": "Scope 3",
               "Activity": "Metal",
               "Waste Material": "Metal: scrap metal",
               "Source Description": "",
@@ -4062,7 +3946,6 @@ sap.ui.define(
             },
             {
               "Reference": "2670",
-              "Scope": "Scope 3",
               "Activity": "Metal",
               "Waste Material": "Metal: scrap metal",
               "Source Description": "",
@@ -4073,7 +3956,6 @@ sap.ui.define(
             },
             {
               "Reference": "2674",
-              "Scope": "Scope 3",
               "Activity": "Metal",
               "Waste Material": "Metal: steel cans",
               "Source Description": "",
@@ -4084,7 +3966,6 @@ sap.ui.define(
             },
             {
               "Reference": "2674",
-              "Scope": "Scope 3",
               "Activity": "Metal",
               "Waste Material": "Metal: steel cans",
               "Source Description": "",
@@ -4095,7 +3976,6 @@ sap.ui.define(
             },
             {
               "Reference": "2674",
-              "Scope": "Scope 3",
               "Activity": "Metal",
               "Waste Material": "Metal: steel cans",
               "Source Description": "",
@@ -4106,7 +3986,6 @@ sap.ui.define(
             },
             {
               "Reference": "2678",
-              "Scope": "Scope 3",
               "Activity": "Plastic",
               "Waste Material": "Plastics: average plastics",
               "Source Description": "",
@@ -4117,7 +3996,6 @@ sap.ui.define(
             },
             {
               "Reference": "2678",
-              "Scope": "Scope 3",
               "Activity": "Plastic",
               "Waste Material": "Plastics: average plastics",
               "Source Description": "",
@@ -4128,7 +4006,6 @@ sap.ui.define(
             },
             {
               "Reference": "2678",
-              "Scope": "Scope 3",
               "Activity": "Plastic",
               "Waste Material": "Plastics: average plastics",
               "Source Description": "",
@@ -4139,7 +4016,6 @@ sap.ui.define(
             },
             {
               "Reference": "2682",
-              "Scope": "Scope 3",
               "Activity": "Plastic",
               "Waste Material": "Plastics: average plastic film",
               "Source Description": "",
@@ -4150,7 +4026,6 @@ sap.ui.define(
             },
             {
               "Reference": "2682",
-              "Scope": "Scope 3",
               "Activity": "Plastic",
               "Waste Material": "Plastics: average plastic film",
               "Source Description": "",
@@ -4161,7 +4036,6 @@ sap.ui.define(
             },
             {
               "Reference": "2682",
-              "Scope": "Scope 3",
               "Activity": "Plastic",
               "Waste Material": "Plastics: average plastic film",
               "Source Description": "",
@@ -4172,7 +4046,6 @@ sap.ui.define(
             },
             {
               "Reference": "2686",
-              "Scope": "Scope 3",
               "Activity": "Plastic",
               "Waste Material": "Plastics: average plastic rigid",
               "Source Description": "",
@@ -4183,7 +4056,6 @@ sap.ui.define(
             },
             {
               "Reference": "2686",
-              "Scope": "Scope 3",
               "Activity": "Plastic",
               "Waste Material": "Plastics: average plastic rigid",
               "Source Description": "",
@@ -4194,7 +4066,6 @@ sap.ui.define(
             },
             {
               "Reference": "2686",
-              "Scope": "Scope 3",
               "Activity": "Plastic",
               "Waste Material": "Plastics: average plastic rigid",
               "Source Description": "",
@@ -4205,7 +4076,6 @@ sap.ui.define(
             },
             {
               "Reference": "2690",
-              "Scope": "Scope 3",
               "Activity": "Plastic",
               "Waste Material": "Plastics: HDPE (incl. forming)",
               "Source Description": "",
@@ -4216,7 +4086,6 @@ sap.ui.define(
             },
             {
               "Reference": "2690",
-              "Scope": "Scope 3",
               "Activity": "Plastic",
               "Waste Material": "Plastics: HDPE (incl. forming)",
               "Source Description": "",
@@ -4227,7 +4096,6 @@ sap.ui.define(
             },
             {
               "Reference": "2690",
-              "Scope": "Scope 3",
               "Activity": "Plastic",
               "Waste Material": "Plastics: HDPE (incl. forming)",
               "Source Description": "",
@@ -4238,7 +4106,6 @@ sap.ui.define(
             },
             {
               "Reference": "2694",
-              "Scope": "Scope 3",
               "Activity": "Plastic",
               "Waste Material": "Plastics: LDPE and LLDPE (incl. forming)",
               "Source Description": "",
@@ -4249,7 +4116,6 @@ sap.ui.define(
             },
             {
               "Reference": "2694",
-              "Scope": "Scope 3",
               "Activity": "Plastic",
               "Waste Material": "Plastics: LDPE and LLDPE (incl. forming)",
               "Source Description": "",
@@ -4260,7 +4126,6 @@ sap.ui.define(
             },
             {
               "Reference": "2694",
-              "Scope": "Scope 3",
               "Activity": "Plastic",
               "Waste Material": "Plastics: LDPE and LLDPE (incl. forming)",
               "Source Description": "",
@@ -4271,7 +4136,6 @@ sap.ui.define(
             },
             {
               "Reference": "2698",
-              "Scope": "Scope 3",
               "Activity": "Plastic",
               "Waste Material": "Plastics: PET (incl. forming)",
               "Source Description": "",
@@ -4282,7 +4146,6 @@ sap.ui.define(
             },
             {
               "Reference": "2698",
-              "Scope": "Scope 3",
               "Activity": "Plastic",
               "Waste Material": "Plastics: PET (incl. forming)",
               "Source Description": "",
@@ -4293,7 +4156,6 @@ sap.ui.define(
             },
             {
               "Reference": "2698",
-              "Scope": "Scope 3",
               "Activity": "Plastic",
               "Waste Material": "Plastics: PET (incl. forming)",
               "Source Description": "",
@@ -4304,7 +4166,6 @@ sap.ui.define(
             },
             {
               "Reference": "2702",
-              "Scope": "Scope 3",
               "Activity": "Plastic",
               "Waste Material": "Plastics: PP (incl. forming)",
               "Source Description": "",
@@ -4315,7 +4176,6 @@ sap.ui.define(
             },
             {
               "Reference": "2702",
-              "Scope": "Scope 3",
               "Activity": "Plastic",
               "Waste Material": "Plastics: PP (incl. forming)",
               "Source Description": "",
@@ -4326,7 +4186,6 @@ sap.ui.define(
             },
             {
               "Reference": "2702",
-              "Scope": "Scope 3",
               "Activity": "Plastic",
               "Waste Material": "Plastics: PP (incl. forming)",
               "Source Description": "",
@@ -4337,7 +4196,6 @@ sap.ui.define(
             },
             {
               "Reference": "2706",
-              "Scope": "Scope 3",
               "Activity": "Plastic",
               "Waste Material": "Plastics: PS (incl. forming)",
               "Source Description": "",
@@ -4348,7 +4206,6 @@ sap.ui.define(
             },
             {
               "Reference": "2706",
-              "Scope": "Scope 3",
               "Activity": "Plastic",
               "Waste Material": "Plastics: PS (incl. forming)",
               "Source Description": "",
@@ -4359,7 +4216,6 @@ sap.ui.define(
             },
             {
               "Reference": "2706",
-              "Scope": "Scope 3",
               "Activity": "Plastic",
               "Waste Material": "Plastics: PS (incl. forming)",
               "Source Description": "",
@@ -4370,7 +4226,6 @@ sap.ui.define(
             },
             {
               "Reference": "2710",
-              "Scope": "Scope 3",
               "Activity": "Plastic",
               "Waste Material": "Plastics: PVC (incl. forming)",
               "Source Description": "",
@@ -4381,7 +4236,6 @@ sap.ui.define(
             },
             {
               "Reference": "2710",
-              "Scope": "Scope 3",
               "Activity": "Plastic",
               "Waste Material": "Plastics: PVC (incl. forming)",
               "Source Description": "",
@@ -4392,7 +4246,6 @@ sap.ui.define(
             },
             {
               "Reference": "2710",
-              "Scope": "Scope 3",
               "Activity": "Plastic",
               "Waste Material": "Plastics: PVC (incl. forming)",
               "Source Description": "",
@@ -4403,7 +4256,6 @@ sap.ui.define(
             },
             {
               "Reference": "2715",
-              "Scope": "Scope 3",
               "Activity": "Paper",
               "Waste Material": "Paper and board: board",
               "Source Description": "",
@@ -4414,7 +4266,6 @@ sap.ui.define(
             },
             {
               "Reference": "2715",
-              "Scope": "Scope 3",
               "Activity": "Paper",
               "Waste Material": "Paper and board: board",
               "Source Description": "",
@@ -4425,7 +4276,6 @@ sap.ui.define(
             },
             {
               "Reference": "2715",
-              "Scope": "Scope 3",
               "Activity": "Paper",
               "Waste Material": "Paper and board: board",
               "Source Description": "",
@@ -4436,7 +4286,6 @@ sap.ui.define(
             },
             {
               "Reference": "2720",
-              "Scope": "Scope 3",
               "Activity": "Paper",
               "Waste Material": "Paper and board: mixed",
               "Source Description": "",
@@ -4447,7 +4296,6 @@ sap.ui.define(
             },
             {
               "Reference": "2720",
-              "Scope": "Scope 3",
               "Activity": "Paper",
               "Waste Material": "Paper and board: mixed",
               "Source Description": "",
@@ -4458,7 +4306,6 @@ sap.ui.define(
             },
             {
               "Reference": "2720",
-              "Scope": "Scope 3",
               "Activity": "Paper",
               "Waste Material": "Paper and board: mixed",
               "Source Description": "",
@@ -4469,7 +4316,6 @@ sap.ui.define(
             },
             {
               "Reference": "2725",
-              "Scope": "Scope 3",
               "Activity": "Paper",
               "Waste Material": "Paper and board: paper",
               "Source Description": "",
@@ -4480,7 +4326,6 @@ sap.ui.define(
             },
             {
               "Reference": "2725",
-              "Scope": "Scope 3",
               "Activity": "Paper",
               "Waste Material": "Paper and board: paper",
               "Source Description": "",
@@ -4491,7 +4336,6 @@ sap.ui.define(
             },
             {
               "Reference": "2725",
-              "Scope": "Scope 3",
               "Activity": "Paper",
               "Waste Material": "Paper and board: paper",
               "Source Description": "",
@@ -4505,17 +4349,8 @@ sap.ui.define(
           ,
           "Flight": [
             {
-              "Scope": "Scope 3",
               "Origin (city or IATA code)": "Delhi",
               "Destination (city or IATA code)": "Mumbai",
-              "Class": "Economy",
-              "Single way / \nreturn": " Single way",
-              "kg CO2e": ""
-            },
-            {
-              "Scope": "Scope 3",
-              "Origin (city or IATA code)": "Mumbai",
-              "Destination (city or IATA code)": "Delhi",
               "Class": "Economy",
               "Single way / \nreturn": " Single way",
               "kg CO2e": ""
@@ -4570,12 +4405,11 @@ sap.ui.define(
               "Number of occupied rooms": "",
               "Number of nights per room": "",
               "Factor": ""
-            }
+            },
           ],
           "Business travel - land and sea": [
             {
               "Reference": "1850",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Small car",
               "Fuel": "Battery Electric Vehicle",
@@ -4585,7 +4419,6 @@ sap.ui.define(
             },
             {
               "Reference": "1866",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Medium car",
               "Fuel": "Battery Electric Vehicle",
@@ -4595,7 +4428,6 @@ sap.ui.define(
             },
             {
               "Reference": "1882",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Large car",
               "Fuel": "Battery Electric Vehicle",
@@ -4605,7 +4437,6 @@ sap.ui.define(
             },
             {
               "Reference": "1898",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Average car",
               "Fuel": "Battery Electric Vehicle",
@@ -4615,7 +4446,6 @@ sap.ui.define(
             },
             {
               "Reference": "1842",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Small car",
               "Fuel": "CNG",
@@ -4625,7 +4455,6 @@ sap.ui.define(
             },
             {
               "Reference": "1858",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Medium car",
               "Fuel": "CNG",
@@ -4635,7 +4464,6 @@ sap.ui.define(
             },
             {
               "Reference": "1874",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Large car",
               "Fuel": "CNG",
@@ -4645,7 +4473,6 @@ sap.ui.define(
             },
             {
               "Reference": "1890",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Average car",
               "Fuel": "CNG",
@@ -4655,7 +4482,6 @@ sap.ui.define(
             },
             {
               "Reference": "1836",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Small car",
               "Fuel": "Diesel",
@@ -4665,7 +4491,6 @@ sap.ui.define(
             },
             {
               "Reference": "1852",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Medium car",
               "Fuel": "Diesel",
@@ -4675,7 +4500,6 @@ sap.ui.define(
             },
             {
               "Reference": "1868",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Large car",
               "Fuel": "Diesel",
@@ -4685,7 +4509,6 @@ sap.ui.define(
             },
             {
               "Reference": "1884",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Average car",
               "Fuel": "Diesel",
@@ -4695,7 +4518,6 @@ sap.ui.define(
             },
             {
               "Reference": "1840",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Small car",
               "Fuel": "Hybrid",
@@ -4705,7 +4527,6 @@ sap.ui.define(
             },
             {
               "Reference": "1856",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Medium car",
               "Fuel": "Hybrid",
@@ -4715,7 +4536,6 @@ sap.ui.define(
             },
             {
               "Reference": "1872",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Large car",
               "Fuel": "Hybrid",
@@ -4725,7 +4545,6 @@ sap.ui.define(
             },
             {
               "Reference": "1888",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Average car",
               "Fuel": "Hybrid",
@@ -4735,7 +4554,6 @@ sap.ui.define(
             },
             {
               "Reference": "1844",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Small car",
               "Fuel": "LPG",
@@ -4745,7 +4563,6 @@ sap.ui.define(
             },
             {
               "Reference": "1860",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Medium car",
               "Fuel": "LPG",
@@ -4755,7 +4572,6 @@ sap.ui.define(
             },
             {
               "Reference": "1876",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Large car",
               "Fuel": "LPG",
@@ -4765,7 +4581,6 @@ sap.ui.define(
             },
             {
               "Reference": "1892",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Average car",
               "Fuel": "LPG",
@@ -4775,7 +4590,6 @@ sap.ui.define(
             },
             {
               "Reference": "1838",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Small car",
               "Fuel": "Petrol",
@@ -4785,7 +4599,6 @@ sap.ui.define(
             },
             {
               "Reference": "1854",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Medium car",
               "Fuel": "Petrol",
@@ -4795,7 +4608,6 @@ sap.ui.define(
             },
             {
               "Reference": "1870",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Large car",
               "Fuel": "Petrol",
@@ -4805,7 +4617,6 @@ sap.ui.define(
             },
             {
               "Reference": "1886",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Average car",
               "Fuel": "Petrol",
@@ -4815,7 +4626,6 @@ sap.ui.define(
             },
             {
               "Reference": "1848",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Small car",
               "Fuel": "Plug-in Hybrid Electric Vehicle",
@@ -4825,7 +4635,6 @@ sap.ui.define(
             },
             {
               "Reference": "1864",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Medium car",
               "Fuel": "Plug-in Hybrid Electric Vehicle",
@@ -4835,7 +4644,6 @@ sap.ui.define(
             },
             {
               "Reference": "1880",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Large car",
               "Fuel": "Plug-in Hybrid Electric Vehicle",
@@ -4845,7 +4653,6 @@ sap.ui.define(
             },
             {
               "Reference": "1896",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Average car",
               "Fuel": "Plug-in Hybrid Electric Vehicle",
@@ -4855,7 +4662,6 @@ sap.ui.define(
             },
             {
               "Reference": "1846",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Small car",
               "Fuel": "Unknown",
@@ -4865,7 +4671,6 @@ sap.ui.define(
             },
             {
               "Reference": "1862",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Medium car",
               "Fuel": "Unknown",
@@ -4875,7 +4680,6 @@ sap.ui.define(
             },
             {
               "Reference": "1878",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Large car",
               "Fuel": "Unknown",
@@ -4885,7 +4689,6 @@ sap.ui.define(
             },
             {
               "Reference": "1894",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Average car",
               "Fuel": "Unknown",
@@ -4895,7 +4698,6 @@ sap.ui.define(
             },
             {
               "Reference": "1743",
-              "Scope": "Scope 3",
               "Vehicle": "Ferry",
               "Type": "Foot passenger",
               "Fuel": "",
@@ -4905,7 +4707,6 @@ sap.ui.define(
             },
             {
               "Reference": "1744",
-              "Scope": "Scope 3",
               "Vehicle": "Ferry",
               "Type": "Car passenger",
               "Fuel": "",
@@ -4915,7 +4716,6 @@ sap.ui.define(
             },
             {
               "Reference": "1745",
-              "Scope": "Scope 3",
               "Vehicle": "Ferry",
               "Type": "Average (all passenger)",
               "Fuel": "",
@@ -4925,7 +4725,6 @@ sap.ui.define(
             },
             {
               "Reference": "1900",
-              "Scope": "Scope 3",
               "Vehicle": "Motorbike",
               "Type": "Small",
               "Fuel": "",
@@ -4935,7 +4734,6 @@ sap.ui.define(
             },
             {
               "Reference": "1902",
-              "Scope": "Scope 3",
               "Vehicle": "Motorbike",
               "Type": "Medium",
               "Fuel": "",
@@ -4945,7 +4743,6 @@ sap.ui.define(
             },
             {
               "Reference": "1904",
-              "Scope": "Scope 3",
               "Vehicle": "Motorbike",
               "Type": "Large",
               "Fuel": "",
@@ -4955,7 +4752,6 @@ sap.ui.define(
             },
             {
               "Reference": "1906",
-              "Scope": "Scope 3",
               "Vehicle": "Motorbike",
               "Type": "Average",
               "Fuel": "",
@@ -4965,7 +4761,6 @@ sap.ui.define(
             },
             {
               "Reference": "1908",
-              "Scope": "Scope 3",
               "Vehicle": "Taxis",
               "Type": "Regular taxi",
               "Fuel": "",
@@ -4975,7 +4770,6 @@ sap.ui.define(
             },
             {
               "Reference": "1909",
-              "Scope": "Scope 3",
               "Vehicle": "Taxis",
               "Type": "Regular taxi",
               "Fuel": "",
@@ -4985,7 +4779,6 @@ sap.ui.define(
             },
             {
               "Reference": "1910",
-              "Scope": "Scope 3",
               "Vehicle": "Taxis",
               "Type": "Black cab",
               "Fuel": "",
@@ -4995,7 +4788,6 @@ sap.ui.define(
             },
             {
               "Reference": "1911",
-              "Scope": "Scope 3",
               "Vehicle": "Taxis",
               "Type": "Black cab",
               "Fuel": "",
@@ -5005,7 +4797,6 @@ sap.ui.define(
             },
             {
               "Reference": "1912",
-              "Scope": "Scope 3",
               "Vehicle": "Bus",
               "Type": "Local bus (not London)",
               "Fuel": "",
@@ -5015,7 +4806,6 @@ sap.ui.define(
             },
             {
               "Reference": "1913",
-              "Scope": "Scope 3",
               "Vehicle": "Bus",
               "Type": "Local London bus",
               "Fuel": "",
@@ -5025,7 +4815,6 @@ sap.ui.define(
             },
             {
               "Reference": "1914",
-              "Scope": "Scope 3",
               "Vehicle": "Bus",
               "Type": "Average local bus",
               "Fuel": "",
@@ -5035,7 +4824,6 @@ sap.ui.define(
             },
             {
               "Reference": "1915",
-              "Scope": "Scope 3",
               "Vehicle": "Bus",
               "Type": "Coach",
               "Fuel": "",
@@ -5045,7 +4833,6 @@ sap.ui.define(
             },
             {
               "Reference": "1916",
-              "Scope": "Scope 3",
               "Vehicle": "Rail",
               "Type": "National rail",
               "Fuel": "",
@@ -5055,7 +4842,6 @@ sap.ui.define(
             },
             {
               "Reference": "1917",
-              "Scope": "Scope 3",
               "Vehicle": "Rail",
               "Type": "International rail",
               "Fuel": "",
@@ -5065,7 +4851,6 @@ sap.ui.define(
             },
             {
               "Reference": "1918",
-              "Scope": "Scope 3",
               "Vehicle": "Rail",
               "Type": "Light rail and tram",
               "Fuel": "",
@@ -5075,7 +4860,6 @@ sap.ui.define(
             },
             {
               "Reference": "1919",
-              "Scope": "Scope 3",
               "Vehicle": "Rail",
               "Type": "London Underground",
               "Fuel": "",
@@ -5087,7 +4871,6 @@ sap.ui.define(
           "Freighting goods": [
             {
               "Reference": "2177",
-              "Scope": "Scope 3",
               "Vehicle": "Vans",
               "Type": "Class I (up to 1.305 tonnes)",
               "Fuel": "Diesel",
@@ -5098,7 +4881,6 @@ sap.ui.define(
             },
             {
               "Reference": "2180",
-              "Scope": "Scope 3",
               "Vehicle": "Vans",
               "Type": "Class I (up to 1.305 tonnes)",
               "Fuel": "Petrol",
@@ -5109,7 +4891,6 @@ sap.ui.define(
             },
             {
               "Reference": "2183",
-              "Scope": "Scope 3",
               "Vehicle": "Vans",
               "Type": "Class I (up to 1.305 tonnes)",
               "Fuel": "CNG",
@@ -5120,7 +4901,6 @@ sap.ui.define(
             },
             {
               "Reference": "2186",
-              "Scope": "Scope 3",
               "Vehicle": "Vans",
               "Type": "Class I (up to 1.305 tonnes)",
               "Fuel": "LPG",
@@ -5131,7 +4911,6 @@ sap.ui.define(
             },
             {
               "Reference": "2189",
-              "Scope": "Scope 3",
               "Vehicle": "Vans",
               "Type": "Class I (up to 1.305 tonnes)",
               "Fuel": "Unknown",
@@ -5142,7 +4921,6 @@ sap.ui.define(
             },
             {
               "Reference": "2192",
-              "Scope": "Scope 3",
               "Vehicle": "Vans",
               "Type": "Class I (up to 1.305 tonnes)",
               "Fuel": "Plug-in Hybrid Electric Vehicle",
@@ -5153,7 +4931,6 @@ sap.ui.define(
             },
             {
               "Reference": "2195",
-              "Scope": "Scope 3",
               "Vehicle": "Vans",
               "Type": "Class I (up to 1.305 tonnes)",
               "Fuel": "Battery Electric Vehicle",
@@ -5164,7 +4941,6 @@ sap.ui.define(
             },
             {
               "Reference": "2198",
-              "Scope": "Scope 3",
               "Vehicle": "Vans",
               "Type": "Class II (1.305 to 1.74 tonnes)",
               "Fuel": "Diesel",
@@ -5175,7 +4951,6 @@ sap.ui.define(
             },
             {
               "Reference": "2201",
-              "Scope": "Scope 3",
               "Vehicle": "Vans",
               "Type": "Class II (1.305 to 1.74 tonnes)",
               "Fuel": "Petrol",
@@ -5186,7 +4961,6 @@ sap.ui.define(
             },
             {
               "Reference": "2204",
-              "Scope": "Scope 3",
               "Vehicle": "Vans",
               "Type": "Class II (1.305 to 1.74 tonnes)",
               "Fuel": "CNG",
@@ -5197,7 +4971,6 @@ sap.ui.define(
             },
             {
               "Reference": "2207",
-              "Scope": "Scope 3",
               "Vehicle": "Vans",
               "Type": "Class II (1.305 to 1.74 tonnes)",
               "Fuel": "LPG",
@@ -5208,7 +4981,6 @@ sap.ui.define(
             },
             {
               "Reference": "2210",
-              "Scope": "Scope 3",
               "Vehicle": "Vans",
               "Type": "Class II (1.305 to 1.74 tonnes)",
               "Fuel": "Unknown",
@@ -5219,7 +4991,6 @@ sap.ui.define(
             },
             {
               "Reference": "2213",
-              "Scope": "Scope 3",
               "Vehicle": "Vans",
               "Type": "Class II (1.305 to 1.74 tonnes)",
               "Fuel": "Plug-in Hybrid Electric Vehicle",
@@ -5230,7 +5001,6 @@ sap.ui.define(
             },
             {
               "Reference": "2216",
-              "Scope": "Scope 3",
               "Vehicle": "Vans",
               "Type": "Class II (1.305 to 1.74 tonnes)",
               "Fuel": "Battery Electric Vehicle",
@@ -5241,7 +5011,6 @@ sap.ui.define(
             },
             {
               "Reference": "2219",
-              "Scope": "Scope 3",
               "Vehicle": "Vans",
               "Type": "Class III (1.74 to 3.5 tonnes)",
               "Fuel": "Diesel",
@@ -5252,7 +5021,6 @@ sap.ui.define(
             },
             {
               "Reference": "2222",
-              "Scope": "Scope 3",
               "Vehicle": "Vans",
               "Type": "Class III (1.74 to 3.5 tonnes)",
               "Fuel": "Petrol",
@@ -5263,7 +5031,6 @@ sap.ui.define(
             },
             {
               "Reference": "2225",
-              "Scope": "Scope 3",
               "Vehicle": "Vans",
               "Type": "Class III (1.74 to 3.5 tonnes)",
               "Fuel": "CNG",
@@ -5274,7 +5041,6 @@ sap.ui.define(
             },
             {
               "Reference": "2228",
-              "Scope": "Scope 3",
               "Vehicle": "Vans",
               "Type": "Class III (1.74 to 3.5 tonnes)",
               "Fuel": "LPG",
@@ -5285,7 +5051,6 @@ sap.ui.define(
             },
             {
               "Reference": "2231",
-              "Scope": "Scope 3",
               "Vehicle": "Vans",
               "Type": "Class III (1.74 to 3.5 tonnes)",
               "Fuel": "Unknown",
@@ -5296,7 +5061,6 @@ sap.ui.define(
             },
             {
               "Reference": "2234",
-              "Scope": "Scope 3",
               "Vehicle": "Vans",
               "Type": "Class III (1.74 to 3.5 tonnes)",
               "Fuel": "Plug-in Hybrid Electric Vehicle",
@@ -5307,7 +5071,6 @@ sap.ui.define(
             },
             {
               "Reference": "2237",
-              "Scope": "Scope 3",
               "Vehicle": "Vans",
               "Type": "Class III (1.74 to 3.5 tonnes)",
               "Fuel": "Battery Electric Vehicle",
@@ -5318,7 +5081,6 @@ sap.ui.define(
             },
             {
               "Reference": "2240",
-              "Scope": "Scope 3",
               "Vehicle": "Vans",
               "Type": "Average (up to 3.5 tonnes)",
               "Fuel": "Diesel",
@@ -5329,7 +5091,6 @@ sap.ui.define(
             },
             {
               "Reference": "2243",
-              "Scope": "Scope 3",
               "Vehicle": "Vans",
               "Type": "Average (up to 3.5 tonnes)",
               "Fuel": "Petrol",
@@ -5340,7 +5101,6 @@ sap.ui.define(
             },
             {
               "Reference": "2246",
-              "Scope": "Scope 3",
               "Vehicle": "Vans",
               "Type": "Average (up to 3.5 tonnes)",
               "Fuel": "CNG",
@@ -5351,7 +5111,6 @@ sap.ui.define(
             },
             {
               "Reference": "2249",
-              "Scope": "Scope 3",
               "Vehicle": "Vans",
               "Type": "Average (up to 3.5 tonnes)",
               "Fuel": "LPG",
@@ -5362,7 +5121,6 @@ sap.ui.define(
             },
             {
               "Reference": "2252",
-              "Scope": "Scope 3",
               "Vehicle": "Vans",
               "Type": "Average (up to 3.5 tonnes)",
               "Fuel": "Unknown",
@@ -5373,7 +5131,6 @@ sap.ui.define(
             },
             {
               "Reference": "2255",
-              "Scope": "Scope 3",
               "Vehicle": "Vans",
               "Type": "Average (up to 3.5 tonnes)",
               "Fuel": "Plug-in Hybrid Electric Vehicle",
@@ -5384,7 +5141,6 @@ sap.ui.define(
             },
             {
               "Reference": "2258",
-              "Scope": "Scope 3",
               "Vehicle": "Vans",
               "Type": "Average (up to 3.5 tonnes)",
               "Fuel": "Battery Electric Vehicle",
@@ -5395,7 +5151,6 @@ sap.ui.define(
             },
             {
               "Reference": "2270",
-              "Scope": "Scope 3",
               "Vehicle": "HGV (all diesel)",
               "Type": "Rigid (>3.5 - 7.5 tonnes)",
               "Fuel": "Average laden",
@@ -5406,7 +5161,6 @@ sap.ui.define(
             },
             {
               "Reference": "2282",
-              "Scope": "Scope 3",
               "Vehicle": "HGV (all diesel)",
               "Type": "Rigid (>7.5 tonnes-17 tonnes)",
               "Fuel": "Average laden",
@@ -5417,7 +5171,6 @@ sap.ui.define(
             },
             {
               "Reference": "2294",
-              "Scope": "Scope 3",
               "Vehicle": "HGV (all diesel)",
               "Type": "Rigid (>17 tonnes)",
               "Fuel": "Average laden",
@@ -5428,7 +5181,6 @@ sap.ui.define(
             },
             {
               "Reference": "2306",
-              "Scope": "Scope 3",
               "Vehicle": "HGV (all diesel)",
               "Type": "All rigids",
               "Fuel": "Average laden",
@@ -5439,7 +5191,6 @@ sap.ui.define(
             },
             {
               "Reference": "2318",
-              "Scope": "Scope 3",
               "Vehicle": "HGV (all diesel)",
               "Type": "Articulated (>3.5 - 33t)",
               "Fuel": "Average laden",
@@ -5450,7 +5201,6 @@ sap.ui.define(
             },
             {
               "Reference": "2330",
-              "Scope": "Scope 3",
               "Vehicle": "HGV (all diesel)",
               "Type": "Articulated (>33t)",
               "Fuel": "Average laden",
@@ -5461,7 +5211,6 @@ sap.ui.define(
             },
             {
               "Reference": "2342",
-              "Scope": "Scope 3",
               "Vehicle": "HGV (all diesel)",
               "Type": "All artics",
               "Fuel": "Average laden",
@@ -5472,7 +5221,6 @@ sap.ui.define(
             },
             {
               "Reference": "2354",
-              "Scope": "Scope 3",
               "Vehicle": "HGV (all diesel)",
               "Type": "All HGVs",
               "Fuel": "Average laden",
@@ -5483,7 +5231,6 @@ sap.ui.define(
             },
             {
               "Reference": "2366",
-              "Scope": "Scope 3",
               "Vehicle": "HGV refrigerated (all diesel)",
               "Type": "Rigid (>3.5 - 7.5 tonnes)",
               "Fuel": "Average laden",
@@ -5494,7 +5241,6 @@ sap.ui.define(
             },
             {
               "Reference": "2378",
-              "Scope": "Scope 3",
               "Vehicle": "HGV refrigerated (all diesel)",
               "Type": "Rigid (>7.5 tonnes-17 tonnes)",
               "Fuel": "Average laden",
@@ -5505,7 +5251,6 @@ sap.ui.define(
             },
             {
               "Reference": "2390",
-              "Scope": "Scope 3",
               "Vehicle": "HGV refrigerated (all diesel)",
               "Type": "Rigid (>17 tonnes)",
               "Fuel": "Average laden",
@@ -5516,7 +5261,6 @@ sap.ui.define(
             },
             {
               "Reference": "2402",
-              "Scope": "Scope 3",
               "Vehicle": "HGV refrigerated (all diesel)",
               "Type": "All rigids",
               "Fuel": "Average laden",
@@ -5527,7 +5271,6 @@ sap.ui.define(
             },
             {
               "Reference": "2414",
-              "Scope": "Scope 3",
               "Vehicle": "HGV refrigerated (all diesel)",
               "Type": "Articulated (>3.5 - 33t)",
               "Fuel": "Average laden",
@@ -5538,7 +5281,6 @@ sap.ui.define(
             },
             {
               "Reference": "2426",
-              "Scope": "Scope 3",
               "Vehicle": "HGV refrigerated (all diesel)",
               "Type": "Articulated (>33t)",
               "Fuel": "Average laden",
@@ -5549,7 +5291,6 @@ sap.ui.define(
             },
             {
               "Reference": "2438",
-              "Scope": "Scope 3",
               "Vehicle": "HGV refrigerated (all diesel)",
               "Type": "All artics",
               "Fuel": "Average laden",
@@ -5560,7 +5301,6 @@ sap.ui.define(
             },
             {
               "Reference": "2450",
-              "Scope": "Scope 3",
               "Vehicle": "HGV refrigerated (all diesel)",
               "Type": "All HGVs",
               "Fuel": "Average laden",
@@ -5571,7 +5311,6 @@ sap.ui.define(
             },
             {
               "Reference": "2451",
-              "Scope": "Scope 3",
               "Vehicle": "Freight flights",
               "Type": "Domestic, to/from UK",
               "Fuel": "With RF",
@@ -5582,7 +5321,6 @@ sap.ui.define(
             },
             {
               "Reference": "2452",
-              "Scope": "Scope 3",
               "Vehicle": "Freight flights",
               "Type": "Domestic, to/from UK",
               "Fuel": "Without RF",
@@ -5593,7 +5331,6 @@ sap.ui.define(
             },
             {
               "Reference": "2453",
-              "Scope": "Scope 3",
               "Vehicle": "Freight flights",
               "Type": "Short-haul, to/from UK",
               "Fuel": "With RF",
@@ -5604,7 +5341,6 @@ sap.ui.define(
             },
             {
               "Reference": "2454",
-              "Scope": "Scope 3",
               "Vehicle": "Freight flights",
               "Type": "Short-haul, to/from UK",
               "Fuel": "Without RF",
@@ -5615,7 +5351,6 @@ sap.ui.define(
             },
             {
               "Reference": "2455",
-              "Scope": "Scope 3",
               "Vehicle": "Freight flights",
               "Type": "Long-haul, to/from UK",
               "Fuel": "With RF",
@@ -5626,7 +5361,6 @@ sap.ui.define(
             },
             {
               "Reference": "2456",
-              "Scope": "Scope 3",
               "Vehicle": "Freight flights",
               "Type": "Long-haul, to/from UK",
               "Fuel": "Without RF",
@@ -5637,7 +5371,6 @@ sap.ui.define(
             },
             {
               "Reference": "2457",
-              "Scope": "Scope 3",
               "Vehicle": "Freight flights",
               "Type": "International, to/from non-UK",
               "Fuel": "With RF",
@@ -5648,7 +5381,6 @@ sap.ui.define(
             },
             {
               "Reference": "2458",
-              "Scope": "Scope 3",
               "Vehicle": "Freight flights",
               "Type": "International, to/from non-UK",
               "Fuel": "Without RF",
@@ -5659,7 +5391,6 @@ sap.ui.define(
             },
             {
               "Reference": "2459",
-              "Scope": "Scope 3",
               "Vehicle": "Rail",
               "Type": "Freight train",
               "Fuel": "",
@@ -5670,7 +5401,6 @@ sap.ui.define(
             },
             {
               "Reference": "2460",
-              "Scope": "Scope 3",
               "Vehicle": "Sea tanker",
               "Type": "Crude tanker",
               "Fuel": "200,000+ dwt",
@@ -5681,7 +5411,6 @@ sap.ui.define(
             },
             {
               "Reference": "2461",
-              "Scope": "Scope 3",
               "Vehicle": "Sea tanker",
               "Type": "Crude tanker",
               "Fuel": "120,000–199,999 dwt",
@@ -5692,7 +5421,6 @@ sap.ui.define(
             },
             {
               "Reference": "2462",
-              "Scope": "Scope 3",
               "Vehicle": "Sea tanker",
               "Type": "Crude tanker",
               "Fuel": "80,000–119,999 dwt",
@@ -5703,7 +5431,6 @@ sap.ui.define(
             },
             {
               "Reference": "2463",
-              "Scope": "Scope 3",
               "Vehicle": "Sea tanker",
               "Type": "Crude tanker",
               "Fuel": "60,000–79,999 dwt",
@@ -5714,7 +5441,6 @@ sap.ui.define(
             },
             {
               "Reference": "2464",
-              "Scope": "Scope 3",
               "Vehicle": "Sea tanker",
               "Type": "Crude tanker",
               "Fuel": "10,000–59,999 dwt",
@@ -5725,7 +5451,6 @@ sap.ui.define(
             },
             {
               "Reference": "2465",
-              "Scope": "Scope 3",
               "Vehicle": "Sea tanker",
               "Type": "Crude tanker",
               "Fuel": "0–9999 dwt",
@@ -5736,7 +5461,6 @@ sap.ui.define(
             },
             {
               "Reference": "2466",
-              "Scope": "Scope 3",
               "Vehicle": "Sea tanker",
               "Type": "Crude tanker",
               "Fuel": "Average",
@@ -5747,7 +5471,6 @@ sap.ui.define(
             },
             {
               "Reference": "2467",
-              "Scope": "Scope 3",
               "Vehicle": "Sea tanker",
               "Type": "Products tanker ",
               "Fuel": "60,000+ dwt",
@@ -5758,7 +5481,6 @@ sap.ui.define(
             },
             {
               "Reference": "2468",
-              "Scope": "Scope 3",
               "Vehicle": "Sea tanker",
               "Type": "Products tanker ",
               "Fuel": "20,000–59,999 dwt",
@@ -5769,7 +5491,6 @@ sap.ui.define(
             },
             {
               "Reference": "2469",
-              "Scope": "Scope 3",
               "Vehicle": "Sea tanker",
               "Type": "Products tanker ",
               "Fuel": "10,000–19,999 dwt",
@@ -5780,7 +5501,6 @@ sap.ui.define(
             },
             {
               "Reference": "2470",
-              "Scope": "Scope 3",
               "Vehicle": "Sea tanker",
               "Type": "Products tanker ",
               "Fuel": "5000–9999 dwt",
@@ -5791,7 +5511,6 @@ sap.ui.define(
             },
             {
               "Reference": "2471",
-              "Scope": "Scope 3",
               "Vehicle": "Sea tanker",
               "Type": "Products tanker ",
               "Fuel": "0–4999 dwt",
@@ -5802,7 +5521,6 @@ sap.ui.define(
             },
             {
               "Reference": "2472",
-              "Scope": "Scope 3",
               "Vehicle": "Sea tanker",
               "Type": "Products tanker ",
               "Fuel": "Average",
@@ -5813,7 +5531,6 @@ sap.ui.define(
             },
             {
               "Reference": "2473",
-              "Scope": "Scope 3",
               "Vehicle": "Sea tanker",
               "Type": "Chemical tanker ",
               "Fuel": "20,000+ dwt",
@@ -5824,7 +5541,6 @@ sap.ui.define(
             },
             {
               "Reference": "2474",
-              "Scope": "Scope 3",
               "Vehicle": "Sea tanker",
               "Type": "Chemical tanker ",
               "Fuel": "10,000–19,999 dwt",
@@ -5835,7 +5551,6 @@ sap.ui.define(
             },
             {
               "Reference": "2475",
-              "Scope": "Scope 3",
               "Vehicle": "Sea tanker",
               "Type": "Chemical tanker ",
               "Fuel": "5000–9999 dwt",
@@ -5846,7 +5561,6 @@ sap.ui.define(
             },
             {
               "Reference": "2476",
-              "Scope": "Scope 3",
               "Vehicle": "Sea tanker",
               "Type": "Chemical tanker ",
               "Fuel": "0–4999 dwt",
@@ -5857,7 +5571,6 @@ sap.ui.define(
             },
             {
               "Reference": "2477",
-              "Scope": "Scope 3",
               "Vehicle": "Sea tanker",
               "Type": "Chemical tanker ",
               "Fuel": "Average",
@@ -5868,7 +5581,6 @@ sap.ui.define(
             },
             {
               "Reference": "2478",
-              "Scope": "Scope 3",
               "Vehicle": "Sea tanker",
               "Type": "LNG tanker",
               "Fuel": "200,000+ m3",
@@ -5879,7 +5591,6 @@ sap.ui.define(
             },
             {
               "Reference": "2479",
-              "Scope": "Scope 3",
               "Vehicle": "Sea tanker",
               "Type": "LNG tanker",
               "Fuel": "0–199,999 m3",
@@ -5890,7 +5601,6 @@ sap.ui.define(
             },
             {
               "Reference": "2480",
-              "Scope": "Scope 3",
               "Vehicle": "Sea tanker",
               "Type": "LNG tanker",
               "Fuel": "Average",
@@ -5901,7 +5611,6 @@ sap.ui.define(
             },
             {
               "Reference": "2481",
-              "Scope": "Scope 3",
               "Vehicle": "Sea tanker",
               "Type": "LPG Tanker",
               "Fuel": "50,000+ m3",
@@ -5912,7 +5621,6 @@ sap.ui.define(
             },
             {
               "Reference": "2482",
-              "Scope": "Scope 3",
               "Vehicle": "Sea tanker",
               "Type": "LPG Tanker",
               "Fuel": "0–49,999 m3",
@@ -5923,7 +5631,6 @@ sap.ui.define(
             },
             {
               "Reference": "2483",
-              "Scope": "Scope 3",
               "Vehicle": "Sea tanker",
               "Type": "LPG Tanker",
               "Fuel": "Average",
@@ -5934,7 +5641,6 @@ sap.ui.define(
             },
             {
               "Reference": "2484",
-              "Scope": "Scope 3",
               "Vehicle": "Cargo ship",
               "Type": "Bulk carrier",
               "Fuel": "200,000+ dwt",
@@ -5945,7 +5651,6 @@ sap.ui.define(
             },
             {
               "Reference": "2485",
-              "Scope": "Scope 3",
               "Vehicle": "Cargo ship",
               "Type": "Bulk carrier",
               "Fuel": "100,000–199,999 dwt",
@@ -5956,7 +5661,6 @@ sap.ui.define(
             },
             {
               "Reference": "2486",
-              "Scope": "Scope 3",
               "Vehicle": "Cargo ship",
               "Type": "Bulk carrier",
               "Fuel": "60,000–99,999 dwt",
@@ -5967,7 +5671,6 @@ sap.ui.define(
             },
             {
               "Reference": "2487",
-              "Scope": "Scope 3",
               "Vehicle": "Cargo ship",
               "Type": "Bulk carrier",
               "Fuel": "35,000–59,999 dwt",
@@ -5978,7 +5681,6 @@ sap.ui.define(
             },
             {
               "Reference": "2488",
-              "Scope": "Scope 3",
               "Vehicle": "Cargo ship",
               "Type": "Bulk carrier",
               "Fuel": "10,000–34,999 dwt",
@@ -5989,7 +5691,6 @@ sap.ui.define(
             },
             {
               "Reference": "2489",
-              "Scope": "Scope 3",
               "Vehicle": "Cargo ship",
               "Type": "Bulk carrier",
               "Fuel": "0–9999 dwt",
@@ -6000,7 +5701,6 @@ sap.ui.define(
             },
             {
               "Reference": "2490",
-              "Scope": "Scope 3",
               "Vehicle": "Cargo ship",
               "Type": "Bulk carrier",
               "Fuel": "Average",
@@ -6011,7 +5711,6 @@ sap.ui.define(
             },
             {
               "Reference": "2491",
-              "Scope": "Scope 3",
               "Vehicle": "Cargo ship",
               "Type": "General cargo",
               "Fuel": "10,000+ dwt",
@@ -6022,7 +5721,6 @@ sap.ui.define(
             },
             {
               "Reference": "2492",
-              "Scope": "Scope 3",
               "Vehicle": "Cargo ship",
               "Type": "General cargo",
               "Fuel": "5000–9999 dwt",
@@ -6033,7 +5731,6 @@ sap.ui.define(
             },
             {
               "Reference": "2493",
-              "Scope": "Scope 3",
               "Vehicle": "Cargo ship",
               "Type": "General cargo",
               "Fuel": "0–4999 dwt",
@@ -6044,7 +5741,6 @@ sap.ui.define(
             },
             {
               "Reference": "2494",
-              "Scope": "Scope 3",
               "Vehicle": "Cargo ship",
               "Type": "General cargo",
               "Fuel": "10,000+ dwt 100+ TEU",
@@ -6055,7 +5751,6 @@ sap.ui.define(
             },
             {
               "Reference": "2495",
-              "Scope": "Scope 3",
               "Vehicle": "Cargo ship",
               "Type": "General cargo",
               "Fuel": "5000–9999 dwt 100+ TEU",
@@ -6066,7 +5761,6 @@ sap.ui.define(
             },
             {
               "Reference": "2496",
-              "Scope": "Scope 3",
               "Vehicle": "Cargo ship",
               "Type": "General cargo",
               "Fuel": "0–4999 dwt 100+ TEU",
@@ -6077,7 +5771,6 @@ sap.ui.define(
             },
             {
               "Reference": "2497",
-              "Scope": "Scope 3",
               "Vehicle": "Cargo ship",
               "Type": "General cargo",
               "Fuel": "Average",
@@ -6088,7 +5781,6 @@ sap.ui.define(
             },
             {
               "Reference": "2498",
-              "Scope": "Scope 3",
               "Vehicle": "Cargo ship",
               "Type": "Container ship",
               "Fuel": "8000+ TEU",
@@ -6099,7 +5791,6 @@ sap.ui.define(
             },
             {
               "Reference": "2499",
-              "Scope": "Scope 3",
               "Vehicle": "Cargo ship",
               "Type": "Container ship",
               "Fuel": "5000–7999 TEU",
@@ -6110,7 +5801,6 @@ sap.ui.define(
             },
             {
               "Reference": "2500",
-              "Scope": "Scope 3",
               "Vehicle": "Cargo ship",
               "Type": "Container ship",
               "Fuel": "3000–4999 TEU",
@@ -6121,7 +5811,6 @@ sap.ui.define(
             },
             {
               "Reference": "2501",
-              "Scope": "Scope 3",
               "Vehicle": "Cargo ship",
               "Type": "Container ship",
               "Fuel": "2000–2999 TEU",
@@ -6132,7 +5821,6 @@ sap.ui.define(
             },
             {
               "Reference": "2502",
-              "Scope": "Scope 3",
               "Vehicle": "Cargo ship",
               "Type": "Container ship",
               "Fuel": "1000–1999 TEU",
@@ -6143,7 +5831,6 @@ sap.ui.define(
             },
             {
               "Reference": "2503",
-              "Scope": "Scope 3",
               "Vehicle": "Cargo ship",
               "Type": "Container ship",
               "Fuel": "0–999 TEU",
@@ -6154,7 +5841,6 @@ sap.ui.define(
             },
             {
               "Reference": "2504",
-              "Scope": "Scope 3",
               "Vehicle": "Cargo ship",
               "Type": "Container ship",
               "Fuel": "Average",
@@ -6165,7 +5851,6 @@ sap.ui.define(
             },
             {
               "Reference": "2505",
-              "Scope": "Scope 3",
               "Vehicle": "Cargo ship",
               "Type": "Vehicle transport",
               "Fuel": "4000+ CEU",
@@ -6176,7 +5861,6 @@ sap.ui.define(
             },
             {
               "Reference": "2506",
-              "Scope": "Scope 3",
               "Vehicle": "Cargo ship",
               "Type": "Vehicle transport",
               "Fuel": "0–3999 CEU",
@@ -6187,7 +5871,6 @@ sap.ui.define(
             },
             {
               "Reference": "2507",
-              "Scope": "Scope 3",
               "Vehicle": "Cargo ship",
               "Type": "Vehicle transport",
               "Fuel": "Average",
@@ -6198,7 +5881,6 @@ sap.ui.define(
             },
             {
               "Reference": "2508",
-              "Scope": "Scope 3",
               "Vehicle": "Cargo ship",
               "Type": "RoRo-Ferry",
               "Fuel": "2000+ LM",
@@ -6209,7 +5891,6 @@ sap.ui.define(
             },
             {
               "Reference": "2509",
-              "Scope": "Scope 3",
               "Vehicle": "Cargo ship",
               "Type": "RoRo-Ferry",
               "Fuel": "0–1999 LM",
@@ -6220,7 +5901,6 @@ sap.ui.define(
             },
             {
               "Reference": "2510",
-              "Scope": "Scope 3",
               "Vehicle": "Cargo ship",
               "Type": "RoRo-Ferry",
               "Fuel": "Average",
@@ -6231,7 +5911,6 @@ sap.ui.define(
             },
             {
               "Reference": "2511",
-              "Scope": "Scope 3",
               "Vehicle": "Cargo ship",
               "Type": "Large RoPax ferry",
               "Fuel": "Average",
@@ -6242,7 +5921,6 @@ sap.ui.define(
             },
             {
               "Reference": "2512",
-              "Scope": "Scope 3",
               "Vehicle": "Cargo ship",
               "Type": "Refrigerated cargo",
               "Fuel": " All dwt",
@@ -6255,7 +5933,6 @@ sap.ui.define(
           "Employees commuting": [
             {
               "Reference": "1850",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Small car",
               "Fuel": "Battery Electric Vehicle",
@@ -6265,7 +5942,6 @@ sap.ui.define(
             },
             {
               "Reference": "1866",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Medium car",
               "Fuel": "Battery Electric Vehicle",
@@ -6275,7 +5951,6 @@ sap.ui.define(
             },
             {
               "Reference": "1882",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Large car",
               "Fuel": "Battery Electric Vehicle",
@@ -6285,7 +5960,6 @@ sap.ui.define(
             },
             {
               "Reference": "1898",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Average car",
               "Fuel": "Battery Electric Vehicle",
@@ -6295,7 +5969,6 @@ sap.ui.define(
             },
             {
               "Reference": "1842",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Small car",
               "Fuel": "CNG",
@@ -6305,7 +5978,6 @@ sap.ui.define(
             },
             {
               "Reference": "1858",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Medium car",
               "Fuel": "CNG",
@@ -6315,7 +5987,6 @@ sap.ui.define(
             },
             {
               "Reference": "1874",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Large car",
               "Fuel": "CNG",
@@ -6325,7 +5996,6 @@ sap.ui.define(
             },
             {
               "Reference": "1890",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Average car",
               "Fuel": "CNG",
@@ -6335,7 +6005,6 @@ sap.ui.define(
             },
             {
               "Reference": "1836",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Small car",
               "Fuel": "Diesel",
@@ -6345,7 +6014,6 @@ sap.ui.define(
             },
             {
               "Reference": "1852",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Medium car",
               "Fuel": "Diesel",
@@ -6355,7 +6023,6 @@ sap.ui.define(
             },
             {
               "Reference": "1868",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Large car",
               "Fuel": "Diesel",
@@ -6365,7 +6032,6 @@ sap.ui.define(
             },
             {
               "Reference": "1884",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Average car",
               "Fuel": "Diesel",
@@ -6375,7 +6041,6 @@ sap.ui.define(
             },
             {
               "Reference": "1840",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Small car",
               "Fuel": "Hybrid",
@@ -6385,7 +6050,6 @@ sap.ui.define(
             },
             {
               "Reference": "1856",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Medium car",
               "Fuel": "Hybrid",
@@ -6395,7 +6059,6 @@ sap.ui.define(
             },
             {
               "Reference": "1872",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Large car",
               "Fuel": "Hybrid",
@@ -6405,7 +6068,6 @@ sap.ui.define(
             },
             {
               "Reference": "1888",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Average car",
               "Fuel": "Hybrid",
@@ -6415,7 +6077,6 @@ sap.ui.define(
             },
             {
               "Reference": "1844",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Small car",
               "Fuel": "LPG",
@@ -6425,7 +6086,6 @@ sap.ui.define(
             },
             {
               "Reference": "1860",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Medium car",
               "Fuel": "LPG",
@@ -6435,7 +6095,6 @@ sap.ui.define(
             },
             {
               "Reference": "1876",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Large car",
               "Fuel": "LPG",
@@ -6445,7 +6104,6 @@ sap.ui.define(
             },
             {
               "Reference": "1892",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Average car",
               "Fuel": "LPG",
@@ -6455,7 +6113,6 @@ sap.ui.define(
             },
             {
               "Reference": "1838",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Small car",
               "Fuel": "Petrol",
@@ -6465,7 +6122,6 @@ sap.ui.define(
             },
             {
               "Reference": "1854",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Medium car",
               "Fuel": "Petrol",
@@ -6475,7 +6131,6 @@ sap.ui.define(
             },
             {
               "Reference": "1870",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Large car",
               "Fuel": "Petrol",
@@ -6485,7 +6140,6 @@ sap.ui.define(
             },
             {
               "Reference": "1886",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Average car",
               "Fuel": "Petrol",
@@ -6495,7 +6149,6 @@ sap.ui.define(
             },
             {
               "Reference": "1848",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Small car",
               "Fuel": "Plug-in Hybrid Electric Vehicle",
@@ -6505,7 +6158,6 @@ sap.ui.define(
             },
             {
               "Reference": "1864",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Medium car",
               "Fuel": "Plug-in Hybrid Electric Vehicle",
@@ -6515,7 +6167,6 @@ sap.ui.define(
             },
             {
               "Reference": "1880",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Large car",
               "Fuel": "Plug-in Hybrid Electric Vehicle",
@@ -6525,7 +6176,6 @@ sap.ui.define(
             },
             {
               "Reference": "1896",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Average car",
               "Fuel": "Plug-in Hybrid Electric Vehicle",
@@ -6535,7 +6185,6 @@ sap.ui.define(
             },
             {
               "Reference": "1846",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Small car",
               "Fuel": "Unknown",
@@ -6545,7 +6194,6 @@ sap.ui.define(
             },
             {
               "Reference": "1862",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Medium car",
               "Fuel": "Unknown",
@@ -6555,7 +6203,6 @@ sap.ui.define(
             },
             {
               "Reference": "1878",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Large car",
               "Fuel": "Unknown",
@@ -6565,7 +6212,6 @@ sap.ui.define(
             },
             {
               "Reference": "1894",
-              "Scope": "Scope 3",
               "Vehicle": "Cars (by size)",
               "Type": "Average car",
               "Fuel": "Unknown",
@@ -6575,7 +6221,6 @@ sap.ui.define(
             },
             {
               "Reference": "1743",
-              "Scope": "Scope 3",
               "Vehicle": "Ferry",
               "Type": "Foot passenger",
               "Fuel": "",
@@ -6585,7 +6230,6 @@ sap.ui.define(
             },
             {
               "Reference": "1744",
-              "Scope": "Scope 3",
               "Vehicle": "Ferry",
               "Type": "Car passenger",
               "Fuel": "",
@@ -6595,7 +6239,6 @@ sap.ui.define(
             },
             {
               "Reference": "1745",
-              "Scope": "Scope 3",
               "Vehicle": "Ferry",
               "Type": "Average (all passenger)",
               "Fuel": "",
@@ -6605,7 +6248,6 @@ sap.ui.define(
             },
             {
               "Reference": "1900",
-              "Scope": "Scope 3",
               "Vehicle": "Motorbike",
               "Type": "Small",
               "Fuel": "",
@@ -6615,7 +6257,6 @@ sap.ui.define(
             },
             {
               "Reference": "1902",
-              "Scope": "Scope 3",
               "Vehicle": "Motorbike",
               "Type": "Medium",
               "Fuel": "",
@@ -6625,7 +6266,6 @@ sap.ui.define(
             },
             {
               "Reference": "1904",
-              "Scope": "Scope 3",
               "Vehicle": "Motorbike",
               "Type": "Large",
               "Fuel": "",
@@ -6635,7 +6275,6 @@ sap.ui.define(
             },
             {
               "Reference": "1906",
-              "Scope": "Scope 3",
               "Vehicle": "Motorbike",
               "Type": "Average",
               "Fuel": "",
@@ -6645,7 +6284,6 @@ sap.ui.define(
             },
             {
               "Reference": "1908",
-              "Scope": "Scope 3",
               "Vehicle": "Taxis",
               "Type": "Regular taxi",
               "Fuel": "",
@@ -6655,7 +6293,6 @@ sap.ui.define(
             },
             {
               "Reference": "1909",
-              "Scope": "Scope 3",
               "Vehicle": "Taxis",
               "Type": "Regular taxi",
               "Fuel": "",
@@ -6665,7 +6302,6 @@ sap.ui.define(
             },
             {
               "Reference": "1910",
-              "Scope": "Scope 3",
               "Vehicle": "Taxis",
               "Type": "Black cab",
               "Fuel": "",
@@ -6675,7 +6311,6 @@ sap.ui.define(
             },
             {
               "Reference": "1911",
-              "Scope": "Scope 3",
               "Vehicle": "Taxis",
               "Type": "Black cab",
               "Fuel": "",
@@ -6685,7 +6320,6 @@ sap.ui.define(
             },
             {
               "Reference": "1912",
-              "Scope": "Scope 3",
               "Vehicle": "Bus",
               "Type": "Local bus (not London)",
               "Fuel": "",
@@ -6695,7 +6329,6 @@ sap.ui.define(
             },
             {
               "Reference": "1913",
-              "Scope": "Scope 3",
               "Vehicle": "Bus",
               "Type": "Local London bus",
               "Fuel": "",
@@ -6705,7 +6338,6 @@ sap.ui.define(
             },
             {
               "Reference": "1914",
-              "Scope": "Scope 3",
               "Vehicle": "Bus",
               "Type": "Average local bus",
               "Fuel": "",
@@ -6715,7 +6347,6 @@ sap.ui.define(
             },
             {
               "Reference": "1915",
-              "Scope": "Scope 3",
               "Vehicle": "Bus",
               "Type": "Coach",
               "Fuel": "",
@@ -6725,7 +6356,6 @@ sap.ui.define(
             },
             {
               "Reference": "1916",
-              "Scope": "Scope 3",
               "Vehicle": "Rail",
               "Type": "National rail",
               "Fuel": "",
@@ -6735,7 +6365,6 @@ sap.ui.define(
             },
             {
               "Reference": "1917",
-              "Scope": "Scope 3",
               "Vehicle": "Rail",
               "Type": "International rail",
               "Fuel": "",
@@ -6745,7 +6374,6 @@ sap.ui.define(
             },
             {
               "Reference": "1918",
-              "Scope": "Scope 3",
               "Vehicle": "Rail",
               "Type": "Light rail and tram",
               "Fuel": "",
@@ -6755,7 +6383,6 @@ sap.ui.define(
             },
             {
               "Reference": "1919",
-              "Scope": "Scope 3",
               "Vehicle": "Rail",
               "Type": "London Underground",
               "Fuel": "",
@@ -6842,32 +6469,31 @@ sap.ui.define(
             {
               "Type of home office": "With cooling",
               "Number of employees": "",
-              "Working regime (For full-time: 100%)": "",
-              "% working from home (e.g. 50% from home)": "",
+              "Working regime (For full-time)": "",
+              "Working from home": "",
               "Number of months": "",
-              "Factor": ""
+              "Factor": "3.65"
             },
             {
               "Type of home office": "No heating/No cooling",
               "Number of employees": "",
-              "Working regime (For full-time: 100%)": "",
-              "% working from home (e.g. 50% from home)": "",
+              "Working regime (For full-time)": "",
+              "Working from home": "",
               "Number of months": "",
-              "Factor": ""
+              "Factor": "0.15"
             },
             {
               "Type of home office": "With heating",
               "Number of employees": "",
-              "Working regime (For full-time: 100%)": "",
-              "% working from home (e.g. 50% from home)": "",
+              "Working regime (For full-time)": "",
+              "Working from home": "",
               "Number of months": "",
-              "Factor": ""
+              "Factor": "5.15"
             }
           ],
           "Water": [
             {
               "Reference": "668",
-              "Scope": "Scope 3",
               "Type": "Water Supply",
               "Unit": "cubic metres",
               "Source": "Surface",
@@ -6876,7 +6502,6 @@ sap.ui.define(
             },
             {
               "Reference": "668",
-              "Scope": "Scope 3",
               "Type": "Water Supply",
               "Unit": "cubic metres",
               "Source": "Ground",
@@ -6885,7 +6510,6 @@ sap.ui.define(
             },
             {
               "Reference": "668",
-              "Scope": "Scope 3",
               "Type": "Water Supply",
               "Unit": "cubic metres",
               "Source": "Sea",
@@ -6894,7 +6518,6 @@ sap.ui.define(
             },
             {
               "Reference": "668",
-              "Scope": "Scope 3",
               "Type": "Water Supply",
               "Unit": "cubic metres",
               "Source": "Rain",
@@ -6903,7 +6526,6 @@ sap.ui.define(
             },
             {
               "Reference": "668",
-              "Scope": "Scope 3",
               "Type": "Water Supply",
               "Unit": "cubic metres",
               "Source": "Treated",
@@ -6912,7 +6534,6 @@ sap.ui.define(
             },
             {
               "Reference": "668",
-              "Scope": "Scope 3",
               "Type": "Water Supply",
               "Unit": "cubic metres",
               "Source": "3rd Party",
@@ -6922,7 +6543,6 @@ sap.ui.define(
 
             {
               "Reference": "670",
-              "Scope": "Scope 3",
               "Type": "Water Drainage",
               "Unit": "cubic metres",
               "Source": "Surface",
@@ -6931,7 +6551,6 @@ sap.ui.define(
             },
             {
               "Reference": "670",
-              "Scope": "Scope 3",
               "Type": "Water Drainage",
               "Unit": "cubic metres",
               "Source": "Ground",
@@ -6940,7 +6559,6 @@ sap.ui.define(
             },
             {
               "Reference": "670",
-              "Scope": "Scope 3",
               "Type": "Water Drainage",
               "Unit": "cubic metres",
               "Source": "Sea",
@@ -6948,7 +6566,6 @@ sap.ui.define(
               "Factor": ""
             }, {
               "Reference": "670",
-              "Scope": "Scope 3",
               "Type": "Water Drainage",
               "Unit": "cubic metres",
               "Source": "Rain",
@@ -6956,7 +6573,6 @@ sap.ui.define(
               "Factor": ""
             }, {
               "Reference": "670",
-              "Scope": "Scope 3",
               "Type": "Water Drainage",
               "Unit": "cubic metres",
               "Source": "Treated",
@@ -6964,7 +6580,6 @@ sap.ui.define(
               "Factor": ""
             }, {
               "Reference": "670",
-              "Scope": "Scope 3",
               "Type": "Water Drainage",
               "Unit": "cubic metres",
               "Source": "3rd Party",
@@ -6975,7 +6590,6 @@ sap.ui.define(
 
           "Entity": [
             {
-              "Framework": "GRI",
               "Entity Type": "BOD",
               "Gender": "Male",
               "Age": "50+",
@@ -6983,7 +6597,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "BOD",
               "Gender": "Male",
               "Age": "50+",
@@ -6991,7 +6604,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "BOD",
               "Gender": "Male",
               "Age": "50+",
@@ -6999,7 +6611,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "BOD",
               "Gender": "Male",
               "Age": "50+",
@@ -7007,7 +6618,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "BOD",
               "Gender": "Male",
               "Age": "50+",
@@ -7015,7 +6625,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "BOD",
               "Gender": "Male",
               "Age": "50+",
@@ -7023,7 +6632,132 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
+              "Entity Type": "BOD",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
               "Entity Type": "BOD",
               "Gender": "Female",
               "Age": "50+",
@@ -7031,7 +6765,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "BOD",
               "Gender": "Female",
               "Age": "50+",
@@ -7039,7 +6772,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "BOD",
               "Gender": "Female",
               "Age": "50+",
@@ -7047,7 +6779,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "BOD",
               "Gender": "Female",
               "Age": "50+",
@@ -7055,7 +6786,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "BOD",
               "Gender": "Female",
               "Age": "50+",
@@ -7063,7 +6793,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "BOD",
               "Gender": "Female",
               "Age": "50+",
@@ -7071,7 +6800,132 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
+              "Entity Type": "BOD",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
               "Entity Type": "BOD",
               "Gender": "Others",
               "Age": "50+",
@@ -7079,7 +6933,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "BOD",
               "Gender": "Others",
               "Age": "50+",
@@ -7087,7 +6940,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "BOD",
               "Gender": "Others",
               "Age": "50+",
@@ -7095,7 +6947,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "BOD",
               "Gender": "Others",
               "Age": "50+",
@@ -7103,7 +6954,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "BOD",
               "Gender": "Others",
               "Age": "50+",
@@ -7111,7 +6961,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "BOD",
               "Gender": "Others",
               "Age": "50+",
@@ -7119,151 +6968,1140 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
-              "Entity Type": "CFO/CEO",
+              "Entity Type": "BOD",
+              "Gender": "Others",
+              "Age": "35 to 50",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Others",
+              "Age": "35 to 50",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Others",
+              "Age": "35 to 50",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Others",
+              "Age": "35 to 50",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Others",
+              "Age": "35 to 50",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Others",
+              "Age": "35 to 50",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Others",
+              "Age": "22 to 35",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Others",
+              "Age": "22 to 35",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Others",
+              "Age": "22 to 35",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Others",
+              "Age": "22 to 35",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Others",
+              "Age": "22 to 35",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Others",
+              "Age": "22 to 35",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Others",
+              "Age": "Less than 22",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Others",
+              "Age": "Less than 22",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Others",
+              "Age": "Less than 22",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Others",
+              "Age": "Less than 22",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Others",
+              "Age": "Less than 22",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD",
+              "Gender": "Others",
+              "Age": "Less than 22",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
               "Gender": "Male",
               "Age": "50+",
               "Tenure": "Less than 1 year",
               "Count": ""
             },
             {
-              "Framework": "GRI",
-              "Entity Type": "CFO/CEO",
+              "Entity Type": "CFO",
               "Gender": "Male",
               "Age": "50+",
               "Tenure": "Between 1- 2 years",
               "Count": ""
             },
             {
-              "Framework": "GRI",
-              "Entity Type": "CFO/CEO",
+              "Entity Type": "CFO",
               "Gender": "Male",
               "Age": "50+",
               "Tenure": "Between 2-5 years",
               "Count": ""
             },
             {
-              "Framework": "GRI",
-              "Entity Type": "CFO/CEO",
+              "Entity Type": "CFO",
               "Gender": "Male",
               "Age": "50+",
               "Tenure": "Between 5-7 years",
               "Count": ""
             },
             {
-              "Framework": "GRI",
-              "Entity Type": "CFO/CEO",
+              "Entity Type": "CFO",
               "Gender": "Male",
               "Age": "50+",
               "Tenure": "Between 7-9 years",
               "Count": ""
             },
             {
-              "Framework": "GRI",
-              "Entity Type": "CFO/CEO",
+              "Entity Type": "CFO",
               "Gender": "Male",
               "Age": "50+",
               "Tenure": "Above 10 years",
               "Count": ""
             },
             {
-              "Framework": "GRI",
-              "Entity Type": "CFO/CEO",
+              "Entity Type": "CFO",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
               "Gender": "Female",
               "Age": "50+",
               "Tenure": "Less than 1 year",
               "Count": ""
             },
             {
-              "Framework": "GRI",
-              "Entity Type": "CFO/CEO",
+              "Entity Type": "CFO",
               "Gender": "Female",
               "Age": "50+",
               "Tenure": "Between 1- 2 years",
               "Count": ""
             },
             {
-              "Framework": "GRI",
-              "Entity Type": "CFO/CEO",
+              "Entity Type": "CFO",
               "Gender": "Female",
               "Age": "50+",
               "Tenure": "Between 2-5 years",
               "Count": ""
             },
             {
-              "Framework": "GRI",
-              "Entity Type": "CFO/CEO",
+              "Entity Type": "CFO",
               "Gender": "Female",
               "Age": "50+",
               "Tenure": "Between 5-7 years",
               "Count": ""
             },
             {
-              "Framework": "GRI",
-              "Entity Type": "CFO/CEO",
+              "Entity Type": "CFO",
               "Gender": "Female",
               "Age": "50+",
               "Tenure": "Between 7-9 years",
               "Count": ""
             },
             {
-              "Framework": "GRI",
-              "Entity Type": "CFO/CEO",
+              "Entity Type": "CFO",
               "Gender": "Female",
               "Age": "50+",
               "Tenure": "Above 10 years",
               "Count": ""
             },
             {
-              "Framework": "GRI",
-              "Entity Type": "CFO/CEO",
+              "Entity Type": "CFO",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
               "Gender": "Others",
               "Age": "50+",
               "Tenure": "Less than 1 year",
               "Count": ""
             },
             {
-              "Framework": "GRI",
-              "Entity Type": "CFO/CEO",
+              "Entity Type": "CFO",
               "Gender": "Others",
               "Age": "50+",
               "Tenure": "Between 1- 2 years",
               "Count": ""
             },
             {
-              "Framework": "GRI",
-              "Entity Type": "CFO/CEO",
+              "Entity Type": "CFO",
               "Gender": "Others",
               "Age": "50+",
               "Tenure": "Between 2-5 years",
               "Count": ""
             },
             {
-              "Framework": "GRI",
-              "Entity Type": "CFO/CEO",
+              "Entity Type": "CFO",
               "Gender": "Others",
               "Age": "50+",
               "Tenure": "Between 5-7 years",
               "Count": ""
             },
             {
-              "Framework": "GRI",
-              "Entity Type": "CFO/CEO",
+              "Entity Type": "CFO",
               "Gender": "Others",
               "Age": "50+",
               "Tenure": "Between 7-9 years",
               "Count": ""
             },
             {
-              "Framework": "GRI",
-              "Entity Type": "CFO/CEO",
+              "Entity Type": "CFO",
               "Gender": "Others",
               "Age": "50+",
               "Tenure": "Above 10 years",
               "Count": ""
             },
             {
-              "Framework": "GRI",
+              "Entity Type": "CFO",
+              "Gender": "Others",
+              "Age": "35 to 50",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Others",
+              "Age": "35 to 50",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Others",
+              "Age": "35 to 50",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Others",
+              "Age": "35 to 50",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Others",
+              "Age": "35 to 50",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Others",
+              "Age": "35 to 50",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Others",
+              "Age": "22 to 35",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Others",
+              "Age": "22 to 35",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Others",
+              "Age": "22 to 35",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Others",
+              "Age": "22 to 35",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Others",
+              "Age": "22 to 35",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Others",
+              "Age": "22 to 35",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Others",
+              "Age": "Less than 22",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Others",
+              "Age": "Less than 22",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Others",
+              "Age": "Less than 22",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Others",
+              "Age": "Less than 22",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Others",
+              "Age": "Less than 22",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CFO",
+              "Gender": "Others",
+              "Age": "Less than 22",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Male",
+              "Age": "50+",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Female",
+              "Age": "50+",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Others",
+              "Age": "50+",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Others",
+              "Age": "35 to 50",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Others",
+              "Age": "35 to 50",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Others",
+              "Age": "35 to 50",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Others",
+              "Age": "35 to 50",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Others",
+              "Age": "35 to 50",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Others",
+              "Age": "35 to 50",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Others",
+              "Age": "22 to 35",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Others",
+              "Age": "22 to 35",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Others",
+              "Age": "22 to 35",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Others",
+              "Age": "22 to 35",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Others",
+              "Age": "22 to 35",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Others",
+              "Age": "22 to 35",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Others",
+              "Age": "Less than 22",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Others",
+              "Age": "Less than 22",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Others",
+              "Age": "Less than 22",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Others",
+              "Age": "Less than 22",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Others",
+              "Age": "Less than 22",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "CEO",
+              "Gender": "Others",
+              "Age": "Less than 22",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
               "Entity Type": "Independent Directors",
               "Gender": "Male",
               "Age": "50+",
@@ -7271,7 +8109,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "Independent Directors",
               "Gender": "Male",
               "Age": "50+",
@@ -7279,7 +8116,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "Independent Directors",
               "Gender": "Male",
               "Age": "50+",
@@ -7287,7 +8123,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "Independent Directors",
               "Gender": "Male",
               "Age": "50+",
@@ -7295,7 +8130,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "Independent Directors",
               "Gender": "Male",
               "Age": "50+",
@@ -7303,7 +8137,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "Independent Directors",
               "Gender": "Male",
               "Age": "50+",
@@ -7311,7 +8144,132 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
+              "Entity Type": "Independent Directors",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
               "Entity Type": "Independent Directors",
               "Gender": "Female",
               "Age": "50+",
@@ -7319,7 +8277,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "Independent Directors",
               "Gender": "Female",
               "Age": "50+",
@@ -7327,7 +8284,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "Independent Directors",
               "Gender": "Female",
               "Age": "50+",
@@ -7335,7 +8291,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "Independent Directors",
               "Gender": "Female",
               "Age": "50+",
@@ -7343,7 +8298,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "Independent Directors",
               "Gender": "Female",
               "Age": "50+",
@@ -7351,7 +8305,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "Independent Directors",
               "Gender": "Female",
               "Age": "50+",
@@ -7359,7 +8312,132 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
+              "Entity Type": "Independent Directors",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
               "Entity Type": "Independent Directors",
               "Gender": "Others",
               "Age": "50+",
@@ -7367,7 +8445,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "Independent Directors",
               "Gender": "Others",
               "Age": "50+",
@@ -7375,7 +8452,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "Independent Directors",
               "Gender": "Others",
               "Age": "50+",
@@ -7383,7 +8459,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "Independent Directors",
               "Gender": "Others",
               "Age": "50+",
@@ -7391,7 +8466,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "Independent Directors",
               "Gender": "Others",
               "Age": "50+",
@@ -7399,7 +8473,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "Independent Directors",
               "Gender": "Others",
               "Age": "50+",
@@ -7407,7 +8480,132 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
+              "Entity Type": "Independent Directors",
+              "Gender": "Others",
+              "Age": "35 to 50",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Others",
+              "Age": "35 to 50",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Others",
+              "Age": "35 to 50",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Others",
+              "Age": "35 to 50",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Others",
+              "Age": "35 to 50",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Others",
+              "Age": "35 to 50",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Others",
+              "Age": "22 to 35",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Others",
+              "Age": "22 to 35",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Others",
+              "Age": "22 to 35",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Others",
+              "Age": "22 to 35",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Others",
+              "Age": "22 to 35",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Others",
+              "Age": "22 to 35",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Others",
+              "Age": "Less than 22",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Others",
+              "Age": "Less than 22",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Others",
+              "Age": "Less than 22",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Others",
+              "Age": "Less than 22",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Others",
+              "Age": "Less than 22",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Independent Directors",
+              "Gender": "Others",
+              "Age": "Less than 22",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
               "Entity Type": "Executives",
               "Gender": "Male",
               "Age": "50+",
@@ -7415,7 +8613,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "Executives",
               "Gender": "Male",
               "Age": "50+",
@@ -7423,7 +8620,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "Executives",
               "Gender": "Male",
               "Age": "50+",
@@ -7431,7 +8627,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "Executives",
               "Gender": "Male",
               "Age": "50+",
@@ -7439,7 +8634,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "Executives",
               "Gender": "Male",
               "Age": "50+",
@@ -7447,7 +8641,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "Executives",
               "Gender": "Male",
               "Age": "50+",
@@ -7455,7 +8648,132 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
+              "Entity Type": "Executives",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
               "Entity Type": "Executives",
               "Gender": "Female",
               "Age": "50+",
@@ -7463,7 +8781,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "Executives",
               "Gender": "Female",
               "Age": "50+",
@@ -7471,7 +8788,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "Executives",
               "Gender": "Female",
               "Age": "50+",
@@ -7479,7 +8795,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "Executives",
               "Gender": "Female",
               "Age": "50+",
@@ -7487,7 +8802,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "Executives",
               "Gender": "Female",
               "Age": "50+",
@@ -7495,7 +8809,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "Executives",
               "Gender": "Female",
               "Age": "50+",
@@ -7503,7 +8816,132 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
+              "Entity Type": "Executives",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
               "Entity Type": "Executives",
               "Gender": "Others",
               "Age": "50+",
@@ -7511,7 +8949,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "Executives",
               "Gender": "Others",
               "Age": "50+",
@@ -7519,7 +8956,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "Executives",
               "Gender": "Others",
               "Age": "50+",
@@ -7527,7 +8963,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "Executives",
               "Gender": "Others",
               "Age": "50+",
@@ -7535,7 +8970,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "Executives",
               "Gender": "Others",
               "Age": "50+",
@@ -7543,7 +8977,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "Executives",
               "Gender": "Others",
               "Age": "50+",
@@ -7551,7 +8984,132 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
+              "Entity Type": "Executives",
+              "Gender": "Others",
+              "Age": "35 to 50",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Others",
+              "Age": "35 to 50",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Others",
+              "Age": "35 to 50",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Others",
+              "Age": "35 to 50",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Others",
+              "Age": "35 to 50",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Others",
+              "Age": "35 to 50",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Others",
+              "Age": "22 to 35",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Others",
+              "Age": "22 to 35",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Others",
+              "Age": "22 to 35",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Others",
+              "Age": "22 to 35",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Others",
+              "Age": "22 to 35",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Others",
+              "Age": "22 to 35",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Others",
+              "Age": "Less than 22",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Others",
+              "Age": "Less than 22",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Others",
+              "Age": "Less than 22",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Others",
+              "Age": "Less than 22",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Others",
+              "Age": "Less than 22",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Executives",
+              "Gender": "Others",
+              "Age": "Less than 22",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
               "Entity Type": "BOD turnover rate",
               "Gender": "Male",
               "Age": "50+",
@@ -7559,7 +9117,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "BOD turnover rate",
               "Gender": "Male",
               "Age": "50+",
@@ -7567,7 +9124,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "BOD turnover rate",
               "Gender": "Male",
               "Age": "50+",
@@ -7575,7 +9131,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "BOD turnover rate",
               "Gender": "Male",
               "Age": "50+",
@@ -7583,7 +9138,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "BOD turnover rate",
               "Gender": "Male",
               "Age": "50+",
@@ -7591,7 +9145,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "BOD turnover rate",
               "Gender": "Male",
               "Age": "50+",
@@ -7599,7 +9152,132 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
               "Entity Type": "BOD turnover rate",
               "Gender": "Female",
               "Age": "50+",
@@ -7607,7 +9285,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "BOD turnover rate",
               "Gender": "Female",
               "Age": "50+",
@@ -7615,7 +9292,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "BOD turnover rate",
               "Gender": "Female",
               "Age": "50+",
@@ -7623,7 +9299,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "BOD turnover rate",
               "Gender": "Female",
               "Age": "50+",
@@ -7631,7 +9306,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "BOD turnover rate",
               "Gender": "Female",
               "Age": "50+",
@@ -7639,7 +9313,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "BOD turnover rate",
               "Gender": "Female",
               "Age": "50+",
@@ -7647,7 +9320,132 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
               "Entity Type": "BOD turnover rate",
               "Gender": "Others",
               "Age": "50+",
@@ -7655,7 +9453,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "BOD turnover rate",
               "Gender": "Others",
               "Age": "50+",
@@ -7663,7 +9460,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "BOD turnover rate",
               "Gender": "Others",
               "Age": "50+",
@@ -7671,7 +9467,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "BOD turnover rate",
               "Gender": "Others",
               "Age": "50+",
@@ -7679,7 +9474,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "BOD turnover rate",
               "Gender": "Others",
               "Age": "50+",
@@ -7687,7 +9481,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI",
               "Entity Type": "BOD turnover rate",
               "Gender": "Others",
               "Age": "50+",
@@ -7695,578 +9488,632 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
-              "Entity Type": "BOD",
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Others",
+              "Age": "35 to 50",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Others",
+              "Age": "35 to 50",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Others",
+              "Age": "35 to 50",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Others",
+              "Age": "35 to 50",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Others",
+              "Age": "35 to 50",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Others",
+              "Age": "35 to 50",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Others",
+              "Age": "22 to 35",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Others",
+              "Age": "22 to 35",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Others",
+              "Age": "22 to 35",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Others",
+              "Age": "22 to 35",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Others",
+              "Age": "22 to 35",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Others",
+              "Age": "22 to 35",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Others",
+              "Age": "Less than 22",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Others",
+              "Age": "Less than 22",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Others",
+              "Age": "Less than 22",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Others",
+              "Age": "Less than 22",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Others",
+              "Age": "Less than 22",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "BOD turnover rate",
+              "Gender": "Others",
+              "Age": "Less than 22",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Compensation ratio",
               "Gender": "Male",
               "Age": "50+",
               "Tenure": "Less than 1 year",
               "Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
-              "Entity Type": "BOD",
+              "Entity Type": "Compensation ratio",
               "Gender": "Male",
               "Age": "50+",
               "Tenure": "Between 1- 2 years",
               "Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
-              "Entity Type": "BOD",
+              "Entity Type": "Compensation ratio",
               "Gender": "Male",
               "Age": "50+",
               "Tenure": "Between 2-5 years",
               "Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
-              "Entity Type": "BOD",
+              "Entity Type": "Compensation ratio",
               "Gender": "Male",
               "Age": "50+",
               "Tenure": "Between 5-7 years",
               "Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
-              "Entity Type": "BOD",
+              "Entity Type": "Compensation ratio",
               "Gender": "Male",
               "Age": "50+",
               "Tenure": "Between 7-9 years",
               "Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
-              "Entity Type": "BOD",
+              "Entity Type": "Compensation ratio",
               "Gender": "Male",
               "Age": "50+",
               "Tenure": "Above 10 years",
               "Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
-              "Entity Type": "BOD",
+              "Entity Type": "Compensation ratio",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Compensation ratio",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Compensation ratio",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Compensation ratio",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Compensation ratio",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Compensation ratio",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Compensation ratio",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Compensation ratio",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Compensation ratio",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Compensation ratio",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Compensation ratio",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Compensation ratio",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Compensation ratio",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Compensation ratio",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Compensation ratio",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Compensation ratio",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Compensation ratio",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Compensation ratio",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Compensation ratio",
               "Gender": "Female",
               "Age": "50+",
               "Tenure": "Less than 1 year",
               "Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
-              "Entity Type": "BOD",
+              "Entity Type": "Compensation ratio",
               "Gender": "Female",
               "Age": "50+",
               "Tenure": "Between 1- 2 years",
               "Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
-              "Entity Type": "BOD",
+              "Entity Type": "Compensation ratio",
               "Gender": "Female",
               "Age": "50+",
               "Tenure": "Between 2-5 years",
               "Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
-              "Entity Type": "BOD",
+              "Entity Type": "Compensation ratio",
               "Gender": "Female",
               "Age": "50+",
               "Tenure": "Between 5-7 years",
               "Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
-              "Entity Type": "BOD",
+              "Entity Type": "Compensation ratio",
               "Gender": "Female",
               "Age": "50+",
               "Tenure": "Between 7-9 years",
               "Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
-              "Entity Type": "BOD",
+              "Entity Type": "Compensation ratio",
               "Gender": "Female",
               "Age": "50+",
               "Tenure": "Above 10 years",
               "Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
-              "Entity Type": "BOD",
+              "Entity Type": "Compensation ratio",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Compensation ratio",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Compensation ratio",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Compensation ratio",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Compensation ratio",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Compensation ratio",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Compensation ratio",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Compensation ratio",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Compensation ratio",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Compensation ratio",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Compensation ratio",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Compensation ratio",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Compensation ratio",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Less than 1 year",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Compensation ratio",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Between 1- 2 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Compensation ratio",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Between 2-5 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Compensation ratio",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Between 5-7 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Compensation ratio",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Between 7-9 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Compensation ratio",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Tenure": "Above 10 years",
+              "Count": ""
+            },
+            {
+              "Entity Type": "Compensation ratio",
               "Gender": "Others",
               "Age": "50+",
               "Tenure": "Less than 1 year",
               "Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
-              "Entity Type": "BOD",
+              "Entity Type": "Compensation ratio",
               "Gender": "Others",
               "Age": "50+",
               "Tenure": "Between 1- 2 years",
               "Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
-              "Entity Type": "BOD",
+              "Entity Type": "Compensation ratio",
               "Gender": "Others",
               "Age": "50+",
               "Tenure": "Between 2-5 years",
               "Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
-              "Entity Type": "BOD",
+              "Entity Type": "Compensation ratio",
               "Gender": "Others",
               "Age": "50+",
               "Tenure": "Between 5-7 years",
               "Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
-              "Entity Type": "BOD",
+              "Entity Type": "Compensation ratio",
               "Gender": "Others",
               "Age": "50+",
               "Tenure": "Between 7-9 years",
               "Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
-              "Entity Type": "BOD",
+              "Entity Type": "Compensation ratio",
               "Gender": "Others",
               "Age": "50+",
               "Tenure": "Above 10 years",
               "Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
-              "Entity Type": "CFO/CEO",
-              "Gender": "Male",
-              "Age": "50+",
+              "Entity Type": "Compensation ratio",
+              "Gender": "Others",
+              "Age": "35 to 50",
               "Tenure": "Less than 1 year",
               "Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
-              "Entity Type": "CFO/CEO",
-              "Gender": "Male",
-              "Age": "50+",
+              "Entity Type": "Compensation ratio",
+              "Gender": "Others",
+              "Age": "35 to 50",
               "Tenure": "Between 1- 2 years",
               "Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
-              "Entity Type": "CFO/CEO",
-              "Gender": "Male",
-              "Age": "50+",
+              "Entity Type": "Compensation ratio",
+              "Gender": "Others",
+              "Age": "35 to 50",
               "Tenure": "Between 2-5 years",
               "Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
-              "Entity Type": "CFO/CEO",
-              "Gender": "Male",
-              "Age": "50+",
+              "Entity Type": "Compensation ratio",
+              "Gender": "Others",
+              "Age": "35 to 50",
               "Tenure": "Between 5-7 years",
               "Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
-              "Entity Type": "CFO/CEO",
-              "Gender": "Male",
-              "Age": "50+",
+              "Entity Type": "Compensation ratio",
+              "Gender": "Others",
+              "Age": "35 to 50",
               "Tenure": "Between 7-9 years",
               "Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
-              "Entity Type": "CFO/CEO",
-              "Gender": "Male",
-              "Age": "50+",
+              "Entity Type": "Compensation ratio",
+              "Gender": "Others",
+              "Age": "35 to 50",
               "Tenure": "Above 10 years",
               "Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
-              "Entity Type": "CFO/CEO",
-              "Gender": "Female",
-              "Age": "50+",
+              "Entity Type": "Compensation ratio",
+              "Gender": "Others",
+              "Age": "22 to 35",
               "Tenure": "Less than 1 year",
               "Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
-              "Entity Type": "CFO/CEO",
-              "Gender": "Female",
-              "Age": "50+",
+              "Entity Type": "Compensation ratio",
+              "Gender": "Others",
+              "Age": "22 to 35",
               "Tenure": "Between 1- 2 years",
               "Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
-              "Entity Type": "CFO/CEO",
-              "Gender": "Female",
-              "Age": "50+",
+              "Entity Type": "Compensation ratio",
+              "Gender": "Others",
+              "Age": "22 to 35",
               "Tenure": "Between 2-5 years",
               "Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
-              "Entity Type": "CFO/CEO",
-              "Gender": "Female",
-              "Age": "50+",
+              "Entity Type": "Compensation ratio",
+              "Gender": "Others",
+              "Age": "22 to 35",
               "Tenure": "Between 5-7 years",
               "Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
-              "Entity Type": "CFO/CEO",
-              "Gender": "Female",
-              "Age": "50+",
+              "Entity Type": "Compensation ratio",
+              "Gender": "Others",
+              "Age": "22 to 35",
               "Tenure": "Between 7-9 years",
               "Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
-              "Entity Type": "CFO/CEO",
-              "Gender": "Female",
-              "Age": "50+",
+              "Entity Type": "Compensation ratio",
+              "Gender": "Others",
+              "Age": "22 to 35",
               "Tenure": "Above 10 years",
               "Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
-              "Entity Type": "CFO/CEO",
+              "Entity Type": "Compensation ratio",
               "Gender": "Others",
-              "Age": "50+",
+              "Age": "Less than 22",
               "Tenure": "Less than 1 year",
               "Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
-              "Entity Type": "CFO/CEO",
+              "Entity Type": "Compensation ratio",
               "Gender": "Others",
-              "Age": "50+",
+              "Age": "Less than 22",
               "Tenure": "Between 1- 2 years",
               "Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
-              "Entity Type": "CFO/CEO",
+              "Entity Type": "Compensation ratio",
               "Gender": "Others",
-              "Age": "50+",
+              "Age": "Less than 22",
               "Tenure": "Between 2-5 years",
               "Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
-              "Entity Type": "CFO/CEO",
+              "Entity Type": "Compensation ratio",
               "Gender": "Others",
-              "Age": "50+",
+              "Age": "Less than 22",
               "Tenure": "Between 5-7 years",
               "Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
-              "Entity Type": "CFO/CEO",
+              "Entity Type": "Compensation ratio",
               "Gender": "Others",
-              "Age": "50+",
+              "Age": "Less than 22",
               "Tenure": "Between 7-9 years",
               "Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
-              "Entity Type": "CFO/CEO",
+              "Entity Type": "Compensation ratio",
               "Gender": "Others",
-              "Age": "50+",
-              "Tenure": "Above 10 years",
-              "Count": ""
-            },
-            {
-              "Framework": "BRSR",
-              "Entity Type": "BOD",
-              "Gender": "Male",
-              "Age": "50+",
-              "Tenure": "Less than 1 year",
-              "Count": ""
-            },
-            {
-              "Framework": "BRSR",
-              "Entity Type": "BOD",
-              "Gender": "Male",
-              "Age": "50+",
-              "Tenure": "Between 1- 2 years",
-              "Count": ""
-            },
-            {
-              "Framework": "BRSR",
-              "Entity Type": "BOD",
-              "Gender": "Male",
-              "Age": "50+",
-              "Tenure": "Between 2-5 years",
-              "Count": ""
-            },
-            {
-              "Framework": "BRSR",
-              "Entity Type": "BOD",
-              "Gender": "Male",
-              "Age": "50+",
-              "Tenure": "Between 5-7 years",
-              "Count": ""
-            },
-            {
-              "Framework": "BRSR",
-              "Entity Type": "BOD",
-              "Gender": "Male",
-              "Age": "50+",
-              "Tenure": "Between 7-9 years",
-              "Count": ""
-            },
-            {
-              "Framework": "BRSR",
-              "Entity Type": "BOD",
-              "Gender": "Male",
-              "Age": "50+",
-              "Tenure": "Above 10 years",
-              "Count": ""
-            },
-            {
-              "Framework": "BRSR",
-              "Entity Type": "BOD",
-              "Gender": "Female",
-              "Age": "50+",
-              "Tenure": "Less than 1 year",
-              "Count": ""
-            },
-            {
-              "Framework": "BRSR",
-              "Entity Type": "BOD",
-              "Gender": "Female",
-              "Age": "50+",
-              "Tenure": "Between 1- 2 years",
-              "Count": ""
-            },
-            {
-              "Framework": "BRSR",
-              "Entity Type": "BOD",
-              "Gender": "Female",
-              "Age": "50+",
-              "Tenure": "Between 2-5 years",
-              "Count": ""
-            },
-            {
-              "Framework": "BRSR",
-              "Entity Type": "BOD",
-              "Gender": "Female",
-              "Age": "50+",
-              "Tenure": "Between 5-7 years",
-              "Count": ""
-            },
-            {
-              "Framework": "BRSR",
-              "Entity Type": "BOD",
-              "Gender": "Female",
-              "Age": "50+",
-              "Tenure": "Between 7-9 years",
-              "Count": ""
-            },
-            {
-              "Framework": "BRSR",
-              "Entity Type": "BOD",
-              "Gender": "Female",
-              "Age": "50+",
-              "Tenure": "Above 10 years",
-              "Count": ""
-            },
-            {
-              "Framework": "BRSR",
-              "Entity Type": "BOD",
-              "Gender": "Others",
-              "Age": "50+",
-              "Tenure": "Less than 1 year",
-              "Count": ""
-            },
-            {
-              "Framework": "BRSR",
-              "Entity Type": "BOD",
-              "Gender": "Others",
-              "Age": "50+",
-              "Tenure": "Between 1- 2 years",
-              "Count": ""
-            },
-            {
-              "Framework": "BRSR",
-              "Entity Type": "BOD",
-              "Gender": "Others",
-              "Age": "50+",
-              "Tenure": "Between 2-5 years",
-              "Count": ""
-            },
-            {
-              "Framework": "BRSR",
-              "Entity Type": "BOD",
-              "Gender": "Others",
-              "Age": "50+",
-              "Tenure": "Between 5-7 years",
-              "Count": ""
-            },
-            {
-              "Framework": "BRSR",
-              "Entity Type": "BOD",
-              "Gender": "Others",
-              "Age": "50+",
-              "Tenure": "Between 7-9 years",
-              "Count": ""
-            },
-            {
-              "Framework": "BRSR",
-              "Entity Type": "BOD",
-              "Gender": "Others",
-              "Age": "50+",
-              "Tenure": "Above 10 years",
-              "Count": ""
-            },
-            {
-              "Framework": "BRSR",
-              "Entity Type": "CFO/CEO",
-              "Gender": "Male",
-              "Age": "50+",
-              "Tenure": "Less than 1 year",
-              "Count": ""
-            },
-            {
-              "Framework": "BRSR",
-              "Entity Type": "CFO/CEO",
-              "Gender": "Male",
-              "Age": "50+",
-              "Tenure": "Between 1- 2 years",
-              "Count": ""
-            },
-            {
-              "Framework": "BRSR",
-              "Entity Type": "CFO/CEO",
-              "Gender": "Male",
-              "Age": "50+",
-              "Tenure": "Between 2-5 years",
-              "Count": ""
-            },
-            {
-              "Framework": "BRSR",
-              "Entity Type": "CFO/CEO",
-              "Gender": "Male",
-              "Age": "50+",
-              "Tenure": "Between 5-7 years",
-              "Count": ""
-            },
-            {
-              "Framework": "BRSR",
-              "Entity Type": "CFO/CEO",
-              "Gender": "Male",
-              "Age": "50+",
-              "Tenure": "Between 7-9 years",
-              "Count": ""
-            },
-            {
-              "Framework": "BRSR",
-              "Entity Type": "CFO/CEO",
-              "Gender": "Male",
-              "Age": "50+",
-              "Tenure": "Above 10 years",
-              "Count": ""
-            },
-            {
-              "Framework": "BRSR",
-              "Entity Type": "CFO/CEO",
-              "Gender": "Female",
-              "Age": "50+",
-              "Tenure": "Less than 1 year",
-              "Count": ""
-            },
-            {
-              "Framework": "BRSR",
-              "Entity Type": "CFO/CEO",
-              "Gender": "Female",
-              "Age": "50+",
-              "Tenure": "Between 1- 2 years",
-              "Count": ""
-            },
-            {
-              "Framework": "BRSR",
-              "Entity Type": "CFO/CEO",
-              "Gender": "Female",
-              "Age": "50+",
-              "Tenure": "Between 2-5 years",
-              "Count": ""
-            },
-            {
-              "Framework": "BRSR",
-              "Entity Type": "CFO/CEO",
-              "Gender": "Female",
-              "Age": "50+",
-              "Tenure": "Between 5-7 years",
-              "Count": ""
-            },
-            {
-              "Framework": "BRSR",
-              "Entity Type": "CFO/CEO",
-              "Gender": "Female",
-              "Age": "50+",
-              "Tenure": "Between 7-9 years",
-              "Count": ""
-            },
-            {
-              "Framework": "BRSR",
-              "Entity Type": "CFO/CEO",
-              "Gender": "Female",
-              "Age": "50+",
-              "Tenure": "Above 10 years",
-              "Count": ""
-            },
-            {
-              "Framework": "BRSR",
-              "Entity Type": "CFO/CEO",
-              "Gender": "Others",
-              "Age": "50+",
-              "Tenure": "Less than 1 year",
-              "Count": ""
-            },
-            {
-              "Framework": "BRSR",
-              "Entity Type": "CFO/CEO",
-              "Gender": "Others",
-              "Age": "50+",
-              "Tenure": "Between 1- 2 years",
-              "Count": ""
-            },
-            {
-              "Framework": "BRSR",
-              "Entity Type": "CFO/CEO",
-              "Gender": "Others",
-              "Age": "50+",
-              "Tenure": "Between 2-5 years",
-              "Count": ""
-            },
-            {
-              "Framework": "BRSR",
-              "Entity Type": "CFO/CEO",
-              "Gender": "Others",
-              "Age": "50+",
-              "Tenure": "Between 5-7 years",
-              "Count": ""
-            },
-            {
-              "Framework": "BRSR",
-              "Entity Type": "CFO/CEO",
-              "Gender": "Others",
-              "Age": "50+",
-              "Tenure": "Between 7-9 years",
-              "Count": ""
-            },
-            {
-              "Framework": "BRSR",
-              "Entity Type": "CFO/CEO",
-              "Gender": "Others",
-              "Age": "50+",
+              "Age": "Less than 22",
               "Tenure": "Above 10 years",
               "Count": ""
             }
@@ -8275,64 +10122,52 @@ sap.ui.define(
           ,
           "Eco. Performance": [
             {
-              "Framework": "GRI,BRSR",
               "Data": "Total turnover",
               "Values": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Data": "Total Revenue",
               "Values": ""
             },
             {
-              "Framework": "GRI",
               "Data": "Direct economic value generated",
               "Values": ""
             },
             {
-              "Framework": "GRI",
               "Data": "Direct economic value Distributed",
               "Values": ""
             },
             {
-              "Framework": "GRI",
               "Data": "Financial assistance received from governments",
               "Values": ""
             },
             {
-              "Framework": "GRI",
               "Data": "Remuneration ratio of BOD vs Employee",
               "Values": ""
             }
           ],
           "Market Presence": [
             {
-              "Framework": "GRI,BRSR",
               "Data": "Entry level wage",
               "Values": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Data": "Minimum level wage",
               "Values": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Data": "Ratio of entry to minimum wage",
               "Values": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Data": "No of presence in national level",
               "Values": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Data": "No.of offices in International level",
               "Values": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Data": "currently presence in states",
               "Values": ""
             }
@@ -8340,7 +10175,6 @@ sap.ui.define(
 
           "Employment": [
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "New Hires - Disabled",
               "Gender": "Male",
@@ -8348,7 +10182,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "New Hires - Disabled",
               "Gender": "Male",
@@ -8356,7 +10189,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "New Hires - Disabled",
               "Gender": "Male",
@@ -8364,7 +10196,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "New Hires - Disabled",
               "Gender": "Male",
@@ -8372,7 +10203,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "New Hires - Disabled",
               "Gender": "Male",
@@ -8380,7 +10210,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "New Hires - Disabled",
               "Gender": "Female",
@@ -8388,7 +10217,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "New Hires - Disabled",
               "Gender": "Female",
@@ -8396,7 +10224,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "New Hires - Disabled",
               "Gender": "Female",
@@ -8404,7 +10231,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "New Hires - Disabled",
               "Gender": "Female",
@@ -8412,7 +10238,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "New Hires - Disabled",
               "Gender": "Female",
@@ -8420,7 +10245,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "New Hires - Disabled",
               "Gender": "LGBTQ",
@@ -8428,7 +10252,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "New Hires - Disabled",
               "Gender": "LGBTQ",
@@ -8436,7 +10259,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "New Hires - Disabled",
               "Gender": "LGBTQ",
@@ -8444,7 +10266,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "New Hires - Disabled",
               "Gender": "LGBTQ",
@@ -8452,7 +10273,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "New Hires - Disabled",
               "Gender": "LGBTQ",
@@ -8460,7 +10280,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "New Hires",
               "Gender": "Male",
@@ -8468,7 +10287,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "New Hires",
               "Gender": "Male",
@@ -8476,7 +10294,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "New Hires",
               "Gender": "Male",
@@ -8484,7 +10301,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "New Hires",
               "Gender": "Male",
@@ -8492,7 +10308,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "New Hires",
               "Gender": "Male",
@@ -8500,7 +10315,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "New Hires",
               "Gender": "Female",
@@ -8508,7 +10322,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "New Hires",
               "Gender": "Female",
@@ -8516,7 +10329,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "New Hires",
               "Gender": "Female",
@@ -8524,7 +10336,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "New Hires",
               "Gender": "Female",
@@ -8532,7 +10343,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "New Hires",
               "Gender": "Female",
@@ -8540,7 +10350,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "New Hires",
               "Gender": "LGBTQ",
@@ -8548,7 +10357,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "New Hires",
               "Gender": "LGBTQ",
@@ -8556,7 +10364,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "New Hires",
               "Gender": "LGBTQ",
@@ -8564,7 +10371,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "New Hires",
               "Gender": "LGBTQ",
@@ -8572,7 +10378,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "New Hires",
               "Gender": "LGBTQ",
@@ -8580,7 +10385,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "Existing",
               "Gender": "Male",
@@ -8588,7 +10392,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "Existing",
               "Gender": "Male",
@@ -8596,7 +10399,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "Existing",
               "Gender": "Male",
@@ -8604,7 +10406,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "Existing",
               "Gender": "Male",
@@ -8612,7 +10413,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "Existing",
               "Gender": "Male",
@@ -8620,7 +10420,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "Existing",
               "Gender": "Female",
@@ -8628,7 +10427,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "Existing",
               "Gender": "Female",
@@ -8636,7 +10434,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "Existing",
               "Gender": "Female",
@@ -8644,7 +10441,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "Existing",
               "Gender": "Female",
@@ -8652,7 +10448,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "Existing",
               "Gender": "Female",
@@ -8660,7 +10455,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "Existing",
               "Gender": "LGBTQ",
@@ -8668,7 +10462,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "Existing",
               "Gender": "LGBTQ",
@@ -8676,7 +10469,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "Existing",
               "Gender": "LGBTQ",
@@ -8684,7 +10476,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "Existing",
               "Gender": "LGBTQ",
@@ -8692,7 +10483,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "Existing",
               "Gender": "LGBTQ",
@@ -8700,7 +10490,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "Existing - Disabled",
               "Gender": "Male",
@@ -8708,7 +10497,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "Existing - Disabled",
               "Gender": "Male",
@@ -8716,7 +10504,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "Existing - Disabled",
               "Gender": "Male",
@@ -8724,7 +10511,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "Existing - Disabled",
               "Gender": "Male",
@@ -8732,7 +10518,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "Existing - Disabled",
               "Gender": "Male",
@@ -8740,7 +10525,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "Existing - Disabled",
               "Gender": "Female",
@@ -8748,7 +10532,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "Existing - Disabled",
               "Gender": "Female",
@@ -8756,7 +10539,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "Existing - Disabled",
               "Gender": "Female",
@@ -8764,7 +10546,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "Existing - Disabled",
               "Gender": "Female",
@@ -8772,7 +10553,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "Existing - Disabled",
               "Gender": "Female",
@@ -8780,7 +10560,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "Existing - Disabled",
               "Gender": "LGBTQ",
@@ -8788,7 +10567,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "Existing - Disabled",
               "Gender": "LGBTQ",
@@ -8796,7 +10574,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "Existing - Disabled",
               "Gender": "LGBTQ",
@@ -8804,7 +10581,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "Existing - Disabled",
               "Gender": "LGBTQ",
@@ -8812,7 +10588,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Employees",
               "Category": "Existing - Disabled",
               "Gender": "LGBTQ",
@@ -8820,7 +10595,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "New Hires - Disabled",
               "Gender": "Male",
@@ -8828,7 +10602,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "New Hires - Disabled",
               "Gender": "Male",
@@ -8836,7 +10609,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "New Hires - Disabled",
               "Gender": "Male",
@@ -8844,7 +10616,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "New Hires - Disabled",
               "Gender": "Male",
@@ -8852,7 +10623,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "New Hires - Disabled",
               "Gender": "Male",
@@ -8860,7 +10630,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "New Hires - Disabled",
               "Gender": "Female",
@@ -8868,7 +10637,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "New Hires - Disabled",
               "Gender": "Female",
@@ -8876,7 +10644,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "New Hires - Disabled",
               "Gender": "Female",
@@ -8884,7 +10651,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "New Hires - Disabled",
               "Gender": "Female",
@@ -8892,7 +10658,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "New Hires - Disabled",
               "Gender": "Female",
@@ -8900,7 +10665,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "New Hires - Disabled",
               "Gender": "LGBTQ",
@@ -8908,7 +10672,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "New Hires - Disabled",
               "Gender": "LGBTQ",
@@ -8916,7 +10679,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "New Hires - Disabled",
               "Gender": "LGBTQ",
@@ -8924,7 +10686,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "New Hires - Disabled",
               "Gender": "LGBTQ",
@@ -8932,7 +10693,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "New Hires - Disabled",
               "Gender": "LGBTQ",
@@ -8940,7 +10700,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "New Hires",
               "Gender": "Male",
@@ -8948,7 +10707,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "New Hires",
               "Gender": "Male",
@@ -8956,7 +10714,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "New Hires",
               "Gender": "Male",
@@ -8964,7 +10721,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "New Hires",
               "Gender": "Male",
@@ -8972,7 +10728,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "New Hires",
               "Gender": "Male",
@@ -8980,7 +10735,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "New Hires",
               "Gender": "Female",
@@ -8988,7 +10742,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "New Hires",
               "Gender": "Female",
@@ -8996,7 +10749,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "New Hires",
               "Gender": "Female",
@@ -9004,7 +10756,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "New Hires",
               "Gender": "Female",
@@ -9012,7 +10763,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "New Hires",
               "Gender": "Female",
@@ -9020,7 +10770,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "New Hires",
               "Gender": "LGBTQ",
@@ -9028,7 +10777,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "New Hires",
               "Gender": "LGBTQ",
@@ -9036,7 +10784,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "New Hires",
               "Gender": "LGBTQ",
@@ -9044,7 +10791,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "New Hires",
               "Gender": "LGBTQ",
@@ -9052,7 +10798,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "New Hires",
               "Gender": "LGBTQ",
@@ -9060,7 +10805,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "Existing",
               "Gender": "Male",
@@ -9068,7 +10812,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "Existing",
               "Gender": "Male",
@@ -9076,7 +10819,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "Existing",
               "Gender": "Male",
@@ -9084,7 +10826,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "Existing",
               "Gender": "Male",
@@ -9092,7 +10833,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "Existing",
               "Gender": "Male",
@@ -9100,7 +10840,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "Existing",
               "Gender": "Female",
@@ -9108,7 +10847,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "Existing",
               "Gender": "Female",
@@ -9116,7 +10854,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "Existing",
               "Gender": "Female",
@@ -9124,7 +10861,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "Existing",
               "Gender": "Female",
@@ -9132,7 +10868,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "Existing",
               "Gender": "Female",
@@ -9140,7 +10875,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "Existing",
               "Gender": "LGBTQ",
@@ -9148,7 +10882,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "Existing",
               "Gender": "LGBTQ",
@@ -9156,7 +10889,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "Existing",
               "Gender": "LGBTQ",
@@ -9164,7 +10896,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "Existing",
               "Gender": "LGBTQ",
@@ -9172,7 +10903,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "Existing",
               "Gender": "LGBTQ",
@@ -9180,7 +10910,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "Existing - Disabled",
               "Gender": "Male",
@@ -9188,7 +10917,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "Existing - Disabled",
               "Gender": "Male",
@@ -9196,7 +10924,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "Existing - Disabled",
               "Gender": "Male",
@@ -9204,7 +10931,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "Existing - Disabled",
               "Gender": "Male",
@@ -9212,7 +10938,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "Existing - Disabled",
               "Gender": "Male",
@@ -9220,7 +10945,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "Existing - Disabled",
               "Gender": "Female",
@@ -9228,7 +10952,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "Existing - Disabled",
               "Gender": "Female",
@@ -9236,7 +10959,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "Existing - Disabled",
               "Gender": "Female",
@@ -9244,7 +10966,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "Existing - Disabled",
               "Gender": "Female",
@@ -9252,7 +10973,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "Existing - Disabled",
               "Gender": "Female",
@@ -9260,7 +10980,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "Existing - Disabled",
               "Gender": "LGBTQ",
@@ -9268,7 +10987,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "Existing - Disabled",
               "Gender": "LGBTQ",
@@ -9276,7 +10994,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "Existing - Disabled",
               "Gender": "LGBTQ",
@@ -9284,7 +11001,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "Existing - Disabled",
               "Gender": "LGBTQ",
@@ -9292,7 +11008,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Temporary Employee",
               "Category": "Existing - Disabled",
               "Gender": "LGBTQ",
@@ -9300,7 +11015,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "New Hires - Disabled",
               "Gender": "Male",
@@ -9308,7 +11022,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "New Hires - Disabled",
               "Gender": "Male",
@@ -9316,7 +11029,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "New Hires - Disabled",
               "Gender": "Male",
@@ -9324,7 +11036,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "New Hires - Disabled",
               "Gender": "Male",
@@ -9332,7 +11043,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "New Hires - Disabled",
               "Gender": "Male",
@@ -9340,7 +11050,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "New Hires - Disabled",
               "Gender": "Female",
@@ -9348,7 +11057,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "New Hires - Disabled",
               "Gender": "Female",
@@ -9356,7 +11064,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "New Hires - Disabled",
               "Gender": "Female",
@@ -9364,7 +11071,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "New Hires - Disabled",
               "Gender": "Female",
@@ -9372,7 +11078,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "New Hires - Disabled",
               "Gender": "Female",
@@ -9380,7 +11085,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "New Hires - Disabled",
               "Gender": "LGBTQ",
@@ -9388,7 +11092,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "New Hires - Disabled",
               "Gender": "LGBTQ",
@@ -9396,7 +11099,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "New Hires - Disabled",
               "Gender": "LGBTQ",
@@ -9404,7 +11106,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "New Hires - Disabled",
               "Gender": "LGBTQ",
@@ -9412,7 +11113,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "New Hires - Disabled",
               "Gender": "LGBTQ",
@@ -9420,7 +11120,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "New Hires",
               "Gender": "Male",
@@ -9428,7 +11127,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "New Hires",
               "Gender": "Male",
@@ -9436,7 +11134,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "New Hires",
               "Gender": "Male",
@@ -9444,7 +11141,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "New Hires",
               "Gender": "Male",
@@ -9452,7 +11148,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "New Hires",
               "Gender": "Male",
@@ -9460,7 +11155,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "New Hires",
               "Gender": "Female",
@@ -9468,7 +11162,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "New Hires",
               "Gender": "Female",
@@ -9476,7 +11169,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "New Hires",
               "Gender": "Female",
@@ -9484,7 +11176,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "New Hires",
               "Gender": "Female",
@@ -9492,7 +11183,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "New Hires",
               "Gender": "Female",
@@ -9500,7 +11190,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "New Hires",
               "Gender": "LGBTQ",
@@ -9508,7 +11197,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "New Hires",
               "Gender": "LGBTQ",
@@ -9516,7 +11204,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "New Hires",
               "Gender": "LGBTQ",
@@ -9524,7 +11211,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "New Hires",
               "Gender": "LGBTQ",
@@ -9532,7 +11218,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "New Hires",
               "Gender": "LGBTQ",
@@ -9540,7 +11225,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "Existing",
               "Gender": "Male",
@@ -9548,7 +11232,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "Existing",
               "Gender": "Male",
@@ -9556,7 +11239,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "Existing",
               "Gender": "Male",
@@ -9564,7 +11246,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "Existing",
               "Gender": "Male",
@@ -9572,7 +11253,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "Existing",
               "Gender": "Male",
@@ -9580,7 +11260,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "Existing",
               "Gender": "Female",
@@ -9588,7 +11267,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "Existing",
               "Gender": "Female",
@@ -9596,7 +11274,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "Existing",
               "Gender": "Female",
@@ -9604,7 +11281,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "Existing",
               "Gender": "Female",
@@ -9612,7 +11288,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "Existing",
               "Gender": "Female",
@@ -9620,7 +11295,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "Existing",
               "Gender": "LGBTQ",
@@ -9628,7 +11302,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "Existing",
               "Gender": "LGBTQ",
@@ -9636,7 +11309,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "Existing",
               "Gender": "LGBTQ",
@@ -9644,7 +11316,6 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
               "Category": "Existing",
               "Gender": "LGBTQ",
@@ -9652,8 +11323,325 @@ sap.ui.define(
               "Count": ""
             },
             {
-              "Framework": "",
               "Employment Type": "Workers",
+              "Category": "Existing",
+              "Gender": "LGBTQ",
+              "Age": "Overall",
+              "Count": ""
+            },
+
+
+
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "New Hires - Disabled",
+              "Gender": "Male",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "New Hires - Disabled",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "New Hires - Disabled",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "New Hires - Disabled",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "New Hires - Disabled",
+              "Gender": "Male",
+              "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "New Hires - Disabled",
+              "Gender": "Female",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "New Hires - Disabled",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "New Hires - Disabled",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "New Hires - Disabled",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "New Hires - Disabled",
+              "Gender": "Female",
+              "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "New Hires - Disabled",
+              "Gender": "LGBTQ",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "New Hires - Disabled",
+              "Gender": "LGBTQ",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "New Hires - Disabled",
+              "Gender": "LGBTQ",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "New Hires - Disabled",
+              "Gender": "LGBTQ",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "New Hires - Disabled",
+              "Gender": "LGBTQ",
+              "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "New Hires",
+              "Gender": "Male",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "New Hires",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "New Hires",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "New Hires",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "New Hires",
+              "Gender": "Male",
+              "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "New Hires",
+              "Gender": "Female",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "New Hires",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "New Hires",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "New Hires",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "New Hires",
+              "Gender": "Female",
+              "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "New Hires",
+              "Gender": "LGBTQ",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "New Hires",
+              "Gender": "LGBTQ",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "New Hires",
+              "Gender": "LGBTQ",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "New Hires",
+              "Gender": "LGBTQ",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "New Hires",
+              "Gender": "LGBTQ",
+              "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "Existing",
+              "Gender": "Male",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "Existing",
+              "Gender": "Male",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "Existing",
+              "Gender": "Male",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "Existing",
+              "Gender": "Male",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "Existing",
+              "Gender": "Male",
+              "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "Existing",
+              "Gender": "Female",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "Existing",
+              "Gender": "Female",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "Existing",
+              "Gender": "Female",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "Existing",
+              "Gender": "Female",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "Existing",
+              "Gender": "Female",
+              "Age": "Overall",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "Existing",
+              "Gender": "LGBTQ",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "Existing",
+              "Gender": "LGBTQ",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "Existing",
+              "Gender": "LGBTQ",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
+              "Category": "Existing",
+              "Gender": "LGBTQ",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employment Type": "Temporary Workers",
               "Category": "Existing",
               "Gender": "LGBTQ",
               "Age": "Overall",
@@ -9663,45 +11651,543 @@ sap.ui.define(
           ,
           "Leave": [
             {
-              "Framework": "GRI,BRSR",
               "Type of Leave": "Maternity leave",
               "Duration in Days": "",
-              "Count of Employees": ""
+              "Head Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Type of Leave": "Paternity leave",
               "Duration in Days": "",
-              "Count of Employees": ""
+              "Head Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Type of Leave": "Birthday leave",
               "Duration in Days": "",
-              "Count of Employees": ""
+              "Head Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Type of Leave": "Marriage leave",
               "Duration in Days": "",
-              "Count of Employees": ""
+              "Head Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Type of Leave": "Accidental leave",
               "Duration in Days": "",
-              "Count of Employees": ""
+              "Head Count": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Type of Leave": "Sick leave",
               "Duration in Days": "",
-              "Count of Employees": ""
+              "Head Count": ""
             }
           ]
           ,
           "Retention": [
             {
+              "Employee Type": "BOD",
+              "Gender": "Male",
+              "Tenure": "Less than 1 year",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Male",
+              "Tenure": "Less than 1 year",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Male",
+              "Tenure": "Less than 1 year",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Male",
+              "Tenure": "Less than 1 year",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Male",
+              "Tenure": "Between 1-2 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Male",
+              "Tenure": "Between 1-2 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Male",
+              "Tenure": "Between 1-2 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Male",
+              "Tenure": "Between 1-2 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Male",
+              "Tenure": "Between 2-5 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Male",
+              "Tenure": "Between 2-5 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Male",
+              "Tenure": "Between 2-5 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Male",
+              "Tenure": "Between 2-5 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Male",
+              "Tenure": "Between 5-7 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Male",
+              "Tenure": "Between 5-7 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Male",
+              "Tenure": "Between 5-7 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Male",
+              "Tenure": "Between 5-7 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Male",
+              "Tenure": "Between 7-9 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Male",
+              "Tenure": "Between 7-9 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Male",
+              "Tenure": "Between 7-9 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Male",
+              "Tenure": "Between 7-9 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Male",
+              "Tenure": "Above 10 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Male",
+              "Tenure": "Above 10 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Male",
+              "Tenure": "Above 10 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Male",
+              "Tenure": "Above 10 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Female",
+              "Tenure": "Less than 1 year",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Female",
+              "Tenure": "Less than 1 year",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Female",
+              "Tenure": "Less than 1 year",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Female",
+              "Tenure": "Less than 1 year",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Female",
+              "Tenure": "Between 1-2 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Female",
+              "Tenure": "Between 1-2 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Female",
+              "Tenure": "Between 1-2 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Female",
+              "Tenure": "Between 1-2 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Female",
+              "Tenure": "Between 2-5 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Female",
+              "Tenure": "Between 2-5 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Female",
+              "Tenure": "Between 2-5 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Female",
+              "Tenure": "Between 2-5 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Female",
+              "Tenure": "Between 5-7 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Female",
+              "Tenure": "Between 5-7 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Female",
+              "Tenure": "Between 5-7 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Female",
+              "Tenure": "Between 5-7 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Female",
+              "Tenure": "Between 7-9 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Female",
+              "Tenure": "Between 7-9 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Female",
+              "Tenure": "Between 7-9 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Female",
+              "Tenure": "Between 7-9 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Female",
+              "Tenure": "Above 10 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Female",
+              "Tenure": "Above 10 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Female",
+              "Tenure": "Above 10 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Female",
+              "Tenure": "Above 10 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Others",
+              "Tenure": "Less than 1 year",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Others",
+              "Tenure": "Less than 1 year",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Others",
+              "Tenure": "Less than 1 year",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Others",
+              "Tenure": "Less than 1 year",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Others",
+              "Tenure": "Between 1-2 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Others",
+              "Tenure": "Between 1-2 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Others",
+              "Tenure": "Between 1-2 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Others",
+              "Tenure": "Between 1-2 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Others",
+              "Tenure": "Between 2-5 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Others",
+              "Tenure": "Between 2-5 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Others",
+              "Tenure": "Between 2-5 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Others",
+              "Tenure": "Between 2-5 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Others",
+              "Tenure": "Between 5-7 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Others",
+              "Tenure": "Between 5-7 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Others",
+              "Tenure": "Between 5-7 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Others",
+              "Tenure": "Between 5-7 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Others",
+              "Tenure": "Between 7-9 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Others",
+              "Tenure": "Between 7-9 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Others",
+              "Tenure": "Between 7-9 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Others",
+              "Tenure": "Between 7-9 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Others",
+              "Tenure": "Above 10 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Others",
+              "Tenure": "Above 10 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Others",
+              "Tenure": "Above 10 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "BOD",
+              "Gender": "Others",
+              "Tenure": "Above 10 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
               "Employee Type": "Employees",
               "Gender": "Male",
               "Tenure": "Less than 1 year",
@@ -9726,6 +12212,146 @@ sap.ui.define(
               "Employee Type": "Employees",
               "Gender": "Male",
               "Tenure": "Less than 1 year",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Male",
+              "Tenure": "Between 1-2 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Male",
+              "Tenure": "Between 1-2 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Male",
+              "Tenure": "Between 1-2 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Male",
+              "Tenure": "Between 1-2 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Male",
+              "Tenure": "Between 2-5 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Male",
+              "Tenure": "Between 2-5 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Male",
+              "Tenure": "Between 2-5 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Male",
+              "Tenure": "Between 2-5 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Male",
+              "Tenure": "Between 5-7 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Male",
+              "Tenure": "Between 5-7 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Male",
+              "Tenure": "Between 5-7 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Male",
+              "Tenure": "Between 5-7 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Male",
+              "Tenure": "Between 7-9 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Male",
+              "Tenure": "Between 7-9 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Male",
+              "Tenure": "Between 7-9 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Male",
+              "Tenure": "Between 7-9 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Male",
+              "Tenure": "Above 10 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Male",
+              "Tenure": "Above 10 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Male",
+              "Tenure": "Above 10 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Male",
+              "Tenure": "Above 10 years",
               "Age": "Less than 22",
               "Count": ""
             },
@@ -9759,6 +12385,146 @@ sap.ui.define(
             },
             {
               "Employee Type": "Employees",
+              "Gender": "Female",
+              "Tenure": "Between 1-2 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Female",
+              "Tenure": "Between 1-2 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Female",
+              "Tenure": "Between 1-2 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Female",
+              "Tenure": "Between 1-2 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Female",
+              "Tenure": "Between 2-5 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Female",
+              "Tenure": "Between 2-5 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Female",
+              "Tenure": "Between 2-5 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Female",
+              "Tenure": "Between 2-5 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Female",
+              "Tenure": "Between 5-7 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Female",
+              "Tenure": "Between 5-7 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Female",
+              "Tenure": "Between 5-7 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Female",
+              "Tenure": "Between 5-7 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Female",
+              "Tenure": "Between 7-9 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Female",
+              "Tenure": "Between 7-9 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Female",
+              "Tenure": "Between 7-9 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Female",
+              "Tenure": "Between 7-9 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Female",
+              "Tenure": "Above 10 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Female",
+              "Tenure": "Above 10 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Female",
+              "Tenure": "Above 10 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Female",
+              "Tenure": "Above 10 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
               "Gender": "Others",
               "Tenure": "Less than 1 year",
               "Age": "50+",
@@ -9787,85 +12553,1149 @@ sap.ui.define(
             },
             {
               "Employee Type": "Employees",
-              "Gender": "Male",
-              "Tenure": "Between 1- 2 years",
+              "Gender": "Others",
+              "Tenure": "Between 1-2 years",
               "Age": "50+",
               "Count": ""
             },
             {
               "Employee Type": "Employees",
-              "Gender": "Male",
-              "Tenure": "Between 1- 2 years",
+              "Gender": "Others",
+              "Tenure": "Between 1-2 years",
               "Age": "35 to 50",
               "Count": ""
             },
             {
               "Employee Type": "Employees",
-              "Gender": "Male",
-              "Tenure": "Between 1- 2 years",
+              "Gender": "Others",
+              "Tenure": "Between 1-2 years",
               "Age": "22 to 35",
               "Count": ""
             },
             {
               "Employee Type": "Employees",
-              "Gender": "Male",
-              "Tenure": "Between 1- 2 years",
-              "Age": "Less than 22",
-              "Count": ""
-            },
-            {
-              "Employee Type": "Employees",
-              "Gender": "Female",
-              "Tenure": "Between 1- 2 years",
-              "Age": "50+",
-              "Count": ""
-            },
-            {
-              "Employee Type": "Employees",
-              "Gender": "Female",
-              "Tenure": "Between 1- 2 years",
-              "Age": "35 to 50",
-              "Count": ""
-            },
-            {
-              "Employee Type": "Employees",
-              "Gender": "Female",
-              "Tenure": "Between 1- 2 years",
-              "Age": "22 to 35",
-              "Count": ""
-            },
-            {
-              "Employee Type": "Employees",
-              "Gender": "Female",
-              "Tenure": "Between 1- 2 years",
+              "Gender": "Others",
+              "Tenure": "Between 1-2 years",
               "Age": "Less than 22",
               "Count": ""
             },
             {
               "Employee Type": "Employees",
               "Gender": "Others",
-              "Tenure": "Between 1- 2 years",
+              "Tenure": "Between 2-5 years",
               "Age": "50+",
               "Count": ""
             },
             {
               "Employee Type": "Employees",
               "Gender": "Others",
-              "Tenure": "Between 1- 2 years",
+              "Tenure": "Between 2-5 years",
               "Age": "35 to 50",
               "Count": ""
             },
             {
               "Employee Type": "Employees",
               "Gender": "Others",
-              "Tenure": "Between 1- 2 years",
+              "Tenure": "Between 2-5 years",
               "Age": "22 to 35",
               "Count": ""
             },
             {
               "Employee Type": "Employees",
               "Gender": "Others",
-              "Tenure": "Between 1- 2 years",
+              "Tenure": "Between 2-5 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Others",
+              "Tenure": "Between 5-7 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Others",
+              "Tenure": "Between 5-7 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Others",
+              "Tenure": "Between 5-7 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Others",
+              "Tenure": "Between 5-7 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Others",
+              "Tenure": "Between 7-9 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Others",
+              "Tenure": "Between 7-9 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Others",
+              "Tenure": "Between 7-9 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Others",
+              "Tenure": "Between 7-9 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Others",
+              "Tenure": "Above 10 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Others",
+              "Tenure": "Above 10 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Others",
+              "Tenure": "Above 10 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Employees",
+              "Gender": "Others",
+              "Tenure": "Above 10 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Male",
+              "Tenure": "Less than 1 year",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Male",
+              "Tenure": "Less than 1 year",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Male",
+              "Tenure": "Less than 1 year",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Male",
+              "Tenure": "Less than 1 year",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Male",
+              "Tenure": "Between 1-2 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Male",
+              "Tenure": "Between 1-2 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Male",
+              "Tenure": "Between 1-2 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Male",
+              "Tenure": "Between 1-2 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Male",
+              "Tenure": "Between 2-5 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Male",
+              "Tenure": "Between 2-5 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Male",
+              "Tenure": "Between 2-5 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Male",
+              "Tenure": "Between 2-5 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Male",
+              "Tenure": "Between 5-7 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Male",
+              "Tenure": "Between 5-7 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Male",
+              "Tenure": "Between 5-7 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Male",
+              "Tenure": "Between 5-7 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Male",
+              "Tenure": "Between 7-9 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Male",
+              "Tenure": "Between 7-9 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Male",
+              "Tenure": "Between 7-9 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Male",
+              "Tenure": "Between 7-9 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Male",
+              "Tenure": "Above 10 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Male",
+              "Tenure": "Above 10 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Male",
+              "Tenure": "Above 10 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Male",
+              "Tenure": "Above 10 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Female",
+              "Tenure": "Less than 1 year",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Female",
+              "Tenure": "Less than 1 year",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Female",
+              "Tenure": "Less than 1 year",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Female",
+              "Tenure": "Less than 1 year",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Female",
+              "Tenure": "Between 1-2 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Female",
+              "Tenure": "Between 1-2 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Female",
+              "Tenure": "Between 1-2 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Female",
+              "Tenure": "Between 1-2 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Female",
+              "Tenure": "Between 2-5 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Female",
+              "Tenure": "Between 2-5 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Female",
+              "Tenure": "Between 2-5 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Female",
+              "Tenure": "Between 2-5 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Female",
+              "Tenure": "Between 5-7 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Female",
+              "Tenure": "Between 5-7 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Female",
+              "Tenure": "Between 5-7 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Female",
+              "Tenure": "Between 5-7 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Female",
+              "Tenure": "Between 7-9 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Female",
+              "Tenure": "Between 7-9 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Female",
+              "Tenure": "Between 7-9 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Female",
+              "Tenure": "Between 7-9 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Female",
+              "Tenure": "Above 10 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Female",
+              "Tenure": "Above 10 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Female",
+              "Tenure": "Above 10 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Female",
+              "Tenure": "Above 10 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Others",
+              "Tenure": "Less than 1 year",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Others",
+              "Tenure": "Less than 1 year",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Others",
+              "Tenure": "Less than 1 year",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Others",
+              "Tenure": "Less than 1 year",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Others",
+              "Tenure": "Between 1-2 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Others",
+              "Tenure": "Between 1-2 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Others",
+              "Tenure": "Between 1-2 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Others",
+              "Tenure": "Between 1-2 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Others",
+              "Tenure": "Between 2-5 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Others",
+              "Tenure": "Between 2-5 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Others",
+              "Tenure": "Between 2-5 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Others",
+              "Tenure": "Between 2-5 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Others",
+              "Tenure": "Between 5-7 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Others",
+              "Tenure": "Between 5-7 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Others",
+              "Tenure": "Between 5-7 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Others",
+              "Tenure": "Between 5-7 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Others",
+              "Tenure": "Between 7-9 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Others",
+              "Tenure": "Between 7-9 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Others",
+              "Tenure": "Between 7-9 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Others",
+              "Tenure": "Between 7-9 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Others",
+              "Tenure": "Above 10 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Others",
+              "Tenure": "Above 10 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Others",
+              "Tenure": "Above 10 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Temporary Employee",
+              "Gender": "Others",
+              "Tenure": "Above 10 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Male",
+              "Tenure": "Less than 1 year",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Male",
+              "Tenure": "Less than 1 year",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Male",
+              "Tenure": "Less than 1 year",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Male",
+              "Tenure": "Less than 1 year",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Male",
+              "Tenure": "Between 1-2 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Male",
+              "Tenure": "Between 1-2 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Male",
+              "Tenure": "Between 1-2 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Male",
+              "Tenure": "Between 1-2 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Male",
+              "Tenure": "Between 2-5 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Male",
+              "Tenure": "Between 2-5 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Male",
+              "Tenure": "Between 2-5 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Male",
+              "Tenure": "Between 2-5 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Male",
+              "Tenure": "Between 5-7 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Male",
+              "Tenure": "Between 5-7 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Male",
+              "Tenure": "Between 5-7 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Male",
+              "Tenure": "Between 5-7 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Male",
+              "Tenure": "Between 7-9 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Male",
+              "Tenure": "Between 7-9 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Male",
+              "Tenure": "Between 7-9 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Male",
+              "Tenure": "Between 7-9 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Male",
+              "Tenure": "Above 10 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Male",
+              "Tenure": "Above 10 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Male",
+              "Tenure": "Above 10 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Male",
+              "Tenure": "Above 10 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Female",
+              "Tenure": "Less than 1 year",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Female",
+              "Tenure": "Less than 1 year",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Female",
+              "Tenure": "Less than 1 year",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Female",
+              "Tenure": "Less than 1 year",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Female",
+              "Tenure": "Between 1-2 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Female",
+              "Tenure": "Between 1-2 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Female",
+              "Tenure": "Between 1-2 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Female",
+              "Tenure": "Between 1-2 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Female",
+              "Tenure": "Between 2-5 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Female",
+              "Tenure": "Between 2-5 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Female",
+              "Tenure": "Between 2-5 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Female",
+              "Tenure": "Between 2-5 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Female",
+              "Tenure": "Between 5-7 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Female",
+              "Tenure": "Between 5-7 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Female",
+              "Tenure": "Between 5-7 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Female",
+              "Tenure": "Between 5-7 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Female",
+              "Tenure": "Between 7-9 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Female",
+              "Tenure": "Between 7-9 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Female",
+              "Tenure": "Between 7-9 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Female",
+              "Tenure": "Between 7-9 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Female",
+              "Tenure": "Above 10 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Female",
+              "Tenure": "Above 10 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Female",
+              "Tenure": "Above 10 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Female",
+              "Tenure": "Above 10 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Others",
+              "Tenure": "Less than 1 year",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Others",
+              "Tenure": "Less than 1 year",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Others",
+              "Tenure": "Less than 1 year",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Others",
+              "Tenure": "Less than 1 year",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Others",
+              "Tenure": "Between 1-2 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Others",
+              "Tenure": "Between 1-2 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Others",
+              "Tenure": "Between 1-2 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Others",
+              "Tenure": "Between 1-2 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Others",
+              "Tenure": "Between 2-5 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Others",
+              "Tenure": "Between 2-5 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Others",
+              "Tenure": "Between 2-5 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Others",
+              "Tenure": "Between 2-5 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Others",
+              "Tenure": "Between 5-7 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Others",
+              "Tenure": "Between 5-7 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Others",
+              "Tenure": "Between 5-7 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Others",
+              "Tenure": "Between 5-7 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Others",
+              "Tenure": "Between 7-9 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Others",
+              "Tenure": "Between 7-9 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Others",
+              "Tenure": "Between 7-9 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Others",
+              "Tenure": "Between 7-9 years",
+              "Age": "Less than 22",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Others",
+              "Tenure": "Above 10 years",
+              "Age": "50+",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Others",
+              "Tenure": "Above 10 years",
+              "Age": "35 to 50",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Others",
+              "Tenure": "Above 10 years",
+              "Age": "22 to 35",
+              "Count": ""
+            },
+            {
+              "Employee Type": "Workers",
+              "Gender": "Others",
+              "Tenure": "Above 10 years",
               "Age": "Less than 22",
               "Count": ""
             }
@@ -9873,178 +13703,171 @@ sap.ui.define(
           ,
           "OH and S": [
             {
-              "Framework": "GRI,BRSR",
               "Injury Type": "Slips, Trips, and Falls",
               "Number of Incidents": "",
               "Gender": "Male",
               "Count of Persons": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Injury Type": "Slips, Trips, and Falls",
               "Number of Incidents": "",
               "Gender": "Female",
               "Count of Persons": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Injury Type": "Slips, Trips, and Falls",
               "Number of Incidents": "",
               "Gender": "Others",
               "Count of Persons": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Injury Type": "Cuts and Lacerations",
               "Number of Incidents": "",
               "Gender": "Male",
               "Count of Persons": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Injury Type": "Cuts and Lacerations",
               "Number of Incidents": "",
               "Gender": "Female",
               "Count of Persons": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Injury Type": "Cuts and Lacerations",
               "Number of Incidents": "",
               "Gender": "Others",
               "Count of Persons": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Injury Type": "Overexertion Injuries",
               "Number of Incidents": "",
               "Gender": "Male",
               "Count of Persons": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Injury Type": "Overexertion Injuries",
               "Number of Incidents": "",
               "Gender": "Female",
               "Count of Persons": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Injury Type": "Overexertion Injuries",
               "Number of Incidents": "",
               "Gender": "Others",
               "Count of Persons": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Injury Type": "Contact with Objects and Equipment",
               "Number of Incidents": "",
               "Gender": "Male",
               "Count of Persons": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Injury Type": "Contact with Objects and Equipment",
               "Number of Incidents": "",
               "Gender": "Female",
               "Count of Persons": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Injury Type": "Contact with Objects and Equipment",
               "Number of Incidents": "",
               "Gender": "Others",
               "Count of Persons": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Injury Type": "Fires and Explosions",
               "Number of Incidents": "",
               "Gender": "Male",
               "Count of Persons": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Injury Type": "Fires and Explosions",
               "Number of Incidents": "",
               "Gender": "Female",
               "Count of Persons": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Injury Type": "Fires and Explosions",
               "Number of Incidents": "",
               "Gender": "Others",
               "Count of Persons": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Injury Type": "Exposure to Hazardous Materials",
               "Number of Incidents": "",
               "Gender": "Male",
               "Count of Persons": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Injury Type": "Exposure to Hazardous Materials",
               "Number of Incidents": "",
               "Gender": "Female",
               "Count of Persons": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Injury Type": "Exposure to Hazardous Materials",
               "Number of Incidents": "",
               "Gender": "Others",
               "Count of Persons": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Injury Type": "Accident during Business Travel",
               "Number of Incidents": "",
               "Gender": "Male",
               "Count of Persons": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Injury Type": "Accident during Business Travel",
               "Number of Incidents": "",
               "Gender": "Female",
               "Count of Persons": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Injury Type": "Accident during Business Travel",
               "Number of Incidents": "",
               "Gender": "Others",
               "Count of Persons": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Injury Type": "Accident during workplace commute",
               "Number of Incidents": "",
               "Gender": "Male",
               "Count of Persons": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Injury Type": "Accident during workplace commute",
               "Number of Incidents": "",
               "Gender": "Female",
               "Count of Persons": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Injury Type": "Accident during workplace commute",
               "Number of Incidents": "",
               "Gender": "Others",
               "Count of Persons": ""
-            }
+            },
+            {
+              "Injury Type": "Others",
+              "Number of Incidents": "",
+              "Gender": "Male",
+              "Count of Persons": ""
+            },
+            {
+              "Injury Type": "Others",
+              "Number of Incidents": "",
+              "Gender": "Female",
+              "Count of Persons": ""
+            },
+            {
+              "Injury Type": "Others",
+              "Number of Incidents": "",
+              "Gender": "Others",
+              "Count of Persons": ""
+            },
           ]
           ,
           "Training and Edu": [
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Employee health & safety training",
 
               "Segment": "BOD",
@@ -10053,7 +13876,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Employee health & safety training",
 
               "Segment": "Employees",
@@ -10062,7 +13884,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Employee health & safety training",
 
               "Segment": "Key management personnel",
@@ -10071,7 +13892,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Employee health & safety training",
 
               "Segment": "Workers",
@@ -10080,7 +13900,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Employee health & safety training",
 
               "Segment": "others",
@@ -10089,7 +13908,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Employee Skill Upgradation Training",
 
               "Segment": "BOD",
@@ -10098,7 +13916,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Employee Skill Upgradation Training",
 
               "Segment": "Employees",
@@ -10107,7 +13924,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Employee Skill Upgradation Training",
 
               "Segment": "Key management personnel",
@@ -10116,7 +13932,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Employee Skill Upgradation Training",
 
               "Segment": "Workers",
@@ -10125,7 +13940,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Employee Skill Upgradation Training",
 
               "Segment": "others",
@@ -10134,7 +13948,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Onboarding and orientation",
 
               "Segment": "BOD",
@@ -10143,7 +13956,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Onboarding and orientation",
 
               "Segment": "Employees",
@@ -10152,7 +13964,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Onboarding and orientation",
 
               "Segment": "Key management personnel",
@@ -10161,7 +13972,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Onboarding and orientation",
 
               "Segment": "Workers",
@@ -10170,7 +13980,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Onboarding and orientation",
 
               "Segment": "others",
@@ -10179,7 +13988,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Technical Training",
 
               "Segment": "BOD",
@@ -10188,7 +13996,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Technical Training",
 
               "Segment": "Employees",
@@ -10197,7 +14004,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Technical Training",
 
               "Segment": "Key management personnel",
@@ -10206,7 +14012,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Technical Training",
 
               "Segment": "Workers",
@@ -10215,7 +14020,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Technical Training",
 
               "Segment": "others",
@@ -10224,7 +14028,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "corporate training",
 
               "Segment": "BOD",
@@ -10233,7 +14036,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "corporate training",
 
               "Segment": "Employees",
@@ -10242,7 +14044,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "corporate training",
 
               "Segment": "Key management personnel",
@@ -10251,7 +14052,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "corporate training",
 
               "Segment": "Workers",
@@ -10260,7 +14060,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "corporate training",
 
               "Segment": "others",
@@ -10269,7 +14068,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Anti-corruption Training",
 
               "Segment": "BOD",
@@ -10278,7 +14076,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Anti-corruption Training",
 
               "Segment": "Employees",
@@ -10287,7 +14084,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Anti-corruption Training",
 
               "Segment": "Key management personnel",
@@ -10296,7 +14092,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Anti-corruption Training",
 
               "Segment": "Workers",
@@ -10305,7 +14100,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Anti-corruption Training",
 
               "Segment": "others",
@@ -10314,7 +14108,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "POSH training",
 
               "Segment": "BOD",
@@ -10323,7 +14116,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "POSH training",
 
               "Segment": "BOD",
@@ -10332,7 +14124,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "POSH training",
 
               "Segment": "Employees",
@@ -10341,7 +14132,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "POSH training",
 
               "Segment": "Key management personnel",
@@ -10350,7 +14140,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "POSH training",
 
               "Segment": "Workers",
@@ -10359,7 +14148,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "POSH training",
 
               "Segment": "others",
@@ -10368,7 +14156,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Strategy Implementation",
 
               "Segment": "BOD",
@@ -10377,7 +14164,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Strategy Implementation",
 
               "Segment": "Employees",
@@ -10386,7 +14172,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Strategy Implementation",
 
               "Segment": "Key management personnel",
@@ -10395,7 +14180,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Strategy Implementation",
 
               "Segment": "Workers",
@@ -10404,7 +14188,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Strategy Implementation",
 
               "Segment": "others",
@@ -10413,7 +14196,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Business operation",
 
               "Segment": "BOD",
@@ -10422,7 +14204,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Business operation",
 
               "Segment": "Employees",
@@ -10431,7 +14212,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Business operation",
 
               "Segment": "Key management personnel",
@@ -10440,7 +14220,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Business operation",
 
               "Segment": "Workers",
@@ -10449,7 +14228,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Business operation",
 
               "Segment": "others",
@@ -10458,7 +14236,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Organisation structure",
 
               "Segment": "BOD",
@@ -10467,7 +14244,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Organisation structure",
 
               "Segment": "Employees",
@@ -10476,7 +14252,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Organisation structure",
 
               "Segment": "Key management personnel",
@@ -10485,7 +14260,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Organisation structure",
 
               "Segment": "Workers",
@@ -10494,7 +14268,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Organisation structure",
 
               "Segment": "others",
@@ -10503,7 +14276,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Risk Management training",
 
               "Segment": "BOD",
@@ -10512,7 +14284,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Risk Management training",
 
               "Segment": "Employees",
@@ -10521,7 +14292,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Risk Management training",
 
               "Segment": "Key management personnel",
@@ -10530,7 +14300,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Risk Management training",
 
               "Segment": "Workers",
@@ -10539,7 +14308,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Risk Management training",
 
               "Segment": "others",
@@ -10548,7 +14316,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Regulatory framework",
 
               "Segment": "BOD",
@@ -10557,7 +14324,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Regulatory framework",
 
               "Segment": "Employees",
@@ -10566,7 +14332,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Regulatory framework",
 
               "Segment": "Key management personnel",
@@ -10575,7 +14340,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Regulatory framework",
 
               "Segment": "Workers",
@@ -10584,7 +14348,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Regulatory framework",
 
               "Segment": "others",
@@ -10593,7 +14356,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Cyber security",
 
               "Segment": "BOD",
@@ -10602,7 +14364,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Cyber security",
 
               "Segment": "Employees",
@@ -10611,7 +14372,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Cyber security",
 
               "Segment": "Key management personnel",
@@ -10620,7 +14380,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Cyber security",
 
               "Segment": "Workers",
@@ -10629,7 +14388,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Cyber security",
 
               "Segment": "others",
@@ -10638,7 +14396,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Future outlook training",
 
               "Segment": "BOD",
@@ -10647,7 +14404,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Future outlook training",
 
               "Segment": "Employees",
@@ -10656,7 +14412,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Future outlook training",
 
               "Segment": "Key management personnel",
@@ -10665,7 +14420,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Future outlook training",
 
               "Segment": "Workers",
@@ -10674,7 +14428,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Future outlook training",
 
               "Segment": "others",
@@ -10683,7 +14436,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Leadership connect program",
 
               "Segment": "BOD",
@@ -10692,7 +14444,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Leadership connect program",
 
               "Segment": "Employees",
@@ -10701,7 +14452,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Leadership connect program",
 
               "Segment": "Key management personnel",
@@ -10710,7 +14460,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Leadership connect program",
 
               "Segment": "Workers",
@@ -10719,7 +14468,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Leadership connect program",
 
               "Segment": "others",
@@ -10728,7 +14476,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Corporate governance training",
 
               "Segment": "BOD",
@@ -10737,7 +14484,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Corporate governance training",
 
               "Segment": "Employees",
@@ -10746,7 +14492,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Corporate governance training",
 
               "Segment": "Key management personnel",
@@ -10755,7 +14500,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Corporate governance training",
 
               "Segment": "Workers",
@@ -10764,7 +14508,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Corporate governance training",
 
               "Segment": "others",
@@ -10773,7 +14516,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Emerging compliance landscape",
 
               "Segment": "BOD",
@@ -10782,7 +14524,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Emerging compliance landscape",
 
               "Segment": "Employees",
@@ -10791,7 +14532,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Emerging compliance landscape",
 
               "Segment": "Key management personnel",
@@ -10800,7 +14540,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Emerging compliance landscape",
 
               "Segment": "Workers",
@@ -10809,7 +14548,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Emerging compliance landscape",
 
               "Segment": "others",
@@ -10818,7 +14556,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "AML (Anti-money laundering)",
 
               "Segment": "BOD",
@@ -10827,7 +14564,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "AML (Anti-money laundering)",
 
               "Segment": "Employees",
@@ -10836,7 +14572,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "AML (Anti-money laundering)",
 
               "Segment": "Key management personnel",
@@ -10845,7 +14580,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "AML (Anti-money laundering)",
 
               "Segment": "Workers",
@@ -10854,7 +14588,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "AML (Anti-money laundering)",
 
               "Segment": "others",
@@ -10863,7 +14596,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "KYC",
 
               "Segment": "BOD",
@@ -10872,7 +14604,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "KYC",
 
               "Segment": "Employees",
@@ -10881,7 +14612,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "KYC",
 
               "Segment": "Key management personnel",
@@ -10890,7 +14620,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "KYC",
 
               "Segment": "Workers",
@@ -10899,7 +14628,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "KYC",
 
               "Segment": "others",
@@ -10908,7 +14636,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Whistle-blower Policy Training",
 
               "Segment": "BOD",
@@ -10917,7 +14644,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Whistle-blower Policy Training",
 
               "Segment": "Employees",
@@ -10926,7 +14652,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Whistle-blower Policy Training",
 
               "Segment": "Key management personnel",
@@ -10935,7 +14660,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Whistle-blower Policy Training",
 
               "Segment": "Workers",
@@ -10944,7 +14668,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Whistle-blower Policy Training",
 
               "Segment": "others",
@@ -10953,7 +14676,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "NRI Product & KYC Documentation",
 
               "Segment": "BOD",
@@ -10962,7 +14684,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "NRI Product & KYC Documentation",
 
               "Segment": "Employees",
@@ -10971,7 +14692,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "NRI Product & KYC Documentation",
 
               "Segment": "Key management personnel",
@@ -10980,7 +14700,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "NRI Product & KYC Documentation",
 
               "Segment": "Workers",
@@ -10989,7 +14708,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "NRI Product & KYC Documentation",
 
               "Segment": "others",
@@ -10998,7 +14716,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Mobile Banking",
 
               "Segment": "BOD",
@@ -11007,7 +14724,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Mobile Banking",
 
               "Segment": "Employees",
@@ -11016,7 +14732,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Mobile Banking",
 
               "Segment": "Key management personnel",
@@ -11025,7 +14740,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Mobile Banking",
 
               "Segment": "Workers",
@@ -11034,7 +14748,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Mobile Banking",
 
               "Segment": "others",
@@ -11043,7 +14756,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Prohibition of Insider Trading",
 
               "Segment": "BOD",
@@ -11052,7 +14764,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Prohibition of Insider Trading",
 
               "Segment": "Employees",
@@ -11061,7 +14772,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Prohibition of Insider Trading",
 
               "Segment": "Key management personnel",
@@ -11070,7 +14780,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Prohibition of Insider Trading",
 
               "Segment": "Workers",
@@ -11079,7 +14788,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Prohibition of Insider Trading",
 
               "Segment": "others",
@@ -11088,7 +14796,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Cash Management System",
 
               "Segment": "BOD",
@@ -11097,7 +14804,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Cash Management System",
 
               "Segment": "Employees",
@@ -11106,7 +14812,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Cash Management System",
 
               "Segment": "Key management personnel",
@@ -11115,7 +14820,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Cash Management System",
 
               "Segment": "Workers",
@@ -11124,7 +14828,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Cash Management System",
 
               "Segment": "others",
@@ -11133,7 +14836,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Code of Conduct & Ethics",
 
               "Segment": "BOD",
@@ -11142,7 +14844,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Code of Conduct & Ethics",
 
               "Segment": "Employees",
@@ -11151,7 +14852,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Code of Conduct & Ethics",
 
               "Segment": "Key management personnel",
@@ -11160,7 +14860,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Code of Conduct & Ethics",
 
               "Segment": "Workers",
@@ -11169,7 +14868,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Code of Conduct & Ethics",
 
               "Segment": "others",
@@ -11178,7 +14876,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "CERSAI",
 
               "Segment": "BOD",
@@ -11187,7 +14884,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "CERSAI",
 
               "Segment": "Employees",
@@ -11196,7 +14892,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "CERSAI",
 
               "Segment": "Key management personnel",
@@ -11205,7 +14900,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "CERSAI",
 
               "Segment": "Workers",
@@ -11214,7 +14908,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "CERSAI",
 
               "Segment": "others",
@@ -11223,7 +14916,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Grievance Redressal Mechanism",
 
               "Segment": "BOD",
@@ -11232,7 +14924,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Grievance Redressal Mechanism",
 
               "Segment": "Employees",
@@ -11241,7 +14932,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Grievance Redressal Mechanism",
 
               "Segment": "Key management personnel",
@@ -11250,7 +14940,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Grievance Redressal Mechanism",
 
               "Segment": "Workers",
@@ -11259,7 +14948,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Grievance Redressal Mechanism",
 
               "Segment": "others",
@@ -11268,7 +14956,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Other",
 
               "Segment": "BOD",
@@ -11277,7 +14964,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Other",
 
               "Segment": "Employees",
@@ -11286,7 +14972,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Other",
 
               "Segment": "Key management personnel",
@@ -11295,7 +14980,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Other",
 
               "Segment": "Workers",
@@ -11304,7 +14988,6 @@ sap.ui.define(
               "Financial investment": "",
             },
             {
-              "Framework": "GRI,BRSR",
               "Types of training": "Other",
 
               "Segment": "others",
@@ -11316,25 +14999,21 @@ sap.ui.define(
           ,
           "Child Labor": [
             {
-              "Framework": "GRI,BRSR",
               "Supplier Name": "",
               "Risk Level": "High",
               "No. of Incidents reported": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Supplier Name": "",
               "Risk Level": "Moderate",
               "No. of Incidents reported": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Supplier Name": "",
               "Risk Level": "Low",
               "No. of Incidents reported": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Supplier Name": "",
               "Risk Level": "Uncertain",
               "No. of Incidents reported": ""
@@ -11343,25 +15022,21 @@ sap.ui.define(
           ,
           "Customer Privacy": [
             {
-              "Framework": "GRI,BRSR",
               "Nature of Complaints": "Data Breaches",
               "no. of complaint received": "",
               "no. of complaint solved": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Nature of Complaints": "Data Leaks",
               "no. of complaint received": "",
               "no. of complaint solved": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Nature of Complaints": "Unauthorized Data Collection or Use",
               "no. of complaint received": "",
               "no. of complaint solved": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Nature of Complaints": "Difficulties Accessing or Controlling Personal Data",
               "no. of complaint received": "",
               "no. of complaint solved": ""
@@ -11370,49 +15045,41 @@ sap.ui.define(
           ,
           "Mktg and Labelling": [
             {
-              "Framework": "GRI",
               "Incident": "Comparative Advertising",
               "No.of non-compliance Incident": "",
               "No. of time regulation violated": ""
             },
             {
-              "Framework": "GRI",
               "Incident": "Consumer Protection",
               "No.of non-compliance Incident": "",
               "No. of time regulation violated": ""
             },
             {
-              "Framework": "GRI",
               "Incident": "False Advertising and Misleading Claims",
               "No.of non-compliance Incident": "",
               "No. of time regulation violated": ""
             },
             {
-              "Framework": "GRI",
               "Incident": "Greenwashing",
               "No.of non-compliance Incident": "",
               "No. of time regulation violated": ""
             },
             {
-              "Framework": "GRI",
               "Incident": "Health and Wellness Claims",
               "No.of non-compliance Incident": "",
               "No. of time regulation violated": ""
             },
             {
-              "Framework": "GRI",
               "Incident": "Labeling Compliance",
               "No.of non-compliance Incident": "",
               "No. of time regulation violated": ""
             },
             {
-              "Framework": "GRI",
               "Incident": "Product Liability",
               "No.of non-compliance Incident": "",
               "No. of time regulation violated": ""
             },
             {
-              "Framework": "GRI",
               "Incident": "Trademark and Intellectual Property",
               "No.of non-compliance Incident": "",
               "No. of time regulation violated": ""
@@ -11421,49 +15088,41 @@ sap.ui.define(
           ,
           "CHS": [
             {
-              "Framework": "GRI,BRSR",
               "Type of Incident": "Product defects or malfunctions",
               "No.of non-compliance Incident": "",
               "Customers Impacted": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Type of Incident": "Safety hazards",
               "No.of non-compliance Incident": "",
               "Customers Impacted": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Type of Incident": "Injuries or illnesses",
               "No.of non-compliance Incident": "",
               "Customers Impacted": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Type of Incident": "Product recalls",
               "No.of non-compliance Incident": "",
               "Customers Impacted": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Type of Incident": "Errors or omissions in service delivery",
               "No.of non-compliance Incident": "",
               "Customers Impacted": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Type of Incident": "Inadequate customer support",
               "No.of non-compliance Incident": "",
               "Customers Impacted": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Type of Incident": "Security incidents",
               "No.of non-compliance Incident": "",
               "Customers Impacted": ""
             },
             {
-              "Framework": "GRI,BRSR",
               "Type of Incident": "Others",
               "No.of non-compliance Incident": "",
               "Customers Impacted": ""
@@ -11472,47 +15131,38 @@ sap.ui.define(
           ,
           "Social Benefits": [
             {
-              "Framework": "GRI,BRSR",
               "Program name": "",
               "Domain": "Plantation"
             },
             {
-              "Framework": "GRI,BRSR",
               "Program name": "",
               "Domain": "Livlihoods"
             },
             {
-              "Framework": "GRI,BRSR",
               "Program name": "",
               "Domain": "Education"
             },
             {
-              "Framework": "GRI,BRSR",
               "Program name": "",
               "Domain": "Rain water harvesting"
             },
             {
-              "Framework": "GRI,BRSR",
               "Program name": "",
               "Domain": "Renewable energy"
             },
             {
-              "Framework": "GRI,BRSR",
               "Program name": "",
               "Domain": "Training and Awareness"
             },
             {
-              "Framework": "GRI,BRSR",
               "Program name": "",
               "Domain": "Forestry"
             },
             {
-              "Framework": "GRI,BRSR",
               "Program name": "",
               "Domain": "Natural Farming"
             },
             {
-              "Framework": "GRI,BRSR",
               "Program name": "",
               "Domain": "Food Safety"
             }
@@ -11534,11 +15184,175 @@ sap.ui.define(
 
       },
       onLogOut: function () {
-        firebase.auth().signOut();
-        this.MasterData = undefined;
-        this.userData = undefined;
-        this.getRouter().navTo("Login")
+        MessageBox.confirm("Do you want to log out ?", {
+          actions: ["Yes", MessageBox.Action.CANCEL],
+          emphasizedAction: MessageBox.Action.CANCEL,
+          onClose: function (sAction) {
+            if (sAction == "Yes") {
+              firebase.auth().signOut();
+              this.MasterData = undefined;
+              this.userData = undefined;
+              this.getRouter().navTo("Login")
+            }
+          },
+
+        })
+
       },
+      formatNumberWithUnit: function (num) {
+        if (num && num > 0) {
+          num = Math.round((parseFloat(num) + Number.EPSILON) * 100) / 100
+        }
+        else {
+          num = 0;
+        }
+        if (num >= 1_000_000) {
+          return ((num / 1_000_000).toString().split(".")[0]) + 'M'; // For millions
+        } else if (num >= 1_000) {
+          return (num / 1_000).toString().substr(0, 3) + 'K'; // For thousands
+        } else {
+          return num; // For numbers less than 1000
+        }
+      },
+      getFilters: function (module) {
+
+        var columns = {
+          "Fuel": {
+            "Type": [],
+            "Fuel": [],
+            "Unit": []
+          },
+          "Bioenergy": {
+            "Type": [],
+            "Fuel": [],
+            "Unit": []
+          },
+          "Refrigerant and other": {
+            "Type": [],
+            "Fuel": [],
+            "Unit": []
+          },
+          "Elec heat cooling": {
+            "Activity": [],
+            "Country-Type": [],
+            "Unit": []
+          },
+          "Owned Vehicles": {
+            "Scope": [],
+            "Level 1": [],
+            "Level 2": [],
+            "Level 3": [],
+            "Fuel": [],
+            "Unit": []
+          },
+          "Materials": {
+            "Activity": [],
+            "Waste type": [],
+            "Unit": []
+          },
+          "WTT- fuels": {
+            "Type": [],
+            "Fuel": [],
+            "Unit": []
+          },
+          "Waste Disposal": {
+            "Activity": [],
+            "Waste Material": [],
+            "Unit": [],
+            "Disposal Method": []
+          },
+          "Flight": {
+            "Origin (city or IATA code)": [],
+            "Destination (city or IATA code)": [],
+            "Direct / Indirect": [],
+            "Class": [],
+            "Single way / return": []
+          },
+          "Accommodation": {
+            "Country": []
+          },
+          "Business travel - land and sea": {
+            "Vehicle": [],
+            "Type": [],
+            "Fuel": [],
+            "Unit": []
+          },
+          "Freighting goods": {
+            "Vehicle": [],
+            "Type": [],
+            "Fuel": [],
+            "Unit": []
+          },
+          "Employees commuting": {
+            "Vehicle": [],
+            "Type": [],
+            "Fuel": [],
+            "Unit": []
+          },
+          "Food": {
+            "Meal Type": [],
+            "Unit": []
+          },
+          "Home Office": {
+
+          },
+          "Water": {
+            "Type": [],
+            "Unit": []
+          },
+          "Employment": {
+            "Employment Type": [],
+            "Category": [],
+            "Gender": [],
+            "Age": []
+          },
+          "Leave": {
+            "Type of Leave": []
+          },
+          "Retention": {
+            "Employee Type": [],
+            "Gender": [],
+            "Tenure": [],
+            "Age": []
+          },
+          "OH and S": {
+            "Injury Type": [],
+            "Gender": []
+          },
+          "Training and Edu": {
+            "Types of training": [],
+            "Segment": []
+          },
+          "Child Labor": {
+            "Risk Level": []
+          },
+          "Customer Privacy": {
+            "Nature of Complaints": []
+          },
+          "Mktg and Labelling": {
+            "Incident": []
+          },
+          "CHS": {
+            "Type of Incident": []
+          },
+          "Social Benefits": {
+            "Domain": []
+          },
+          "Entity": {
+            "Entity Type": [],
+            "Gender": [],
+            "Age": [],
+            "Tenure": []
+          },
+          "Eco. Performance": {
+            "Data": []
+          },
+          "Market Presence": {
+            "Data": []
+          }
+        };
+        return columns[module];
+      }
 
     });
   }

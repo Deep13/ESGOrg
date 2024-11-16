@@ -12,16 +12,16 @@ sap.ui.define(
         "sap/m/Label",],
     function (Controller, JSONModel, GenericTile, TileContent, NumericContent, HBox, VBox, ObjectPageSection, ObjectPageSubSection, HTML, Item, Select, Label) {
         "use strict";
-        return Controller.extend("ESGOrg.ESGOrg.controller.EnvironmentAnalytics", {
+        return Controller.extend("ESGOrg.ESGOrg.controller.SocialAnalytics", {
             /**
              * Called when a controller is instantiated and its View controls (if available) are already created.
              * Can be used to modify the View before it is displayed, to bind event handlers and do other one-time initialization.
-             * @memberOf ESGOrg.ESGOrg.view.EnvironmentAnalytics
+             * @memberOf ESGOrg.ESGOrg.view.SocialAnalytics
              */
             onInit: function () {
                 this.oRouter = sap.ui.core.UIComponent.getRouterFor(this);
                 this.oRouter
-                    .getRoute("EnvironmentAnalytics")
+                    .getRoute("SocialAnalytics")
                     .attachPatternMatched(this._handleRouteMatched, this);
             },
             _handleRouteMatched: function () {
@@ -30,10 +30,6 @@ sap.ui.define(
                     var oHBox = this.byId("chartData")
                     oHBox.removeAllItems();
                     var oHBox = this.byId("chartDataScope1")
-                    oHBox.removeAllItems();
-                    var oHBox = this.byId("chartDataScope2")
-                    oHBox.removeAllItems();
-                    var oHBox = this.byId("chartDataScope3")
                     oHBox.removeAllItems();
                     var aCanvas = document.getElementsByTagName("canvas");
                     for (let i = aCanvas.length - 1; i >= 0; i--) {
@@ -67,11 +63,11 @@ sap.ui.define(
                                 })
                                 var cycleModel = new JSONModel({ results: branches });
                                 that.analyticsData = data;
-                                var branchData = that.analyticsData[branches[0].title].Environment;
+                                var branchData = that.analyticsData[branches[0].title].Social;
                                 that.createSampleData(branchData.Overview);
-                                that.createSampleDataScope1(branchData["Scope 1"]);
-                                that.createSampleDataScope2(branchData["Scope 2"]);
-                                that.createSampleDataScope3(branchData["Scope 3"]);
+                                that.createSampleDataScope1(branchData["PrivacyOthers"]);
+                                // that.createSampleDataScope2(branchData["Scope 2"]);
+                                // that.createSampleDataScope3(branchData["Scope 3"]);
                                 that.getView().setModel(cycleModel, "branchModel");
                                 that.byId("branchId").setSelectedKey(branches[0].title)
                             }
@@ -104,11 +100,11 @@ sap.ui.define(
                             branches.push({ title: val })
                         })
                         var cycleModel = new JSONModel({ results: branches });
-                        var branchData = that.analyticsData[branches[0].title].Environment;
+                        var branchData = that.analyticsData[branches[0].title].Social;
                         that.createSampleData(branchData.Overview);
-                        that.createSampleDataScope1(branchData["Scope 1"]);
-                        that.createSampleDataScope2(branchData["Scope 2"]);
-                        that.createSampleDataScope3(branchData["Scope 3"]);
+                        that.createSampleDataScope1(branchData["PrivacyOthers"]);
+                        // that.createSampleDataScope2(branchData["Scope 2"]);
+                        // that.createSampleDataScope3(branchData["Scope 3"]);
                         that.getView().setModel(cycleModel, "branchModel");
                         that.byId("branchId").setSelectedKey(branches[0].title)
                     }
@@ -196,63 +192,99 @@ sap.ui.define(
                     var sampleData = {
                         Overview: {
                             "KPI": [{
-                                header: "Total Emissions",
+                                header: "Headcount",
                                 subheader: "Kgco2",
-                                value: that.formatNumberWithUnit(branchData.TotalEmissions),
+                                value: that.formatNumberWithUnit(branchData["Headcount"]),
                                 scale: ""
                             },
                             {
-                                header: "Scope 1",
+                                header: "Female:Male",
                                 subheader: "Kgco2",
-                                value: that.formatNumberWithUnit(branchData["Scope 1"]),
+                                value: branchData["Female:Male"],
                                 scale: ""
                             },
                             {
-                                header: "Scope 2",
+                                header: "Total training Hrs",
                                 subheader: "Kgco2",
-                                value: that.formatNumberWithUnit(branchData["Scope 2"]),
+                                value: that.formatNumberWithUnit(branchData["Total training Hrs"]),
                                 scale: ""
                             },
                             {
-                                header: "Scope 3",
+                                header: "CSR Spend",
                                 subheader: "Kgco2",
-                                value: that.formatNumberWithUnit(branchData["Scope 3"]),
+                                value: that.formatNumberWithUnit(branchData["CSR Spend"]),
                                 scale: ""
                             },
                             {
-                                header: "Water",
+                                header: "Attrition",
                                 subheader: "Kgco2",
-                                value: that.formatNumberWithUnit(branchData.Water),
+                                value: that.formatNumberWithUnit(branchData["Attrition"]),
                                 scale: ""
                             },
                             {
-                                header: "Water Stress",
+                                header: "Retention",
                                 subheader: "Kgco2",
-                                value: that.formatNumberWithUnit(branchData["Water Stress"]),
-                                scale: ""
-                            },
-                            {
-                                header: "Waste",
-                                subheader: "Kgco2",
-                                value: that.formatNumberWithUnit(branchData.Waste),
+                                value: that.formatNumberWithUnit(branchData["Retention"]),
                                 scale: ""
                             },
                             ],
                             "Charts": [{
                                 type: "doughnut",
-                                title: "Scope Emission comparison",
-                                labels: ['Scope 1', 'Scope 2', 'Scope 3'],
-                                data: [[branchData.Scope["Scope 1"], branchData.Scope["Scope 2"], branchData.Scope["Scope 3"]]],
+                                title: "Employement Type",
+                                labels: Object.keys(branchData.EmployementType),
+                                data: [Object.values(branchData.EmployementType)],
                                 datasetLabels: ["Dataset 1"]
                             },
-                                // {
-                                //     type: "line",
-                                //     title: "Scope wise Emission by Year",
-                                //     labels: ['2024', '2025'],
-                                //     data: [[50, 30], [40, 10], [30, 20]],
-                                //     datasetLabels: ["Scope1", "Scope 2", "Scope 3"]
-                                // }
-                            ]
+                            {
+                                type: "doughnut",
+                                title: "Gender Split",
+                                labels: Object.keys(branchData.Gender),
+                                data: [Object.values(branchData.Gender)],
+                                datasetLabels: ["Dataset 1"]
+                            },
+                            {
+                                type: "bar",
+                                title: "Injury by type",
+                                labels: Object.keys(branchData.InjuryType),
+                                data: [Object.values(branchData.InjuryType)],
+                                datasetLabels: ["Dataset 1"]
+                            },
+                            {
+                                type: "doughnut",
+                                title: "Gender Split by injury type",
+                                labels: Object.keys(branchData.GenderForInjuries),
+                                data: [Object.values(branchData.GenderForInjuries)],
+                                datasetLabels: ["Dataset 1"]
+                            },
+
+                            {
+                                type: "doughnut",
+                                title: "Child Labour by Risk Level",
+                                labels: Object.keys(branchData.ChildLabor),
+                                data: [Object.values(branchData.ChildLabor)],
+                                datasetLabels: ["Dataset 1"]
+                            },
+                            {
+                                type: "bar",
+                                title: "Child Labour by Supplier Name",
+                                labels: Object.keys(branchData.ChildLaborSupplier),
+                                data: [Object.values(branchData.ChildLaborSupplier)],
+                                datasetLabels: ["Dataset 1"]
+                            },
+                            {
+                                type: "doughnut",
+                                title: "Training by Employee segment",
+                                labels: Object.keys(branchData.Training),
+                                data: [Object.values(branchData.Training)],
+                                datasetLabels: ["Dataset 1"]
+                            },
+                            {
+                                type: "bar",
+                                title: "Training by Training type",
+                                labels: Object.keys(branchData.TrainingType),
+                                data: [Object.values(branchData.TrainingType)],
+                                datasetLabels: ["Dataset 1"]
+                            }]
                         }
                     }
 
@@ -267,65 +299,62 @@ sap.ui.define(
             createSampleDataScope1: function (branchData) {
                 var that = this;
 
-                if (branchData) {
+                if (branchData && branchData.Complaints && Object.keys(branchData.Complaints).length > 0) {
                     var sampleData = {
                         Overview: {
-                            "KPI": [{
-                                header: "Scope 1",
-                                subheader: "Kgco2",
-                                value: that.formatNumberWithUnit(branchData["Scope 1"]),
-                                scale: ""
-                            },
-                            {
-                                header: "Bioenergy",
-                                subheader: "Kgco2",
-                                value: that.formatNumberWithUnit(branchData.Bioenergy),
-                                scale: ""
-                            },
-                            {
-                                header: "Fuels",
-                                subheader: "Kgco2",
-                                value: that.formatNumberWithUnit(branchData.Fuels),
-                                scale: ""
-                            },
-                            {
-                                header: "Owned Vehicles",
-                                subheader: "Kgco2",
-                                value: that.formatNumberWithUnit(branchData["Owned Vehicles"]),
-                                scale: ""
-                            },
-                            {
-                                header: "Refrigerant",
-                                subheader: "Kgco2",
-                                value: that.formatNumberWithUnit(branchData.Refrigerant),
-                                scale: ""
-                            },
 
-                            ],
                             "Charts": [{
+                                type: "bar",
+                                title: "Customer Privacy Complaints Received vs. Solved (by complant type)",
+                                labels: Object.keys(branchData.Complaints),
+                                data: [that.createDataset(branchData.Complaints, "No. of complaints received"), that.createDataset(branchData.Complaints, "No. of complaints solved")],
+                                datasetLabels: ["No. of complaints received", "No. of complaints solved"]
+                            },
+                            {
+                                type: "bar",
+                                title: "Customer Health & Safety Incidents vs. Customers Impacted ( by incident type)",
+                                labels: Object.keys(branchData.CHS),
+                                data: [that.createDataset(branchData.CHS, "No. of non-compliance Incidents"), that.createDataset(branchData.CHS, "Customers Impacted")],
+                                datasetLabels: ["No. of non-compliance Incidents", "Customers Impacted"]
+                            },
+                            {
+                                type: "bar",
+                                title: "Mrktg. & Labelling Incidents Internal vs. Reported (by incident type)",
+                                labels: Object.keys(branchData["Mktg and Labelling"]),
+                                data: [that.createDataset(branchData["Mktg and Labelling"], "No. of non-compliance Incidents"), that.createDataset(branchData["Mktg and Labelling"], "No. of times regulation violated")],
+                                datasetLabels: ["No. of non-compliance Incidents", "No. of times regulation violated"]
+                            },
+                            {
                                 type: "doughnut",
-                                title: "Scope Emission split by source",
-                                labels: Object.keys(branchData.Emission),
-                                data: [Object.values(branchData.Emission)],
+                                title: "Social benefits: Expenditure",
+                                labels: Object.keys(branchData.SocialEx),
+                                data: [Object.values(branchData.SocialEx)],
                                 datasetLabels: ["Dataset 1"]
                             },
                             {
                                 type: "doughnut",
-                                title: "Bioenergy Emission split",
-                                labels: Object.keys(branchData.BioenergySplit),
-                                data: [Object.values(branchData.BioenergySplit)],
+                                title: "Social benefits: Benificiaries",
+                                labels: Object.keys(branchData.SocialBe),
+                                data: [Object.values(branchData.SocialBe)],
                                 datasetLabels: ["Dataset 1"]
                             }]
                         }
                     }
 
                     this.sampleData = sampleData;
-                    this._generateKPIForSelection(sampleData.Overview.KPI, "KPIDataScope1");
+                    // this._generateKPIForSelection(sampleData.Overview.KPI, "KPIDataScope1");
                     this._generateChartForSelection(sampleData.Overview.Charts, "chartDataScope1");
 
                     // this._onRenderChart("ageChart")
 
                 }
+            },
+            createDataset: function (data, key) {
+                var aData = [];
+                Object.values(data).map(val => {
+                    aData.push(val[key])
+                });
+                return aData
             },
             createSampleDataScope2: function (branchData) {
                 var that = this;
@@ -420,9 +449,9 @@ sap.ui.define(
                                 scale: ""
                             },
                             {
-                                header: "Freighting goods",
+                                header: "Frieghting goods",
                                 subheader: "Kgco2",
-                                value: that.formatNumberWithUnit(branchData["Freighting goods"]),
+                                value: that.formatNumberWithUnit(branchData["Frieghting goods"]),
                                 scale: ""
                             },
                             {
@@ -438,9 +467,9 @@ sap.ui.define(
                                 scale: ""
                             },
                             {
-                                header: "WTT- fuels",
+                                header: "WTT- fuel",
                                 subheader: "Kgco2",
-                                value: that.formatNumberWithUnit(branchData["WTT- fuels"]),
+                                value: that.formatNumberWithUnit(branchData["WTT- fuel"]),
                                 scale: ""
                             },
 
@@ -541,11 +570,11 @@ sap.ui.define(
             onBranchChange: function (oEvent) {
                 var title = oEvent.getParameter("selectedItem").getKey();
                 if (this.analyticsData) {
-                    var branchData = this.analyticsData[title].Environment;
+                    var branchData = this.analyticsData[title].Social;
                     this.createSampleData(branchData.Overview);
-                    this.createSampleDataScope1(branchData["Scope 1"]);
-                    this.createSampleDataScope2(branchData["Scope 2"]);
-                    this.createSampleDataScope3(branchData["Scope 3"]);
+                    this.createSampleDataScope1(branchData["PrivacyOthers"]);
+                    // this.createSampleDataScope2(branchData["Scope 2"]);
+                    // this.createSampleDataScope3(branchData["Scope 3"]);
 
                 }
             },
@@ -598,7 +627,11 @@ sap.ui.define(
                 oHBox.removeAllItems();
                 // var aChartItems = selectedData.Charts.map(function (chart) {
                 selectedData.map(function (chart, index) {
+
                     var sHTMLContent = `<div class="chart-style" style="width:350px"><canvas id="${id}Chart${index}"></canvas></div>`;
+                    if (chart.type == "bar") {
+                        var sHTMLContent = `<div class="chart-style" style="width:500px"><canvas id="${id}Chart${index}"></canvas></div>`;
+                    }
                     oHBox.addItem(new HTML({
                         content: sHTMLContent,
                         afterRendering: this._onRenderChart.bind(this, chart, `${id}Chart${index}`)
@@ -629,6 +662,16 @@ sap.ui.define(
                         })
                     });
                 }
+                else if (chart.type == "bar") {
+                    chart.data.map((val, index) => {
+                        datasets.push({
+                            label: chart.datasetLabels[index],
+                            data: val,
+                            borderColor: colors[index],
+                            backgroundColor: [colors[index]]
+                        })
+                    });
+                }
                 else {
 
                     chart.data.map((val, index) => {
@@ -646,7 +689,19 @@ sap.ui.define(
                         datasets: datasets
                     },
                     options: {
-
+                        responsive: true,
+                        maintainAspectRatio: false, // This keeps the chart responsive but maintains a fixed aspect ratio
+                        scales: {
+                            x: {
+                                ticks: {
+                                    callback: function (value) {
+                                        // Check label length and truncate if necessary
+                                        let label = this.getLabelForValue(value);
+                                        return label.length > 10 ? label.substr(0, 10) + '...' : label;
+                                    }
+                                }
+                            }
+                        },
                         plugins: {
                             legend: {
                                 position: 'bottom'

@@ -47,7 +47,7 @@ sap.ui.define(
 
                     // Create the GenericTile
                     var oTile = new GenericTile({
-                        header: tileData,
+                        header: that.getTitle(tileData),
                         press: function () {
                             that.onPressTile(tileData)
                         },
