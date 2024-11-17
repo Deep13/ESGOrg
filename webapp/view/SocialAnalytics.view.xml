@@ -26,27 +26,7 @@
                         <object:ObjectPageSubSection titleUppercase="false">
                             <object:blocks>
                                 <VBox>
-                                    <HBox justifyContent="End">
-                                        <Select
-                                            class="sapUiSmallMarginEnd"
-                                            change="onBranchChange"
-                                            id="branchId"
-                                            items="{
-                        path: 'branchModel>/results'
-                    }">
-                                            <core:Item key="{branchModel>title}"
-                                                text="{branchModel>title}" />
-                                        </Select>
-                                        <Select
-                                            change="onCycleChange"
-                                            id="cycleId"
-                                            items="{
-							path: 'cycleModel>/results'
-						}">
-                                            <core:Item key="{cycleModel>title}"
-                                                text="{cycleModel>title}" />
-                                        </Select>
-                                    </HBox>
+                                    <HBox id="graphFilters" wrap="Wrap" class="graphFilters-css"></HBox>
                                     <HBox id="KPIData" wrap="Wrap">
                                     </HBox>
                                     <HBox id="chartData" wrap="Wrap"></HBox>

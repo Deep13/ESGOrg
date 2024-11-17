@@ -1,16 +1,9 @@
 sap.ui.define(
-    ["../controller/BaseController", "sap/ui/model/json/JSONModel", "sap/m/GenericTile",
-        "sap/m/TileContent",
-        "sap/m/NumericContent",
-        "sap/m/HBox",
+    ["../controller/BaseController", "sap/ui/model/json/JSONModel",
         "sap/m/VBox",
-        "sap/uxap/ObjectPageSection",
-        "sap/uxap/ObjectPageSubSection",
         "sap/ui/core/HTML",
-        "sap/m/Select",
-        "sap/ui/core/Item",
-        "sap/m/Label",],
-    function (Controller, JSONModel, GenericTile, TileContent, NumericContent, HBox, VBox, ObjectPageSection, ObjectPageSubSection, HTML, Item, Select, Label) {
+        "sap/ui/core/CustomData"],
+    function (Controller, JSONModel, VBox, HTML, CustomData) {
         "use strict";
         return Controller.extend("ESGOrg.ESGOrg.controller.EnvironmentAnalytics", {
             /**
@@ -35,6 +28,7 @@ sap.ui.define(
                     oHBox.removeAllItems();
                     var oHBox = this.byId("chartDataScope3")
                     oHBox.removeAllItems();
+                    this.byId("graphFilters").removeAllItems();
                     var aCanvas = document.getElementsByTagName("canvas");
                     for (let i = aCanvas.length - 1; i >= 0; i--) {
                         aCanvas[i].remove();
@@ -42,152 +36,163 @@ sap.ui.define(
                     firebase.firestore().collection(user.domain).doc("Master Data").collection("Reporting Cycle").doc("All Cycle").get().then(doc => {
                         var cycle = [];
                         if (doc.exists) {
+                            that.months = [];
+                            that.years = [];
+                            var cycledata = doc.data();
+                            const initialKeys = Object.keys(cycledata);
+                            initialKeys.forEach((key) => {
+                                const [months, years] = key.split("-");
 
+
+                                if (years && !that.years.some(item => item.title === years)) {
+                                    that.years.push({ title: years });
+                                }
+                                if (months && !that.months.some(item => item.title === months)) {
+                                    that.months.push({ title: months, years });
+                                }
+                            });
+                            var initialSelection = that.years[0].title;
+                            if (that.years.indexOf(new Date().getFullYear()) !== -1) {
+                                initialSelection = new Date().getFullYear()
+                            }
                             Object.keys(doc.data()).map(val => {
                                 var data = doc.data()[val];
                                 data.title = val;
                                 cycle.push(data);
                             });
+                            firebase.firestore().collection(user.domain).doc("AnalyticsData").collection("Reporting Cycle").where("year", "==", initialSelection).get().then(querySnapshot => {
+                                sap.ui.core.BusyIndicator.hide();
+                                var aClubData = {};
+                                querySnapshot.forEach(function (doc) {
+                                    var monthYear = doc.id;
+                                    var yearMonth = monthYear.split("-")[1] + "-" + monthYear.split("-")[0]
+                                    var data = doc.data();
+                                    if (data.data) {
+                                        Object.keys(data.data).map(val => {
+                                            aClubData[yearMonth + "-" + val] = data.data[val];
+                                        })
+                                    }
+
+
+                                });
+                                if (Object.keys(aClubData).length > 0) {
+
+                                    sap.ui.core.BusyIndicator.hide();
+                                    that.analyticsData = aClubData;
+                                    that.years = [];
+                                    that.months = [];
+                                    that.countries = [];
+                                    that.states = [];
+                                    that.districts = [];
+                                    that.blocks = [];
+                                    var initialDataKeys = Object.keys(aClubData);
+                                    initialDataKeys.forEach((key) => {
+                                        const [years, months, countries, states, districts, blocks] = key.split("-");
+
+                                        if (years && !that.years.some(item => item.title === years)) {
+                                            that.years.push({ title: years });
+                                        }
+                                        if (months && !that.months.some(item => item.title === months && item.years === years)) {
+                                            that.months.push({ title: months, years });
+                                        }
+                                        if (countries && !that.countries.some(item => item.title === countries && item.months === months)) {
+                                            that.countries.push({ title: countries, months });
+                                        }
+                                        if (states && !that.states.some(item => item.title === states && item.countries === countries)) {
+                                            that.states.push({ title: states, countries });
+                                        }
+                                        if (districts && !that.districts.some(item => item.title === districts && item.states === states)) {
+                                            that.districts.push({ title: districts, states });
+                                        }
+                                        if (blocks && !that.blocks.some(item => item.title === blocks && item.districts === districts)) {
+                                            that.blocks.push({ title: blocks, districts });
+                                        }
+                                    });
+                                    var oFilters = {
+                                        years: that.years,
+                                        months: that.months.filter(key => key.years === initialSelection),
+                                        countries: [],
+                                        states: [],
+                                        districts: [],
+                                        blocks: [],
+                                    }
+                                    Object.keys(oFilters).map((val, index) => {
+                                        var vbox = new sap.m.VBox();
+                                        var label = new sap.m.Label({
+                                            text: that.capitalizeFirstLetter(val)
+                                        });
+                                        var oDataTemplate = new CustomData({ key: "title", value: val });
+                                        var oDataTemplate1 = new CustomData({ key: "index", value: index });
+                                        var select = new sap.m.Select({
+                                            items: val === "years" ? [...oFilters[val].map(function (value) {
+                                                return new sap.ui.core.Item({
+                                                    key: value.title,
+                                                    text: value.title
+                                                });
+                                            })
+                                            ] : [
+                                                new sap.ui.core.Item({
+                                                    key: "All",
+                                                    text: "All"
+                                                }),
+                                                ...oFilters[val].map(function (value) {
+                                                    return new sap.ui.core.Item({
+                                                        key: value.title,
+                                                        text: value.title
+                                                    });
+                                                })
+                                            ],
+                                            // enabled: false,
+                                            maxWidth: "100px",
+                                            change: function (oEvent) {
+                                                that.applyFilters(oEvent);
+                                            } // On change, apply the filters to the table
+                                        });
+                                        select.addCustomData(oDataTemplate);
+                                        select.addCustomData(oDataTemplate1);
+                                        select.addStyleClass("sapUiSmallMarginEnd");
+                                        if (val === "years") {
+                                            select.setSelectedKey(initialSelection);
+                                        }
+                                        vbox.addItem(label);
+                                        vbox.addItem(select);
+                                        that.byId("graphFilters").addItem(vbox);
+                                    });
+                                    var branch = "";
+                                    var filterContainerItems = that.byId("graphFilters").getItems();
+                                    filterContainerItems.forEach(function (item, index) {
+                                        if (item instanceof sap.m.Select) {
+                                            var selectedKey = item.getSelectedKey();
+                                            if (selectedKey && selectedKey !== "All") {
+                                                branch += selectedKey + "-"
+                                            }
+                                        }
+                                    });
+                                    branch = branch.substring(0, branch.length - 1);
+                                    var selectedData = Object.keys(that.analyticsData).filter(val => val.indexOf(branch) !== -1)
+                                    that.createSampleData(that.consolidatedData(selectedData, "Overview"));
+                                    that.createSampleDataScope1(that.consolidatedData(selectedData, "Scope 1"));
+                                    that.createSampleDataScope2(that.consolidatedData(selectedData, "Scope 2"));
+                                    that.createSampleDataScope3(that.consolidatedData(selectedData, "Scope 3"));
+                                }
+                                else {
+                                    sap.ui.core.BusyIndicator.hide();
+                                    sap.m.MessageBox.Error("No data found")
+                                }
+
+
+                            });
                         }
                         else {
-
+                            sap.ui.core.BusyIndicator.hide();
+                            sap.m.MessageBox.error("No data found")
                         }
-
-                        var cycleModel = new JSONModel({ results: cycle });
-
-                        that.getView().setModel(cycleModel, "cycleModel");
-                        that.byId("cycleId").setSelectedKey(cycle[0].title)
-                        firebase.firestore().collection(user.domain).doc("AnalyticsData").collection("Reporting Cycle").doc(cycle[0].title).get().then(doc => {
-                            if (doc.exists) {
-                                var branches = [];
-                                var data = doc.data().data;
-
-                                Object.keys(data).map(val => {
-                                    branches.push({ title: val })
-                                })
-                                var cycleModel = new JSONModel({ results: branches });
-                                that.analyticsData = data;
-                                var branchData = that.analyticsData[branches[0].title].Environment;
-                                that.createSampleData(branchData.Overview);
-                                that.createSampleDataScope1(branchData["Scope 1"]);
-                                that.createSampleDataScope2(branchData["Scope 2"]);
-                                that.createSampleDataScope3(branchData["Scope 3"]);
-                                that.getView().setModel(cycleModel, "branchModel");
-                                that.byId("branchId").setSelectedKey(branches[0].title)
-                            }
-                            else {
-                                sap.m.MessageBox.Error("No data found")
-                            }
-
-
-                        });
-
-                        sap.ui.core.BusyIndicator.hide();
                     });
                 });
 
-                this._originalData = this._getSampleData(); // Store original data
+                // this._originalData = this._getSampleData(); // Store original data
                 this._charts = {};
                 // this._renderSections(this._originalData);
-            },
-            onCycleChange: function (oEvent) {
-                var that = this;
-                var user = this.userData;
-                console.log(oEvent)
-                var cycle = oEvent.getParameter("selectedItem").getKey();
-                firebase.firestore().collection(user.domain).doc("AnalyticsData").collection("Reporting Cycle").doc(cycle).get().then(doc => {
-                    if (doc.exists) {
-                        var branches = [];
-                        var data = doc.data().data;
-                        that.analyticsData = data;
-                        Object.keys(data).map(val => {
-                            branches.push({ title: val })
-                        })
-                        var cycleModel = new JSONModel({ results: branches });
-                        var branchData = that.analyticsData[branches[0].title].Environment;
-                        that.createSampleData(branchData.Overview);
-                        that.createSampleDataScope1(branchData["Scope 1"]);
-                        that.createSampleDataScope2(branchData["Scope 2"]);
-                        that.createSampleDataScope3(branchData["Scope 3"]);
-                        that.getView().setModel(cycleModel, "branchModel");
-                        that.byId("branchId").setSelectedKey(branches[0].title)
-                    }
-                    else {
-                        var emptyData = {
-                            "KPI": [{
-                                header: "Total Emissions",
-                                subheader: "Kgco2",
-                                value: 0,
-                                scale: ""
-                            },
-                            {
-                                header: "Water",
-                                subheader: "Kgco2",
-                                value: 0,
-                                scale: ""
-                            },
-                            {
-                                header: "Waste",
-                                subheader: "Kgco2",
-                                value: 0,
-                                scale: ""
-                            },
-                            {
-                                header: "Biodiversity",
-                                subheader: "Trees Planted",
-                                value: 0,
-                                scale: ""
-                            },
-                            {
-                                header: "Social Spend",
-                                subheader: "Expenditure",
-                                value: 0,
-                                scale: ""
-                            },
-                            {
-                                header: "Beneficiaries",
-                                subheader: "People",
-                                value: 0,
-                                scale: ""
-                            },
-                            {
-                                header: "Gender Split",
-                                subheader: "Female:Male",
-                                value: 0,
-                                scale: ""
-                            }],
-                            "Charts": [{
-                                type: "doughnut",
-                                title: "Title 1",
-                                labels: ['50+', '35-50', 'Less than 22', "22 to 35"],
-                                data: [[0, 0, 0, 0]],
-                                datasetLabels: ["Dataset 1"]
-
-                            },
-                            {
-                                type: "doughnut",
-                                title: "Title 2",
-                                labels: ['Male', 'Female', 'Others'],
-                                data: [[0, 0, 0]],
-                                datasetLabels: ["Dataset 1"]
-                            }, {
-                                type: "doughnut",
-                                title: "Title 3",
-                                labels: ['Scope 1', 'Scope 2', 'Scope 3'],
-                                data: [[0, 0, 0]],
-                                datasetLabels: ["Dataset 1"]
-                            }]
-                        }
-                        this.sampleData = emptyData;
-                        this.analyticsData = undefined
-                        this._generateKPIForSelection(emptyData.KPI);
-                        this._generateChartForSelection(emptyData.Charts);
-                        var cycleModel = new JSONModel({ results: [] });
-                        that.getView().setModel(cycleModel, "branchModel");
-                    }
-
-
-                });
             },
             createSampleData: function (branchData) {
                 var that = this;
@@ -242,7 +247,7 @@ sap.ui.define(
                                 type: "doughnut",
                                 title: "Scope Emission comparison",
                                 labels: ['Scope 1', 'Scope 2', 'Scope 3'],
-                                data: [[branchData.Scope["Scope 1"], branchData.Scope["Scope 2"], branchData.Scope["Scope 3"]]],
+                                data: [[branchData["Scope 1"], branchData["Scope 2"], branchData["Scope 3"]]],
                                 datasetLabels: ["Dataset 1"]
                             },
                                 // {
@@ -374,8 +379,8 @@ sap.ui.define(
                             "Charts": [{
                                 type: "doughnut",
                                 title: "Emission split by Activity",
-                                labels: Object.keys(branchData.Activities),
-                                data: [Object.values(branchData.Activities)],
+                                labels: ["District Cooling", "Electricity", "Heat and steam", "Electricity - Backup", "Owned Vehicles"],
+                                data: [[branchData["District Cooling"], branchData.Electricity, branchData["Heat and steam"], branchData["Electricity - Backup"], branchData["Owned Vehicles"]]],
                                 datasetLabels: ["Dataset 1"]
                             }]
                         }
@@ -448,8 +453,20 @@ sap.ui.define(
                             "Charts": [{
                                 type: "doughnut",
                                 title: "Emission split by Source",
-                                labels: Object.keys(branchData.Emission),
-                                data: [Object.values(branchData.Emission)],
+                                labels: ["Business travel - land and sea",
+                                    "Employees commuting",
+                                    "Flight",
+                                    "Freighting goods",
+                                    "Materials",
+                                    "Waste Disposal",
+                                    "WTT- fuels"],
+                                data: [[branchData["Business travel - land and sea"],
+                                branchData["Employees commuting"],
+                                branchData["Flight"],
+                                branchData["Freighting goods"],
+                                branchData["Materials"],
+                                branchData["Waste Disposal"],
+                                branchData["WTT- fuels"]]],
                                 datasetLabels: ["Dataset 1"]
                             }]
                         }
@@ -463,93 +480,231 @@ sap.ui.define(
 
                 }
             },
-            _getSampleData: function () {
-                return {
-                    "Overview": {
-                        "locations": {
-                            "Jharkhand": {
-                                "2023": {
-                                    "KPI": [{
-                                        header: "Total Emissions",
-                                        subheader: "Kgco2",
-                                        value: "234",
-                                        scale: "M"
-                                    },
-                                    {
-                                        header: "Water",
-                                        subheader: "Kgco2",
-                                        value: "206",
-                                        scale: "M"
-                                    },
-                                    {
-                                        header: "Waste",
-                                        subheader: "Kgco2",
-                                        value: "0",
-                                        scale: "K"
-                                    },
-                                    {
-                                        header: "Biodiversity",
-                                        subheader: "Trees Planted",
-                                        value: "60",
-                                        scale: ""
-                                    },
-                                    {
-                                        header: "Social Spend",
-                                        subheader: "Expenditure",
-                                        value: "103",
-                                        scale: "K"
-                                    },
-                                    {
-                                        header: "Beneficiaries",
-                                        subheader: "People",
-                                        value: "103",
-                                        scale: "K"
-                                    },
-                                    {
-                                        header: "Gender Split",
-                                        subheader: "Female:Male",
-                                        value: "1.31",
-                                        scale: ""
-                                    }],
-                                    "Charts": [{
-                                        type: "doughnut",
-                                        title: "Title 1",
-                                        labels: ['50+', '35-50', 'Less than 22', "22 to 35"],
-                                        data: [[52.6, 36.8, 7.9, 2.6]],
-                                        datasetLabels: ["Dataset 1"]
+            applyFilters: function (oEvent) {
+                var that = this;
+                var filterTitle = oEvent.getSource().data().title;
+                var SelectedKey = oEvent.getSource().getSelectedKey();
+                var filterContainerItems = this.byId("graphFilters").getItems();
 
-                                    },
-                                    {
-                                        type: "doughnut",
-                                        title: "Title 2",
-                                        labels: ['Male', 'Female', 'Others'],
-                                        data: [[52.6, 44.7, 2.6]],
-                                        datasetLabels: ["Dataset 1"]
-                                    }, {
-                                        type: "doughnut",
-                                        title: "Title 3",
-                                        labels: ['Scope 1', 'Scope 2', 'Scope 3'],
-                                        data: [[88, 0, 12]],
-                                        datasetLabels: ["Dataset 1"]
-                                    }]
-                                }
-                            }
+                var filterIndex = oEvent.getSource().data().index;
+                for (var i = filterIndex + 1; i < filterContainerItems.length; i++) {
+                    filterContainerItems[i].setSelectedKey("All");
+                }
+                var branch = "";
+                filterContainerItems.forEach(function (item, index) {
+                    if (item instanceof sap.m.Select) {
+                        var selectedKey = item.getSelectedKey();
+                        if (selectedKey && selectedKey !== "All") {
+                            branch += selectedKey + "-"
                         }
                     }
-                };
-            },
-            onBranchChange: function (oEvent) {
-                var title = oEvent.getParameter("selectedItem").getKey();
-                if (this.analyticsData) {
-                    var branchData = this.analyticsData[title].Environment;
-                    this.createSampleData(branchData.Overview);
-                    this.createSampleDataScope1(branchData["Scope 1"]);
-                    this.createSampleDataScope2(branchData["Scope 2"]);
-                    this.createSampleDataScope3(branchData["Scope 3"]);
-
+                });
+                branch = branch.substring(0, branch.length - 1);
+                var selectedData = Object.keys(that.analyticsData).filter(val => val.indexOf(branch) !== -1)
+                that.createSampleData(that.consolidatedData(selectedData, "Overview"));
+                that.createSampleDataScope1(that.consolidatedData(selectedData, "Scope 1"));
+                that.createSampleDataScope2(that.consolidatedData(selectedData, "Scope 2"));
+                that.createSampleDataScope3(that.consolidatedData(selectedData, "Scope 3"));
+                for (var i = filterIndex + 1; i < filterContainerItems.length; i++) {
+                    var title = filterContainerItems[i].data().title;
+                    filterContainerItems[i].removeAllItems();
+                    var data = that[title];
+                    data = data.filter(key => key[filterTitle] === SelectedKey)
+                    filterContainerItems[i].addItem(new sap.ui.core.Item({
+                        key: "All",
+                        text: "All"
+                    }))
+                    for (var j = 0; j < data.length; j++) {
+                        filterContainerItems[i].addItem(new sap.ui.core.Item({
+                            key: data[j].title,
+                            text: data[j].title
+                        }))
+                    }
+                    filterContainerItems[i].setSelectedKey("All");
                 }
             },
+            consolidatedData: function (data, module) {
+                var that = this;
+                if (data.length > 1) {
+                    var oData = [];
+                    data.forEach(val => {
+                        oData.push(that.analyticsData[val].Environment);
+                    })
+                }
+                else {
+                    return that.analyticsData[data[0]].Environment[module]
+                }
+                var consolidatedData = "";
+                switch (module) {
+                    case "Overview": consolidatedData = {
+                        TotalEmissions: 0,
+                        "Scope 1": 0,
+                        "Scope 2": 0,
+                        "Scope 3": 0,
+                        Water: 0,
+                        "Water Stress": 0,
+                        Waste: 0
+                    };
+                        oData.forEach(val => {
+                            consolidatedData.TotalEmissions += parseFloat(val[module].TotalEmissions) || 0;
+                            consolidatedData["Scope 1"] += parseFloat(val[module]["Scope 1"]) || 0;
+                            consolidatedData["Scope 2"] += parseFloat(val[module]["Scope 2"]) || 0;
+                            consolidatedData["Scope 3"] += parseFloat(val[module]["Scope 3"]) || 0;
+                            consolidatedData.Water += parseFloat(val[module].Water) || 0;
+                            consolidatedData["Water Stress"] += parseFloat(val[module]["Water Stress"]) || 0;
+                            consolidatedData.Waste += parseFloat(val[module].Waste) || 0;
+                            consolidatedData.Scope = consolidatedData.Scope ? that.sumData(consolidatedData.Scope, val[module].Scope) : val[module].Scope;
+                        })
+                        break;
+                    case "Scope 1": consolidatedData = {
+                        "Scope 1": 0,
+                        Bioenergy: 0,
+                        Fuels: 0,
+                        "Owned Vehicles": 0,
+                        Refrigerant: 0,
+                    };
+                        oData.forEach(val => {
+                            consolidatedData["Scope 1"] += parseFloat(val[module]["Scope 1"]) || 0;
+                            consolidatedData.Bioenergy += parseFloat(val[module].Bioenergy) || 0;
+                            consolidatedData.Fuels += parseFloat(val[module].Fuels) || 0;
+                            consolidatedData["Owned Vehicles"] += parseFloat(val[module]["Owned Vehicles"]) || 0;
+                            consolidatedData.Refrigerant += parseFloat(val[module].Refrigerant) || 0;
+                            consolidatedData.Emission = consolidatedData.Emission ? that.sumData(consolidatedData.Emission, val[module].Emission) : val[module].Emission;
+                            consolidatedData.BioenergySplit = consolidatedData.BioenergySplit ? that.sumData(consolidatedData.BioenergySplit, val[module].BioenergySplit) : val[module].BioenergySplit;
+                        })
+                        break;
+                    case "Scope 2": consolidatedData = {
+                        "Scope 2": 0,
+                        "District Cooling": 0,
+                        Electricity: 0,
+                        "Heat and steam": 0,
+                        "Electricity - Backup": 0,
+                        "Owned Vehicles": 0,
+                    };
+                        oData.forEach(val => {
+                            consolidatedData["Scope 2"] += parseFloat(val[module]["Scope 2"]) || 0;
+                            consolidatedData["District Cooling"] += parseFloat(val[module]["District Cooling"]) || 0;
+                            consolidatedData.Electricity += parseFloat(val[module].Electricity) || 0;
+                            consolidatedData["Heat and steam"] += parseFloat(val[module]["Heat and steam"]) || 0;
+                            consolidatedData["Electricity - Backup"] += parseFloat(val[module]["Electricity - Backup"]) || 0;
+                            consolidatedData["Owned Vehicles"] = parseFloat(val[module]["Owned Vehicles"]) || 0;
+                            consolidatedData.Activities = consolidatedData.Activities ? that.sumData(consolidatedData.Activities, val[module].Activities) : val[module].Activities;
+                        })
+                        break;
+                    case "Scope 3": consolidatedData = {
+                        "Scope 3": 0,
+                        "Business travel - land and sea": 0,
+                        "Employees commuting": 0,
+                        "Flight": 0,
+                        "Freighting goods": 0,
+                        "Materials": 0,
+                        "Waste Disposal": 0,
+                        "WTT- fuels": 0
+                    };
+                        oData.forEach(val => {
+                            consolidatedData["Scope 3"] += parseFloat(val[module]["Scope 3"]) || 0;
+                            consolidatedData["Business travel - land and sea"] += parseFloat(val[module]["Business travel - land and sea"]) || 0;
+                            consolidatedData["Employees commuting"] += parseFloat(val[module]["Employees commuting"]) || 0;
+                            consolidatedData["Flight"] += parseFloat(val[module]["Flight"]) || 0;
+                            consolidatedData["Freighting goods"] += parseFloat(val[module]["Freighting goods"]) || 0;
+                            consolidatedData["Materials"] = parseFloat(val[module]["Materials"]) || 0;
+                            consolidatedData["Waste Disposal"] = parseFloat(val[module]["Waste Disposal"]) || 0;
+                            consolidatedData["WTT- fuels"] = parseFloat(val[module]["WTT- fuels"]) || 0;
+                            consolidatedData.Emission = consolidatedData.Emission ? that.sumData(consolidatedData.Emission, val[module].Emission) : val[module].Emission;
+                        })
+                        break;
 
+                }
+
+                return consolidatedData;
+            },
+
+            sumData: function (obj1, obj2) {
+                let result = {};
+
+                // If obj1 is null or empty, return obj2
+                if (!obj1 || Object.keys(obj1).length === 0) {
+                    return { ...obj2 };
+                }
+
+                // If obj2 is null or empty, return obj1
+                if (!obj2 || Object.keys(obj2).length === 0) {
+                    return { ...obj1 };
+                }
+
+                // Iterate through the keys of both objects and sum the values
+                for (let key in obj1) {
+                    if (obj1.hasOwnProperty(key)) {
+                        // Add the value from obj1
+                        result[key] = obj1[key];
+                    }
+                }
+
+                for (let key in obj2) {
+                    if (obj2.hasOwnProperty(key)) {
+                        // Sum the values if the key exists in both objects; otherwise, take the value from obj2
+                        result[key] = result[key] ? result[key] + obj2[key] : obj2[key];
+                    }
+                }
+
+                return result;
+            },
+            consolidatePercentage: function (data1, data2) {
+                // Calculate total sum for each data set
+                var total1 = data1["Scope 1"] + data1["Scope 2"] + data1["Scope 3"];
+                var total2 = data2["Scope 1"] + data2["Scope 2"] + data2["Scope 3"];
+
+                // Calculate the consolidated percentages as weighted averages
+                var consolidatedScope1 = (
+                    (data1["Scope 1"] * total1 + data2["Scope 1"] * total2) /
+                    (total1 + total2)
+                ).toFixed(2);
+
+                var consolidatedScope2 = (
+                    (data1["Scope 2"] * total1 + data2["Scope 2"] * total2) /
+                    (total1 + total2)
+                ).toFixed(2);
+
+                var consolidatedScope3 = (
+                    (data1["Scope 3"] * total1 + data2["Scope 3"] * total2) /
+                    (total1 + total2)
+                ).toFixed(2);
+
+                // Return the consolidated data as a JavaScript object
+                return {
+                    ["Scope 1"]: parseFloat(consolidatedScope1),
+                    ["Scope 2"]: parseFloat(consolidatedScope2),
+                    ["Scope 3"]: parseFloat(consolidatedScope3)
+                };
+            },
+            consolidateRatios: function (ratio1, ratio2) {
+                // Function to validate and parse the ratio input
+                function parseRatio(ratio) {
+                    if (!ratio || typeof ratio !== "string" || !ratio.includes(":")) {
+                        return [0, 1]; // Return a default ratio of 0:1 for invalid input
+                    }
+                    return ratio.split(":").map(Number);
+                }
+
+                // Parse and validate both ratios
+                let [a, b] = parseRatio(ratio1);
+                let [c, d] = parseRatio(ratio2);
+
+                // Handle cases where the denominator is zero to avoid division issues
+                if (b === 0) b = 1;
+                if (d === 0) d = 1;
+
+                // Convert both ratios to have a common denominator
+                // let commonDenominator = b * d;
+                let numerator1 = a + c;
+                let numerator2 = b + d;
+
+                // Add the numerators
+                let combinedNumerator = numerator1 + numerator2;
+
+                // The combined ratio is the sum of numerators over the common denominator
+                return `${numerator1}:${numerator2}`;
+            },
             _generateKPIForSelection: function (selectedData, id) {
 
                 // Clear previous KPI and Chart boxes

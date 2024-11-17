@@ -1,16 +1,9 @@
 sap.ui.define(
-    ["../controller/BaseController", "sap/ui/model/json/JSONModel", "sap/m/GenericTile",
-        "sap/m/TileContent",
-        "sap/m/NumericContent",
-        "sap/m/HBox",
+    ["../controller/BaseController", "sap/ui/model/json/JSONModel",
         "sap/m/VBox",
-        "sap/uxap/ObjectPageSection",
-        "sap/uxap/ObjectPageSubSection",
         "sap/ui/core/HTML",
-        "sap/m/Select",
-        "sap/ui/core/Item",
-        "sap/m/Label",],
-    function (Controller, JSONModel, GenericTile, TileContent, NumericContent, HBox, VBox, ObjectPageSection, ObjectPageSubSection, HTML, Item, Select, Label) {
+        "sap/ui/core/CustomData"],
+    function (Controller, JSONModel, VBox, HTML, CustomData) {
         "use strict";
         return Controller.extend("ESGOrg.ESGOrg.controller.SocialAnalytics", {
             /**
@@ -31,6 +24,7 @@ sap.ui.define(
                     oHBox.removeAllItems();
                     var oHBox = this.byId("chartDataScope1")
                     oHBox.removeAllItems();
+                    this.byId("graphFilters").removeAllItems();
                     var aCanvas = document.getElementsByTagName("canvas");
                     for (let i = aCanvas.length - 1; i >= 0; i--) {
                         aCanvas[i].remove();
@@ -38,152 +32,161 @@ sap.ui.define(
                     firebase.firestore().collection(user.domain).doc("Master Data").collection("Reporting Cycle").doc("All Cycle").get().then(doc => {
                         var cycle = [];
                         if (doc.exists) {
+                            that.months = [];
+                            that.years = [];
+                            var cycledata = doc.data();
+                            const initialKeys = Object.keys(cycledata);
+                            initialKeys.forEach((key) => {
+                                const [months, years] = key.split("-");
 
+
+                                if (years && !that.years.some(item => item.title === years)) {
+                                    that.years.push({ title: years });
+                                }
+                                if (months && !that.months.some(item => item.title === months)) {
+                                    that.months.push({ title: months, years });
+                                }
+                            });
+                            var initialSelection = that.years[0].title;
+                            if (that.years.indexOf(new Date().getFullYear()) !== -1) {
+                                initialSelection = new Date().getFullYear()
+                            }
                             Object.keys(doc.data()).map(val => {
                                 var data = doc.data()[val];
                                 data.title = val;
                                 cycle.push(data);
                             });
+                            firebase.firestore().collection(user.domain).doc("AnalyticsData").collection("Reporting Cycle").where("year", "==", initialSelection).get().then(querySnapshot => {
+                                sap.ui.core.BusyIndicator.hide();
+                                var aClubData = {};
+                                querySnapshot.forEach(function (doc) {
+                                    var monthYear = doc.id;
+                                    var yearMonth = monthYear.split("-")[1] + "-" + monthYear.split("-")[0]
+                                    var data = doc.data();
+                                    if (data.data) {
+                                        Object.keys(data.data).map(val => {
+                                            aClubData[yearMonth + "-" + val] = data.data[val];
+                                        })
+                                    }
+
+
+                                });
+                                if (Object.keys(aClubData).length > 0) {
+
+                                    sap.ui.core.BusyIndicator.hide();
+                                    that.analyticsData = aClubData;
+                                    that.years = [];
+                                    that.months = [];
+                                    that.countries = [];
+                                    that.states = [];
+                                    that.districts = [];
+                                    that.blocks = [];
+                                    var initialDataKeys = Object.keys(aClubData);
+                                    initialDataKeys.forEach((key) => {
+                                        const [years, months, countries, states, districts, blocks] = key.split("-");
+
+                                        if (years && !that.years.some(item => item.title === years)) {
+                                            that.years.push({ title: years });
+                                        }
+                                        if (months && !that.months.some(item => item.title === months && item.years === years)) {
+                                            that.months.push({ title: months, years });
+                                        }
+                                        if (countries && !that.countries.some(item => item.title === countries && item.months === months)) {
+                                            that.countries.push({ title: countries, months });
+                                        }
+                                        if (states && !that.states.some(item => item.title === states && item.countries === countries)) {
+                                            that.states.push({ title: states, countries });
+                                        }
+                                        if (districts && !that.districts.some(item => item.title === districts && item.states === states)) {
+                                            that.districts.push({ title: districts, states });
+                                        }
+                                        if (blocks && !that.blocks.some(item => item.title === blocks && item.districts === districts)) {
+                                            that.blocks.push({ title: blocks, districts });
+                                        }
+                                    });
+                                    var oFilters = {
+                                        years: that.years,
+                                        months: that.months.filter(key => key.years === initialSelection),
+                                        countries: [],
+                                        states: [],
+                                        districts: [],
+                                        blocks: [],
+                                    }
+                                    Object.keys(oFilters).map((val, index) => {
+                                        var vbox = new sap.m.VBox();
+                                        var label = new sap.m.Label({
+                                            text: that.capitalizeFirstLetter(val)
+                                        });
+                                        var oDataTemplate = new CustomData({ key: "title", value: val });
+                                        var oDataTemplate1 = new CustomData({ key: "index", value: index });
+                                        var select = new sap.m.Select({
+                                            items: val === "years" ? [...oFilters[val].map(function (value) {
+                                                return new sap.ui.core.Item({
+                                                    key: value.title,
+                                                    text: value.title
+                                                });
+                                            })
+                                            ] : [
+                                                new sap.ui.core.Item({
+                                                    key: "All",
+                                                    text: "All"
+                                                }),
+                                                ...oFilters[val].map(function (value) {
+                                                    return new sap.ui.core.Item({
+                                                        key: value.title,
+                                                        text: value.title
+                                                    });
+                                                })
+                                            ],
+                                            // enabled: false,
+                                            maxWidth: "100px",
+                                            change: function (oEvent) {
+                                                that.applyFilters(oEvent);
+                                            } // On change, apply the filters to the table
+                                        });
+                                        select.addCustomData(oDataTemplate);
+                                        select.addCustomData(oDataTemplate1);
+                                        select.addStyleClass("sapUiSmallMarginEnd");
+                                        if (val === "years") {
+                                            select.setSelectedKey(initialSelection);
+                                        }
+                                        vbox.addItem(label);
+                                        vbox.addItem(select);
+                                        that.byId("graphFilters").addItem(vbox);
+                                    });
+                                    var branch = "";
+                                    var filterContainerItems = that.byId("graphFilters").getItems();
+                                    filterContainerItems.forEach(function (item, index) {
+                                        if (item instanceof sap.m.Select) {
+                                            var selectedKey = item.getSelectedKey();
+                                            if (selectedKey && selectedKey !== "All") {
+                                                branch += selectedKey + "-"
+                                            }
+                                        }
+                                    });
+                                    branch = branch.substring(0, branch.length - 1);
+                                    var selectedData = Object.keys(that.analyticsData).filter(val => val.indexOf(branch) !== -1)
+                                    that.createSampleData(that.consolidatedData(selectedData, "Overview"));
+                                    that.createSampleDataScope1(that.consolidatedData(selectedData, "PrivacyOthers"));
+                                }
+                                else {
+                                    sap.ui.core.BusyIndicator.hide();
+                                    sap.m.MessageBox.Error("No data found")
+                                }
+
+
+                            });
                         }
                         else {
-
+                            sap.ui.core.BusyIndicator.hide();
+                            sap.m.MessageBox.error("No data found")
                         }
-
-                        var cycleModel = new JSONModel({ results: cycle });
-
-                        that.getView().setModel(cycleModel, "cycleModel");
-                        that.byId("cycleId").setSelectedKey(cycle[0].title)
-                        firebase.firestore().collection(user.domain).doc("AnalyticsData").collection("Reporting Cycle").doc(cycle[0].title).get().then(doc => {
-                            if (doc.exists) {
-                                var branches = [];
-                                var data = doc.data().data;
-
-                                Object.keys(data).map(val => {
-                                    branches.push({ title: val })
-                                })
-                                var cycleModel = new JSONModel({ results: branches });
-                                that.analyticsData = data;
-                                var branchData = that.analyticsData[branches[0].title].Social;
-                                that.createSampleData(branchData.Overview);
-                                that.createSampleDataScope1(branchData["PrivacyOthers"]);
-                                // that.createSampleDataScope2(branchData["Scope 2"]);
-                                // that.createSampleDataScope3(branchData["Scope 3"]);
-                                that.getView().setModel(cycleModel, "branchModel");
-                                that.byId("branchId").setSelectedKey(branches[0].title)
-                            }
-                            else {
-                                sap.m.MessageBox.Error("No data found")
-                            }
-
-
-                        });
-
-                        sap.ui.core.BusyIndicator.hide();
                     });
                 });
 
-                this._originalData = this._getSampleData(); // Store original data
+                // this._originalData = this._getSampleData(); // Store original data
                 this._charts = {};
                 // this._renderSections(this._originalData);
-            },
-            onCycleChange: function (oEvent) {
-                var that = this;
-                var user = this.userData;
-                console.log(oEvent)
-                var cycle = oEvent.getParameter("selectedItem").getKey();
-                firebase.firestore().collection(user.domain).doc("AnalyticsData").collection("Reporting Cycle").doc(cycle).get().then(doc => {
-                    if (doc.exists) {
-                        var branches = [];
-                        var data = doc.data().data;
-                        that.analyticsData = data;
-                        Object.keys(data).map(val => {
-                            branches.push({ title: val })
-                        })
-                        var cycleModel = new JSONModel({ results: branches });
-                        var branchData = that.analyticsData[branches[0].title].Social;
-                        that.createSampleData(branchData.Overview);
-                        that.createSampleDataScope1(branchData["PrivacyOthers"]);
-                        // that.createSampleDataScope2(branchData["Scope 2"]);
-                        // that.createSampleDataScope3(branchData["Scope 3"]);
-                        that.getView().setModel(cycleModel, "branchModel");
-                        that.byId("branchId").setSelectedKey(branches[0].title)
-                    }
-                    else {
-                        var emptyData = {
-                            "KPI": [{
-                                header: "Total Emissions",
-                                subheader: "Kgco2",
-                                value: 0,
-                                scale: ""
-                            },
-                            {
-                                header: "Water",
-                                subheader: "Kgco2",
-                                value: 0,
-                                scale: ""
-                            },
-                            {
-                                header: "Waste",
-                                subheader: "Kgco2",
-                                value: 0,
-                                scale: ""
-                            },
-                            {
-                                header: "Biodiversity",
-                                subheader: "Trees Planted",
-                                value: 0,
-                                scale: ""
-                            },
-                            {
-                                header: "Social Spend",
-                                subheader: "Expenditure",
-                                value: 0,
-                                scale: ""
-                            },
-                            {
-                                header: "Beneficiaries",
-                                subheader: "People",
-                                value: 0,
-                                scale: ""
-                            },
-                            {
-                                header: "Gender Split",
-                                subheader: "Female:Male",
-                                value: 0,
-                                scale: ""
-                            }],
-                            "Charts": [{
-                                type: "doughnut",
-                                title: "Title 1",
-                                labels: ['50+', '35-50', 'Less than 22', "22 to 35"],
-                                data: [[0, 0, 0, 0]],
-                                datasetLabels: ["Dataset 1"]
-
-                            },
-                            {
-                                type: "doughnut",
-                                title: "Title 2",
-                                labels: ['Male', 'Female', 'Others'],
-                                data: [[0, 0, 0]],
-                                datasetLabels: ["Dataset 1"]
-                            }, {
-                                type: "doughnut",
-                                title: "Title 3",
-                                labels: ['Scope 1', 'Scope 2', 'Scope 3'],
-                                data: [[0, 0, 0]],
-                                datasetLabels: ["Dataset 1"]
-                            }]
-                        }
-                        this.sampleData = emptyData;
-                        this.analyticsData = undefined
-                        this._generateKPIForSelection(emptyData.KPI);
-                        this._generateChartForSelection(emptyData.Charts);
-                        var cycleModel = new JSONModel({ results: [] });
-                        that.getView().setModel(cycleModel, "branchModel");
-                    }
-
-
-                });
             },
             createSampleData: function (branchData) {
                 var that = this;
@@ -302,7 +305,6 @@ sap.ui.define(
                 if (branchData && branchData.Complaints && Object.keys(branchData.Complaints).length > 0) {
                     var sampleData = {
                         Overview: {
-
                             "Charts": [{
                                 type: "bar",
                                 title: "Customer Privacy Complaints Received vs. Solved (by complant type)",
@@ -356,229 +358,192 @@ sap.ui.define(
                 });
                 return aData
             },
-            createSampleDataScope2: function (branchData) {
+            applyFilters: function (oEvent) {
                 var that = this;
+                var filterTitle = oEvent.getSource().data().title;
+                var SelectedKey = oEvent.getSource().getSelectedKey();
+                var filterContainerItems = this.byId("graphFilters").getItems();
 
-                if (branchData) {
-                    var sampleData = {
-                        Overview: {
-                            "KPI": [{
-                                header: "Scope 2",
-                                subheader: "Kgco2",
-                                value: that.formatNumberWithUnit(branchData["Scope 2"]),
-                                scale: ""
-                            },
-                            {
-                                header: "District Cooling",
-                                subheader: "Kgco2",
-                                value: that.formatNumberWithUnit(branchData["District Cooling"]),
-                                scale: ""
-                            },
-                            {
-                                header: "Electricity",
-                                subheader: "Kgco2",
-                                value: that.formatNumberWithUnit(branchData.Electricity),
-                                scale: ""
-                            },
-                            {
-                                header: "Heat and steam",
-                                subheader: "Kgco2",
-                                value: that.formatNumberWithUnit(branchData["Heat and steam"]),
-                                scale: ""
-                            },
-                            {
-                                header: "Electricity - Backup",
-                                subheader: "Kgco2",
-                                value: that.formatNumberWithUnit(branchData["Electricity - Backup"]),
-                                scale: ""
-                            },
-                            {
-                                header: "Owned Vehicles",
-                                subheader: "Kgco2",
-                                value: that.formatNumberWithUnit(branchData["Owned Vehicles"]),
-                                scale: ""
-                            },
-
-                            ],
-                            "Charts": [{
-                                type: "doughnut",
-                                title: "Emission split by Activity",
-                                labels: Object.keys(branchData.Activities),
-                                data: [Object.values(branchData.Activities)],
-                                datasetLabels: ["Dataset 1"]
-                            }]
+                var filterIndex = oEvent.getSource().data().index;
+                for (var i = filterIndex + 1; i < filterContainerItems.length; i++) {
+                    filterContainerItems[i].setSelectedKey("All");
+                }
+                var branch = "";
+                filterContainerItems.forEach(function (item, index) {
+                    if (item instanceof sap.m.Select) {
+                        var selectedKey = item.getSelectedKey();
+                        if (selectedKey && selectedKey !== "All") {
+                            branch += selectedKey + "-"
                         }
                     }
-
-                    this.sampleData = sampleData;
-                    this._generateKPIForSelection(sampleData.Overview.KPI, "KPIDataScope2");
-                    this._generateChartForSelection(sampleData.Overview.Charts, "chartDataScope2");
-
-                    // this._onRenderChart("ageChart")
-
-                }
-            },
-            createSampleDataScope3: function (branchData) {
-                var that = this;
-
-                if (branchData) {
-                    var sampleData = {
-                        Overview: {
-                            "KPI": [{
-                                header: "Scope 3",
-                                subheader: "Kgco2",
-                                value: that.formatNumberWithUnit(branchData["Scope 3"]),
-                                scale: ""
-                            },
-                            {
-                                header: "Business travel - land and sea",
-                                subheader: "Kgco2",
-                                value: that.formatNumberWithUnit(branchData["Business travel - land and sea"]),
-                                scale: ""
-                            },
-                            {
-                                header: "Employees commuting",
-                                subheader: "Kgco2",
-                                value: that.formatNumberWithUnit(branchData["Employees commuting"]),
-                                scale: ""
-                            },
-                            {
-                                header: "Flight",
-                                subheader: "Kgco2",
-                                value: that.formatNumberWithUnit(branchData["Flight"]),
-                                scale: ""
-                            },
-                            {
-                                header: "Frieghting goods",
-                                subheader: "Kgco2",
-                                value: that.formatNumberWithUnit(branchData["Frieghting goods"]),
-                                scale: ""
-                            },
-                            {
-                                header: "Materials",
-                                subheader: "Kgco2",
-                                value: that.formatNumberWithUnit(branchData["Materials"]),
-                                scale: ""
-                            },
-                            {
-                                header: "Waste Disposal",
-                                subheader: "Kgco2",
-                                value: that.formatNumberWithUnit(branchData["Waste Disposal"]),
-                                scale: ""
-                            },
-                            {
-                                header: "WTT- fuel",
-                                subheader: "Kgco2",
-                                value: that.formatNumberWithUnit(branchData["WTT- fuel"]),
-                                scale: ""
-                            },
-
-                            ],
-                            "Charts": [{
-                                type: "doughnut",
-                                title: "Emission split by Source",
-                                labels: Object.keys(branchData.Emission),
-                                data: [Object.values(branchData.Emission)],
-                                datasetLabels: ["Dataset 1"]
-                            }]
-                        }
+                });
+                branch = branch.substring(0, branch.length - 1);
+                var selectedData = Object.keys(that.analyticsData).filter(val => val.indexOf(branch) !== -1)
+                that.createSampleData(that.consolidatedData(selectedData, "Overview"));
+                that.createSampleDataScope1(that.consolidatedData(selectedData, "PrivacyOthers"));
+                for (var i = filterIndex + 1; i < filterContainerItems.length; i++) {
+                    var title = filterContainerItems[i].data().title;
+                    filterContainerItems[i].removeAllItems();
+                    var data = that[title];
+                    data = data.filter(key => key[filterTitle] === SelectedKey)
+                    filterContainerItems[i].addItem(new sap.ui.core.Item({
+                        key: "All",
+                        text: "All"
+                    }))
+                    for (var j = 0; j < data.length; j++) {
+                        filterContainerItems[i].addItem(new sap.ui.core.Item({
+                            key: data[j].title,
+                            text: data[j].title
+                        }))
                     }
-
-                    this.sampleData = sampleData;
-                    this._generateKPIForSelection(sampleData.Overview.KPI, "KPIDataScope3");
-                    this._generateChartForSelection(sampleData.Overview.Charts, "chartDataScope3");
-
-                    // this._onRenderChart("ageChart")
-
+                    filterContainerItems[i].setSelectedKey("All");
                 }
             },
-            _getSampleData: function () {
+            consolidatedData: function (data, module) {
+                var that = this;
+                if (data.length > 1) {
+                    var oData = [];
+                    data.forEach(val => {
+                        oData.push(that.analyticsData[val].Social);
+                    })
+                }
+                else {
+                    return that.analyticsData[data[0]].Social[module]
+                }
+                var consolidatedData = "";
+                switch (module) {
+                    case "Overview": consolidatedData = {
+                        "Headcount": 0,
+                        "Total training Hrs": 0,
+                        "CSR Spend": 0,
+                        "Attrition": 0,
+                        "Retention": 0,
+                    };
+                        oData.forEach(val => {
+                            consolidatedData["Headcount"] += parseFloat(val[module]["Headcount"]) || 0;
+                            consolidatedData["Female:Male"] = consolidatedData["Female:Male"] ? that.consolidateRatios(consolidatedData["Female:Male"], val.Overview["Female:Male"]) : val.Overview["Female:Male"];
+                            consolidatedData["Total training Hrs"] += parseFloat(val[module]["Total training Hrs"]) || 0;
+                            consolidatedData["CSR Spend"] += parseFloat(val[module]["CSR Spend"]) || 0;
+                            consolidatedData["Attrition"] += parseFloat(val[module]["Attrition"]) || 0;
+                            consolidatedData["Retention"] += parseFloat(val[module]["Retention"]) || 0;
+                            consolidatedData.EmployementType = consolidatedData.EmployementType ? that.sumData(consolidatedData.EmployementType, val[module].EmployementType) : val[module].EmployementType;
+                            consolidatedData.Gender = consolidatedData.Gender ? that.sumData(consolidatedData.Gender, val[module].Gender) : val[module].Gender;
+                            consolidatedData.InjuryType = consolidatedData.InjuryType ? that.sumData(consolidatedData.InjuryType, val[module].InjuryType) : val[module].InjuryType;
+                            consolidatedData.GenderForInjuries = consolidatedData.GenderForInjuries ? that.sumData(consolidatedData.GenderForInjuries, val[module].GenderForInjuries) : val[module].GenderForInjuries;
+                            consolidatedData.ChildLabor = consolidatedData.ChildLabor ? that.sumData(consolidatedData.ChildLabor, val[module].ChildLabor) : val[module].ChildLabor;
+                            consolidatedData.ChildLaborSupplier = consolidatedData.ChildLaborSupplier ? that.sumData(consolidatedData.ChildLaborSupplier, val[module].ChildLaborSupplier) : val[module].ChildLaborSupplier;
+                            consolidatedData.Training = consolidatedData.Training ? that.sumData(consolidatedData.Training, val[module].Training) : val[module].Training;
+                            consolidatedData.TrainingType = consolidatedData.TrainingType ? that.sumData(consolidatedData.TrainingType, val[module].TrainingType) : val[module].TrainingType;
+                        })
+                        break;
+                    case "PrivacyOthers": consolidatedData = {
+                        Complaints: 0,
+                        CHS: 0,
+                        "Mktg and Labelling": 0,
+                        SocialEx: 0,
+                        SocialBe: 0,
+                    };
+                        oData.forEach(val => {
+                            consolidatedData.Complaints = consolidatedData.Complaints ? that.sumData(consolidatedData.Complaints, val[module].Complaints) : val[module].Complaints;
+                            consolidatedData.CHS = consolidatedData.CHS ? that.sumData(consolidatedData.CHS, val[module].CHS) : val[module].CHS;
+                            consolidatedData["Mktg and Labelling"] = consolidatedData["Mktg and Labelling"] ? that.sumData(consolidatedData["Mktg and Labelling"], val[module]["Mktg and Labelling"]) : val[module]["Mktg and Labelling"];
+                            consolidatedData.SocialEx = consolidatedData.SocialEx ? that.sumData(consolidatedData.SocialEx, val[module].SocialEx) : val[module].SocialEx;
+                            consolidatedData.SocialBe = consolidatedData.SocialBe ? that.sumData(consolidatedData.SocialBe, val[module].SocialBe) : val[module].SocialBe;
+                        })
+                        break;
+
+
+                }
+
+                return consolidatedData;
+            },
+
+            sumData: function (obj1, obj2) {
+                let result = {};
+
+                // If obj1 is null or empty, return obj2
+                if (!obj1 || Object.keys(obj1).length === 0) {
+                    return { ...obj2 };
+                }
+
+                // If obj2 is null or empty, return obj1
+                if (!obj2 || Object.keys(obj2).length === 0) {
+                    return { ...obj1 };
+                }
+
+                // Iterate through the keys of both objects and sum the values
+                for (let key in obj1) {
+                    if (obj1.hasOwnProperty(key)) {
+                        // Add the value from obj1
+                        result[key] = obj1[key];
+                    }
+                }
+
+                for (let key in obj2) {
+                    if (obj2.hasOwnProperty(key)) {
+                        // Sum the values if the key exists in both objects; otherwise, take the value from obj2
+                        result[key] = result[key] ? result[key] + obj2[key] : obj2[key];
+                    }
+                }
+
+                return result;
+            },
+            consolidatePercentage: function (data1, data2) {
+                // Calculate total sum for each data set
+                var total1 = data1["Scope 1"] + data1["Scope 2"] + data1["Scope 3"];
+                var total2 = data2["Scope 1"] + data2["Scope 2"] + data2["Scope 3"];
+
+                // Calculate the consolidated percentages as weighted averages
+                var consolidatedScope1 = (
+                    (data1["Scope 1"] * total1 + data2["Scope 1"] * total2) /
+                    (total1 + total2)
+                ).toFixed(2);
+
+                var consolidatedScope2 = (
+                    (data1["Scope 2"] * total1 + data2["Scope 2"] * total2) /
+                    (total1 + total2)
+                ).toFixed(2);
+
+                var consolidatedScope3 = (
+                    (data1["Scope 3"] * total1 + data2["Scope 3"] * total2) /
+                    (total1 + total2)
+                ).toFixed(2);
+
+                // Return the consolidated data as a JavaScript object
                 return {
-                    "Overview": {
-                        "locations": {
-                            "Jharkhand": {
-                                "2023": {
-                                    "KPI": [{
-                                        header: "Total Emissions",
-                                        subheader: "Kgco2",
-                                        value: "234",
-                                        scale: "M"
-                                    },
-                                    {
-                                        header: "Water",
-                                        subheader: "Kgco2",
-                                        value: "206",
-                                        scale: "M"
-                                    },
-                                    {
-                                        header: "Waste",
-                                        subheader: "Kgco2",
-                                        value: "0",
-                                        scale: "K"
-                                    },
-                                    {
-                                        header: "Biodiversity",
-                                        subheader: "Trees Planted",
-                                        value: "60",
-                                        scale: ""
-                                    },
-                                    {
-                                        header: "Social Spend",
-                                        subheader: "Expenditure",
-                                        value: "103",
-                                        scale: "K"
-                                    },
-                                    {
-                                        header: "Beneficiaries",
-                                        subheader: "People",
-                                        value: "103",
-                                        scale: "K"
-                                    },
-                                    {
-                                        header: "Gender Split",
-                                        subheader: "Female:Male",
-                                        value: "1.31",
-                                        scale: ""
-                                    }],
-                                    "Charts": [{
-                                        type: "doughnut",
-                                        title: "Title 1",
-                                        labels: ['50+', '35-50', 'Less than 22', "22 to 35"],
-                                        data: [[52.6, 36.8, 7.9, 2.6]],
-                                        datasetLabels: ["Dataset 1"]
-
-                                    },
-                                    {
-                                        type: "doughnut",
-                                        title: "Title 2",
-                                        labels: ['Male', 'Female', 'Others'],
-                                        data: [[52.6, 44.7, 2.6]],
-                                        datasetLabels: ["Dataset 1"]
-                                    }, {
-                                        type: "doughnut",
-                                        title: "Title 3",
-                                        labels: ['Scope 1', 'Scope 2', 'Scope 3'],
-                                        data: [[88, 0, 12]],
-                                        datasetLabels: ["Dataset 1"]
-                                    }]
-                                }
-                            }
-                        }
-                    }
+                    ["Scope 1"]: parseFloat(consolidatedScope1),
+                    ["Scope 2"]: parseFloat(consolidatedScope2),
+                    ["Scope 3"]: parseFloat(consolidatedScope3)
                 };
             },
-            onBranchChange: function (oEvent) {
-                var title = oEvent.getParameter("selectedItem").getKey();
-                if (this.analyticsData) {
-                    var branchData = this.analyticsData[title].Social;
-                    this.createSampleData(branchData.Overview);
-                    this.createSampleDataScope1(branchData["PrivacyOthers"]);
-                    // this.createSampleDataScope2(branchData["Scope 2"]);
-                    // this.createSampleDataScope3(branchData["Scope 3"]);
-
+            consolidateRatios: function (ratio1, ratio2) {
+                // Function to validate and parse the ratio input
+                function parseRatio(ratio) {
+                    if (!ratio || typeof ratio !== "string" || !ratio.includes(":")) {
+                        return [0, 1]; // Return a default ratio of 0:1 for invalid input
+                    }
+                    return ratio.split(":").map(Number);
                 }
-            },
 
+                // Parse and validate both ratios
+                let [a, b] = parseRatio(ratio1);
+                let [c, d] = parseRatio(ratio2);
+
+                // Handle cases where the denominator is zero to avoid division issues
+                if (b === 0) b = 1;
+                if (d === 0) d = 1;
+
+                // Convert both ratios to have a common denominator
+                // let commonDenominator = b * d;
+                let numerator1 = a + c;
+                let numerator2 = b + d;
+
+                // Add the numerators
+                let combinedNumerator = numerator1 + numerator2;
+
+                // The combined ratio is the sum of numerators over the common denominator
+                return `${numerator1}:${numerator2}`;
+            },
             _generateKPIForSelection: function (selectedData, id) {
 
                 // Clear previous KPI and Chart boxes

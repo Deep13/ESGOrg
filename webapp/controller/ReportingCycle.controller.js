@@ -814,6 +814,20 @@ sap.ui.define(
                                                 branchWiseData[branch].Governance["Overview"]["CFO/CEO-Female"] += parseFloat(item["Head Count"]) || 0;
                                             }
                                         }
+                                        if (item["Entity Type"] === "CEO") { // Filter by "Entity Type" as "BOD"
+
+                                            branchWiseData[branch].Governance["Overview"]["CEO"] += parseFloat(item["Head Count"]) || 0;
+                                            if (item.Gender === "Female") {
+                                                branchWiseData[branch].Governance["Overview"]["CEO-Female"] += parseFloat(item["Head Count"]) || 0;
+                                            }
+                                        }
+                                        if (item["Entity Type"] === "CFO") { // Filter by "Entity Type" as "BOD"
+
+                                            branchWiseData[branch].Governance["Overview"]["CFO"] += parseFloat(item["Head Count"]) || 0;
+                                            if (item.Gender === "Female") {
+                                                branchWiseData[branch].Governance["Overview"]["CFO-Female"] += parseFloat(item["Head Count"]) || 0;
+                                            }
+                                        }
                                         if (item["Entity Type"] === "Independent Directors") { // Filter by "Entity Type" as "BOD"
 
                                             branchWiseData[branch].Governance["Overview"]["Independent Directors"] += parseFloat(item["Head Count"]) || 0;

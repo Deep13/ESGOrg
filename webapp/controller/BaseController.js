@@ -15214,6 +15214,10 @@ sap.ui.define(
           return num; // For numbers less than 1000
         }
       },
+      capitalizeFirstLetter: function (str) {
+        if (!str) return ""; // Handle empty or null strings
+        return str.charAt(0).toUpperCase() + str.slice(1);
+      },
       getFilters: function (module) {
 
         var columns = {

@@ -1,6 +1,6 @@
 sap.ui.define(
-    ["../controller/BaseController", "sap/ui/model/json/JSONModel", "../assets/js/firebaseConfigs", "../assets/js/Firebase"],
-    function (Controller, JSONModel, firebaseConfigs, Firebase) {
+    ["../controller/BaseController", "sap/ui/model/json/JSONModel", "../assets/js/Firebase"],
+    function (Controller, JSONModel, Firebase) {
         "use strict";
 
         return Controller.extend("ESGOrg.ESGOrg.controller.Login", {
