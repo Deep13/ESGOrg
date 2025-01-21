@@ -98,7 +98,7 @@ const viewContent = `<mvc:View controllerName="ESGOrg.ESGOrg.controller.Governan
 <footer>
     <OverflowToolbar>
         <ToolbarSpacer />
-        <Text text="Sustrack Sustainable Solutions Pvt.Ltd © 2024" />
+        <Text text="{i18n>footer}" />
         <ToolbarSpacer />
 
         <Button text="Save as Draft" press="onSubmit" />

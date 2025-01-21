@@ -45,6 +45,21 @@
   border-radius: 8px;
   margin-top: 20px;
 }
+.env-style {
+  background-color: #a0d0987d;
+  border: 20px solid #a0d098;
+  box-shadow: 17px 20px 16px 0px #00000073;
+}
+.gov-style {
+  background-color: #96cdf345;
+  border: 20px solid #96cdf3;
+  box-shadow: 17px 20px 16px 0px #00000073;
+}
+.social-style {
+  background-color: #f3b59f57;
+  border: 20px solid #f3b59f;
+  box-shadow: 17px 20px 16px 0px #00000073;
+}
 
 .kpi-style {
   background: white;
@@ -62,3 +77,33 @@
 .graphFilters-css {
   margin-left: 18px;
 }
+
+.unit-text {
+  margin-bottom: 10px;
+  font-weight: 300;
+}
+
+.legend-box {
+  background: white;
+  padding: 10px;
+  border-radius: 8px;
+  justify-content: center;
+  margin: 10px;
+  margin-top: 20px;
+}
+
+.overview .kpi-style {
+  background: #1878d44f;
+  padding: 10px;
+  border-radius: 5px;
+  box-shadow: 10px 10px 8px #00000057;
+  margin: 10px;
+  min-width: 170px;
+  border: 2px solid;
+}
+.overview .kpi-style .sapMTitleStyleH2 {
+  color: #000;
+}
+
+/* border: 20px solid #a0d098;
+    box-shadow: 17px 20px 16px 0px #00000073; */

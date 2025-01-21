@@ -1,12 +1,12 @@
 sap.ui.define(
-    ["../controller/BaseController", "sap/ui/model/json/JSONModel", "sap/m/Column",
+    ["../../controller/BaseController", "sap/ui/model/json/JSONModel", "sap/m/Column",
         "sap/m/Label",
         "sap/m/Input",
         "sap/m/MessageBox", "sap/ui/core/CustomData", "ESGOrg/ESGOrg/model/formatter", "sap/m/HBox",
         "sap/ui/core/Icon",],
     function (Controller, JSONModel, Column, Label, Input, MessageBox, CustomData, formatter, HBox, Icon) {
         "use strict";
-        return Controller.extend("ESGOrg.ESGOrg.controller.ReportingSheet", {
+        return Controller.extend("ESGOrg.ESGOrg.controller.Governance.MarketPresence", {
             /**
              * Called when a controller is instantiated and its View controls (if available) are already created.
              * Can be used to modify the View before it is displayed, to bind event handlers and do other one-time initialization.
@@ -15,19 +15,19 @@ sap.ui.define(
             onInit: function () {
                 this.oRouter = sap.ui.core.UIComponent.getRouterFor(this);
                 this.oRouter
-                    .getRoute("ReportingSheet")
+                    .getRoute("MarketPresence")
                     .attachPatternMatched(this._handleRouteMatched, this);
             },
             _handleRouteMatched: function (oEvent) {
                 var that = this;
-                var oModule = oEvent.getParameter("arguments").module;
-                this.module = JSON.parse(oModule).sub;
-                this.tile = JSON.parse(oModule).tile;
+                // var oModule = oEvent.getParameter("arguments").module;
+                this.module = "Market Presence";
+                this.tile = "Governance";
                 this.variantData = undefined;
                 this.moduleData = undefined;
                 this.checkgetUserLog().then(async user => {
                     that.byId("Filters")?.removeAllItems();
-                    // that.byId("status").setText("");
+                    that.byId("status").setText("");
                     that.byId("title").setText(that.getTitle(that.module));
                     var oModel = new JSONModel({ results: [] });
                     this.getView().setModel(oModel, "moduleMaster");
@@ -236,12 +236,12 @@ sap.ui.define(
                 var monthYear = this.getView().getModel("masterModel").getProperty("/currentReportingCycle");
                 var officeType = oEvent.getParameter("selectedItem").getBindingContext("masterModel").getObject().officeType;
                 var branch = oEvent.getParameter("selectedItem").getBindingContext("masterModel").getObject().branch;
-                // that.byId("status").setText("");
+                that.byId("status").setText("");
                 if (this.moduleData) {
                     if (this.moduleData[branch]) {
                         if (this.moduleData[branch].dataType == "Variant") {
                             if (this.moduleData[branch].status == "Submitted") {
-                                // that.byId("status").setText("Submitted");
+                                that.byId("status").setText("Submitted");
                                 that._initializeTable(that.moduleData[branch].data, false);
                             }
                             else {
@@ -298,7 +298,7 @@ sap.ui.define(
 
                                     if (this.moduleData[branch].dataType == "Variant") {
                                         if (this.moduleData[branch].status == "Submitted") {
-                                            // that.byId("status").setText("Submitted");
+                                            that.byId("status").setText("Submitted");
                                             that._initializeTable(that.moduleData[branch].data, false);
                                         }
                                         else {
@@ -576,7 +576,7 @@ sap.ui.define(
 
             onSubmit: function () {
                 var that = this;
-                // var text = that.byId("status").getText();
+                var text = that.byId("status").getText();
                 if (text !== "Submitted") {
                     var aData = this.getView().getModel("moduleMaster").getData().results;
                     var monthYear = this.getView().getModel("masterModel").getProperty("/currentReportingCycle");
@@ -622,7 +622,7 @@ sap.ui.define(
             onSave: function () {
                 var that = this;
                 // Show confirmation dialog before deleting
-                // var text = that.byId("status").getText();
+                var text = that.byId("status").getText();
                 if (text !== "Submitted") {
                     var branch = that.getView().getModel("masterModel").getProperty("/EmployeeBranch");
                     if (!branch) {
@@ -683,7 +683,7 @@ sap.ui.define(
                                                                     // MessageBox.error("Error writing document: " + error);
                                                                 });
                                                             MessageBox.success("Data successfully submitted for reporting");
-                                                            // that.byId("status").setText("Submitted");
+                                                            that.byId("status").setText("Submitted");
 
                                                         })
                                                         .catch((error) => {
@@ -720,7 +720,7 @@ sap.ui.define(
                                                         // MessageBox.error("Error writing document: " + error);
                                                     });
                                                 MessageBox.success("Data successfully submitted for reporting");
-                                                // that.byId("status").setText("Submitted");
+                                                that.byId("status").setText("Submitted");
 
 
                                             })
@@ -1059,46 +1059,6 @@ sap.ui.define(
 
                 });
             },
-            onDownload: function () {
-                var that = this;
-                var headers = this.getView().getModel("moduleMaster").getData().results;;
-                headers = headers.map((item) => {
-                    const { Reference, ...rest } = item; // Destructure to exclude 'Reference'
-                    return rest;
-                });
-                const worksheet = XLSX.utils.json_to_sheet(headers);
-
-                // Create a new workbook and append the worksheet
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, that.module);
-
-                // Export the workbook to a file
-                const xlsxFile = XLSX.write(workbook, {
-                    bookType: "xlsx",
-                    type: "binary"
-                });
-
-                // Convert the binary data to a Blob
-                const blob = new Blob([this.s2ab(xlsxFile)], { type: "application/octet-stream" });
-
-                // Trigger the download
-                const link = document.createElement("a");
-                link.href = URL.createObjectURL(blob);
-                link.download = that.module + ".xlsx";
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-
-            },
-            // Helper function to convert string to ArrayBuffer
-            s2ab: function (s) {
-                const buf = new ArrayBuffer(s.length);
-                const view = new Uint8Array(buf);
-                for (let i = 0; i < s.length; i++) {
-                    view[i] = s.charCodeAt(i) & 0xFF;
-                }
-                return buf;
-            },
             updateStructWithIncoming: function (data, incoming, matchingKeys) {
                 var struct = JSON.parse(JSON.stringify(data));
                 // Loop through each element in struct
@@ -1167,7 +1127,18 @@ sap.ui.define(
                                     return new Input({
                                         value: "{variantMaster>" + sKey.title + "}",
                                         editable: sKey.editable,
-                                        type: sKey.type
+                                        type: sKey.type,
+                                        submit: function (oEvent) {
+                                            var title = oEvent.getSource().getParent().getCells()[0].getItems()[0].getText();
+                                            var val = oEvent.getSource().getValue();
+                                            that.calcRatio(title, val)
+                                            console.log(oEvent)
+                                        },
+                                        liveChange: function (oEvent) {
+                                            oEvent.getSource().onsapfocusleave = function (e) {
+                                                e.srcControl.fireSubmit();
+                                            }
+                                        }
 
                                     });
                                 }
@@ -1206,5 +1177,32 @@ sap.ui.define(
 
 
             },
+            calcRatio: function (title, value) {
+                var aItems = this.getView().byId("CreateVariantTable").getItems();
+                var selectedMale = aItems.filter(val => val.getCells()[0].getItems()[0].getText() === "Ratio of entry level wage to local minimum wage for Male");
+                var selectedFemale = aItems.filter(val => val.getCells()[0].getItems()[0].getText() === "Ratio of entry level wage to local minimum wage for Female");
+                var entryMale = 0;
+                var entryFemale = 0;
+                var localFemale = 0;
+                var localMale = 0;
+                if (title == "Entry level wage for Male") {
+                    entryMale = parseFloat(value);
+                    selectedMale[0].getCells()[1].setValue(entryMale + localMale);
+                }
+                else if (title == "Entry level wage for Female") {
+                    entryFemale = parseFloat(value);
+                    selectedFemale[0].getCells()[1].setValue(entryFemale + localFemale);
+                }
+                else if (title == "Local Minimum Wage as Male") {
+                    localMale = parseFloat(value);
+                    selectedMale[0].getCells()[1].setValue(entryMale + localMale);
+                }
+                else if (title == "Local Minimum Wage as Female") {
+                    localFemale = parseFloat(value);
+                    selectedFemale[0].getCells()[1].setValue(entryFemale + localFemale);
+                }
+
+
+            }
         });
     });

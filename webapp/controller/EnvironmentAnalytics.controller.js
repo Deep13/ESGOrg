@@ -60,128 +60,8 @@ sap.ui.define(
                                 data.title = val;
                                 cycle.push(data);
                             });
-                            firebase.firestore().collection(user.domain).doc("AnalyticsData").collection("Reporting Cycle").where("year", "==", initialSelection).get().then(querySnapshot => {
-                                sap.ui.core.BusyIndicator.hide();
-                                var aClubData = {};
-                                querySnapshot.forEach(function (doc) {
-                                    var monthYear = doc.id;
-                                    var yearMonth = monthYear.split("-")[1] + "-" + monthYear.split("-")[0]
-                                    var data = doc.data();
-                                    if (data.data) {
-                                        Object.keys(data.data).map(val => {
-                                            aClubData[yearMonth + "-" + val] = data.data[val];
-                                        })
-                                    }
-
-
-                                });
-                                if (Object.keys(aClubData).length > 0) {
-
-                                    sap.ui.core.BusyIndicator.hide();
-                                    that.analyticsData = aClubData;
-                                    that.years = [];
-                                    that.months = [];
-                                    that.countries = [];
-                                    that.states = [];
-                                    that.districts = [];
-                                    that.blocks = [];
-                                    var initialDataKeys = Object.keys(aClubData);
-                                    initialDataKeys.forEach((key) => {
-                                        const [years, months, countries, states, districts, blocks] = key.split("-");
-
-                                        if (years && !that.years.some(item => item.title === years)) {
-                                            that.years.push({ title: years });
-                                        }
-                                        if (months && !that.months.some(item => item.title === months && item.years === years)) {
-                                            that.months.push({ title: months, years });
-                                        }
-                                        if (countries && !that.countries.some(item => item.title === countries && item.months === months)) {
-                                            that.countries.push({ title: countries, months });
-                                        }
-                                        if (states && !that.states.some(item => item.title === states && item.countries === countries)) {
-                                            that.states.push({ title: states, countries });
-                                        }
-                                        if (districts && !that.districts.some(item => item.title === districts && item.states === states)) {
-                                            that.districts.push({ title: districts, states });
-                                        }
-                                        if (blocks && !that.blocks.some(item => item.title === blocks && item.districts === districts)) {
-                                            that.blocks.push({ title: blocks, districts });
-                                        }
-                                    });
-                                    var oFilters = {
-                                        years: that.years,
-                                        months: that.months.filter(key => key.years === initialSelection),
-                                        countries: [],
-                                        states: [],
-                                        districts: [],
-                                        blocks: [],
-                                    }
-                                    Object.keys(oFilters).map((val, index) => {
-                                        var vbox = new sap.m.VBox();
-                                        var label = new sap.m.Label({
-                                            text: that.capitalizeFirstLetter(val)
-                                        });
-                                        var oDataTemplate = new CustomData({ key: "title", value: val });
-                                        var oDataTemplate1 = new CustomData({ key: "index", value: index });
-                                        var select = new sap.m.Select({
-                                            items: val === "years" ? [...oFilters[val].map(function (value) {
-                                                return new sap.ui.core.Item({
-                                                    key: value.title,
-                                                    text: value.title
-                                                });
-                                            })
-                                            ] : [
-                                                new sap.ui.core.Item({
-                                                    key: "All",
-                                                    text: "All"
-                                                }),
-                                                ...oFilters[val].map(function (value) {
-                                                    return new sap.ui.core.Item({
-                                                        key: value.title,
-                                                        text: value.title
-                                                    });
-                                                })
-                                            ],
-                                            // enabled: false,
-                                            maxWidth: "100px",
-                                            change: function (oEvent) {
-                                                that.applyFilters(oEvent);
-                                            } // On change, apply the filters to the table
-                                        });
-                                        select.addCustomData(oDataTemplate);
-                                        select.addCustomData(oDataTemplate1);
-                                        select.addStyleClass("sapUiSmallMarginEnd");
-                                        if (val === "years") {
-                                            select.setSelectedKey(initialSelection);
-                                        }
-                                        vbox.addItem(label);
-                                        vbox.addItem(select);
-                                        that.byId("graphFilters").addItem(vbox);
-                                    });
-                                    var branch = "";
-                                    var filterContainerItems = that.byId("graphFilters").getItems();
-                                    filterContainerItems.forEach(function (item, index) {
-                                        if (item instanceof sap.m.Select) {
-                                            var selectedKey = item.getSelectedKey();
-                                            if (selectedKey && selectedKey !== "All") {
-                                                branch += selectedKey + "-"
-                                            }
-                                        }
-                                    });
-                                    branch = branch.substring(0, branch.length - 1);
-                                    var selectedData = Object.keys(that.analyticsData).filter(val => val.indexOf(branch) !== -1)
-                                    that.createSampleData(that.consolidatedData(selectedData, "Overview"));
-                                    that.createSampleDataScope1(that.consolidatedData(selectedData, "Scope 1"));
-                                    that.createSampleDataScope2(that.consolidatedData(selectedData, "Scope 2"));
-                                    that.createSampleDataScope3(that.consolidatedData(selectedData, "Scope 3"));
-                                }
-                                else {
-                                    sap.ui.core.BusyIndicator.hide();
-                                    sap.m.MessageBox.Error("No data found")
-                                }
-
-
-                            });
+                            sap.ui.core.BusyIndicator.hide();
+                            that.getYearWiseData(user, initialSelection)
                         }
                         else {
                             sap.ui.core.BusyIndicator.hide();
@@ -193,6 +73,129 @@ sap.ui.define(
                 // this._originalData = this._getSampleData(); // Store original data
                 this._charts = {};
                 // this._renderSections(this._originalData);
+            },
+            getYearWiseData: function (user, initialSelection) {
+                sap.ui.core.BusyIndicator.show();
+                var that = this;
+                this.byId("graphFilters").removeAllItems();
+                firebase.firestore().collection(user.domain).doc("AnalyticsData").collection("Reporting Cycle").where("year", "==", initialSelection).get().then(querySnapshot => {
+                    var aClubData = {};
+                    querySnapshot.forEach(function (doc) {
+                        var monthYear = doc.id;
+                        var yearMonth = monthYear.split("-")[1] + "-" + monthYear.split("-")[0]
+                        var data = doc.data();
+                        if (data.data) {
+                            Object.keys(data.data).map(val => {
+                                aClubData[yearMonth + "-" + val] = data.data[val];
+                            })
+                        }
+
+
+                    });
+                    if (Object.keys(aClubData).length > 0) {
+                        sap.ui.core.BusyIndicator.hide();
+                        that.analyticsData = aClubData;
+                        that.years = [];
+                        that.months = [];
+                        that.countries = [];
+                        that.states = [];
+                        that.districts = [];
+                        that.blocks = [];
+                        var initialDataKeys = Object.keys(aClubData);
+                        initialDataKeys.forEach((key) => {
+                            const [years, months, countries, states, districts, blocks] = key.split("-");
+
+                            if (years && !that.years.some(item => item.title === years)) {
+                                that.years.push({ title: years });
+                            }
+                            if (months && !that.months.some(item => item.title === months && item.years === years)) {
+                                that.months.push({ title: months, years });
+                            }
+                            if (countries && !that.countries.some(item => item.title === countries && item.months === months)) {
+                                that.countries.push({ title: countries, months });
+                            }
+                            if (states && !that.states.some(item => item.title === states && item.countries === countries)) {
+                                that.states.push({ title: states, countries });
+                            }
+                            if (districts && !that.districts.some(item => item.title === districts && item.states === states)) {
+                                that.districts.push({ title: districts, states });
+                            }
+                            if (blocks && !that.blocks.some(item => item.title === blocks && item.districts === districts)) {
+                                that.blocks.push({ title: blocks, districts });
+                            }
+                        });
+                        var oFilters = {
+                            years: that.years,
+                            months: that.months.filter(key => key.years === initialSelection),
+                            countries: [],
+                            states: [],
+                            districts: [],
+                            blocks: [],
+                        }
+                        Object.keys(oFilters).map((val, index) => {
+                            var vbox = new sap.m.VBox();
+                            var label = new sap.m.Label({
+                                text: that.capitalizeFirstLetter(val)
+                            });
+                            var oDataTemplate = new CustomData({ key: "title", value: val });
+                            var oDataTemplate1 = new CustomData({ key: "index", value: index });
+                            var select = new sap.m.Select({
+                                items: val === "years" ? [...oFilters[val].map(function (value) {
+                                    return new sap.ui.core.Item({
+                                        key: value.title,
+                                        text: value.title
+                                    });
+                                })
+                                ] : [
+                                    new sap.ui.core.Item({
+                                        key: "All",
+                                        text: "All"
+                                    }),
+                                    ...oFilters[val].map(function (value) {
+                                        return new sap.ui.core.Item({
+                                            key: value.title,
+                                            text: value.title
+                                        });
+                                    })
+                                ],
+                                // enabled: false,
+                                maxWidth: "100px",
+                                change: function (oEvent) {
+                                    that.applyFilters(oEvent);
+                                } // On change, apply the filters to the table
+                            });
+                            select.addCustomData(oDataTemplate);
+                            select.addCustomData(oDataTemplate1);
+                            select.addStyleClass("sapUiSmallMarginEnd");
+                            if (val === "years") {
+                                select.setSelectedKey(initialSelection);
+                            }
+                            vbox.addItem(label);
+                            vbox.addItem(select);
+                            that.byId("graphFilters").addItem(vbox);
+                        });
+                        var branch = "";
+                        var filterContainerItems = that.byId("graphFilters").getItems();
+                        filterContainerItems.forEach(function (item, index) {
+                            if (item instanceof sap.m.Select) {
+                                var selectedKey = item.getSelectedKey();
+                                if (selectedKey && selectedKey !== "All") {
+                                    branch += selectedKey + "-"
+                                }
+                            }
+                        });
+                        branch = branch.substring(0, branch.length - 1);
+                        var selectedData = Object.keys(that.analyticsData).filter(val => val.indexOf(branch) !== -1)
+                        that.createSampleData(that.consolidatedData(selectedData, "Overview"));
+                        that.createSampleDataScope1(that.consolidatedData(selectedData, "Scope 1"));
+                        that.createSampleDataScope2(that.consolidatedData(selectedData, "Scope 2"));
+                        that.createSampleDataScope3(that.consolidatedData(selectedData, "Scope 3"));
+                    }
+                    else {
+                        sap.ui.core.BusyIndicator.hide();
+                        sap.m.MessageBox.error("No data found")
+                    }
+                });
             },
             createSampleData: function (branchData) {
                 var that = this;
@@ -230,12 +233,12 @@ sap.ui.define(
                                 value: that.formatNumberWithUnit(branchData.Water),
                                 scale: ""
                             },
-                            {
-                                header: "Water Stress",
-                                subheader: "Kgco2",
-                                value: that.formatNumberWithUnit(branchData["Water Stress"]),
-                                scale: ""
-                            },
+                            // {
+                            //     header: "Water Stress",
+                            //     subheader: "Kgco2",
+                            //     value: that.formatNumberWithUnit(branchData["Water Stress"]),
+                            //     scale: ""
+                            // },
                             {
                                 header: "Waste",
                                 subheader: "Kgco2",
@@ -484,43 +487,48 @@ sap.ui.define(
                 var that = this;
                 var filterTitle = oEvent.getSource().data().title;
                 var SelectedKey = oEvent.getSource().getSelectedKey();
-                var filterContainerItems = this.byId("graphFilters").getItems();
-
-                var filterIndex = oEvent.getSource().data().index;
-                for (var i = filterIndex + 1; i < filterContainerItems.length; i++) {
-                    filterContainerItems[i].setSelectedKey("All");
+                if (filterTitle == "years") {
+                    that.getYearWiseData(that.userData, SelectedKey)
                 }
-                var branch = "";
-                filterContainerItems.forEach(function (item, index) {
-                    if (item instanceof sap.m.Select) {
-                        var selectedKey = item.getSelectedKey();
-                        if (selectedKey && selectedKey !== "All") {
-                            branch += selectedKey + "-"
+                else {
+                    var filterContainerItems = this.byId("graphFilters").getItems();
+
+                    var filterIndex = oEvent.getSource().data().index;
+                    for (var i = filterIndex + 1; i < filterContainerItems.length; i++) {
+                        filterContainerItems[i].getItems()[1].setSelectedKey("All");
+                    }
+                    var branch = "";
+                    filterContainerItems.forEach(function (item, index) {
+                        if (item.getItems()[1] instanceof sap.m.Select) {
+                            var selectedKey = item.getItems()[1].getSelectedKey();
+                            if (selectedKey && selectedKey !== "All") {
+                                branch += selectedKey + "-"
+                            }
                         }
-                    }
-                });
-                branch = branch.substring(0, branch.length - 1);
-                var selectedData = Object.keys(that.analyticsData).filter(val => val.indexOf(branch) !== -1)
-                that.createSampleData(that.consolidatedData(selectedData, "Overview"));
-                that.createSampleDataScope1(that.consolidatedData(selectedData, "Scope 1"));
-                that.createSampleDataScope2(that.consolidatedData(selectedData, "Scope 2"));
-                that.createSampleDataScope3(that.consolidatedData(selectedData, "Scope 3"));
-                for (var i = filterIndex + 1; i < filterContainerItems.length; i++) {
-                    var title = filterContainerItems[i].data().title;
-                    filterContainerItems[i].removeAllItems();
-                    var data = that[title];
-                    data = data.filter(key => key[filterTitle] === SelectedKey)
-                    filterContainerItems[i].addItem(new sap.ui.core.Item({
-                        key: "All",
-                        text: "All"
-                    }))
-                    for (var j = 0; j < data.length; j++) {
-                        filterContainerItems[i].addItem(new sap.ui.core.Item({
-                            key: data[j].title,
-                            text: data[j].title
+                    });
+                    branch = branch.substring(0, branch.length - 1);
+                    var selectedData = Object.keys(that.analyticsData).filter(val => val.indexOf(branch) !== -1)
+                    that.createSampleData(that.consolidatedData(selectedData, "Overview"));
+                    that.createSampleDataScope1(that.consolidatedData(selectedData, "Scope 1"));
+                    that.createSampleDataScope2(that.consolidatedData(selectedData, "Scope 2"));
+                    that.createSampleDataScope3(that.consolidatedData(selectedData, "Scope 3"));
+                    for (var i = filterIndex + 1; i < filterContainerItems.length; i++) {
+                        var title = filterContainerItems[i].getItems()[1].data().title;
+                        filterContainerItems[i].getItems()[1].removeAllItems();
+                        var data = that[title];
+                        data = data.filter(key => key[filterTitle] === SelectedKey)
+                        filterContainerItems[i].getItems()[1].addItem(new sap.ui.core.Item({
+                            key: "All",
+                            text: "All"
                         }))
+                        for (var j = 0; j < data.length; j++) {
+                            filterContainerItems[i].getItems()[1].addItem(new sap.ui.core.Item({
+                                key: data[j].title,
+                                text: data[j].title
+                            }))
+                        }
+                        filterContainerItems[i].getItems()[1].setSelectedKey("All");
                     }
-                    filterContainerItems[i].setSelectedKey("All");
                 }
             },
             consolidatedData: function (data, module) {
@@ -531,8 +539,12 @@ sap.ui.define(
                         oData.push(that.analyticsData[val].Environment);
                     })
                 }
-                else {
+                else if (data.length == 1) {
                     return that.analyticsData[data[0]].Environment[module]
+                }
+                else {
+                    sap.m.MessageBox.error("No Data record");
+                    return {};
                 }
                 var consolidatedData = "";
                 switch (module) {
@@ -706,43 +718,73 @@ sap.ui.define(
                 return `${numerator1}:${numerator2}`;
             },
             _generateKPIForSelection: function (selectedData, id) {
-
+                var that = this;
                 // Clear previous KPI and Chart boxes
                 var oHBox = this.byId(id)
                 oHBox.removeAllItems();
+                oHBox.addStyleClass("sapUiTinyMarginBeginEnd sapUiTinyMarginTop tileLayout");
+                if (id == "KPIData") {
+                    var VBox1 = new sap.m.HBox().addStyleClass("sapUiTinyMarginBeginEnd sapUiTinyMarginTop tileLayout kpi-style");
+                    var VBox2 = new sap.m.HBox().addStyleClass("sapUiTinyMarginBeginEnd sapUiTinyMarginTop tileLayout kpi-style");
 
-
-                selectedData.map(function (kpi) {
-                    // oHBox.addItem(new GenericTile({
-                    //     header: kpi.header,
-                    //     subheader: kpi.subheader,
-                    //     frameType: "OneByHalf",
-                    //     pressEnabled: false,
-                    //     tileContent: [
-                    //         new TileContent({
-                    //             unit: kpi.subheader,
-                    //             content: new NumericContent({
-                    //                 scale: kpi.scale,
-                    //                 value: kpi.value,
-                    //                 withMargin: false
-                    //             })
-                    //         })
-                    //     ]
-                    // }).addStyleClass("sapUiTinyMarginBeginEnd sapUiTinyMarginTop tileLayout")
-                    // )
-                    oHBox.addItem(new VBox({
-                        items: [new sap.m.Title({
-                            text: kpi.header,
-                            level: "H4",
-                            titleStyle: "H4"
-                        }),
-                        new sap.m.Title({
-                            text: kpi.value,
-                            level: "H2",
-                            titleStyle: "H2"
-                        })]
-                    }).addStyleClass("sapUiTinyMarginBeginEnd sapUiTinyMarginTop tileLayout kpi-style")).addStyleClass("sapUiTinyMarginBeginEnd sapUiTinyMarginTop tileLayout")
-                });
+                    selectedData.map(function (kpi) {
+                        if (kpi.header == "Total Emissions" || kpi.header == "Scope 1" || kpi.header == "Scope 2" || kpi.header == "Scope 3") {
+                            VBox1.addItem(new VBox({
+                                items: [new sap.m.Title({
+                                    text: kpi.header,
+                                    level: "H4",
+                                    titleStyle: "H4"
+                                }),
+                                new sap.m.Text({
+                                    text: that.getUnits(kpi.header) ? `(${that.getUnits(kpi.header)})` : "",
+                                }).addStyleClass("unit-text"),
+                                new sap.m.Title({
+                                    text: kpi.value,
+                                    level: "H2",
+                                    titleStyle: "H2"
+                                })]
+                            }).addStyleClass("sapUiTinyMarginBeginEnd sapUiTinyMarginTop tileLayout kpi-style"))
+                        }
+                        else {
+                            VBox2.addItem(new VBox({
+                                items: [new sap.m.Title({
+                                    text: kpi.header,
+                                    level: "H4",
+                                    titleStyle: "H4"
+                                }),
+                                new sap.m.Text({
+                                    text: that.getUnits(kpi.header) ? `(${that.getUnits(kpi.header)})` : "",
+                                }).addStyleClass("unit-text"),
+                                new sap.m.Title({
+                                    text: kpi.value,
+                                    level: "H2",
+                                    titleStyle: "H2"
+                                })]
+                            }).addStyleClass("sapUiTinyMarginBeginEnd sapUiTinyMarginTop tileLayout kpi-style"))
+                        }
+                    });
+                    oHBox.addItem(VBox1)
+                    oHBox.addItem(VBox2)
+                }
+                else {
+                    selectedData.map(function (kpi) {
+                        oHBox.addItem(new VBox({
+                            items: [new sap.m.Title({
+                                text: kpi.header,
+                                level: "H4",
+                                titleStyle: "H4"
+                            }),
+                            new sap.m.Text({
+                                text: that.getUnits(kpi.header) ? `(${that.getUnits(kpi.header)})` : "",
+                            }).addStyleClass("unit-text"),
+                            new sap.m.Title({
+                                text: kpi.value,
+                                level: "H2",
+                                titleStyle: "H2"
+                            })]
+                        }).addStyleClass("sapUiTinyMarginBeginEnd sapUiTinyMarginTop tileLayout kpi-style"))
+                    });
+                }
 
 
             },
@@ -808,7 +850,8 @@ sap.ui.define(
                             },
                             title: {
                                 display: true,
-                                text: chart.title
+                                text: chart.title,
+
                             },
                         },
                         interaction: {

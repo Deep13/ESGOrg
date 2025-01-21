@@ -105,5 +105,13 @@
             <!-- <object:ObjectPageLayout id="objectPageLayout">
             </object:ObjectPageLayout> -->
         </content>
+        <footer>
+            <OverflowToolbar>
+                <HBox alignItems="Center" alignContent="Center" justifyContent="Center"
+                    width="100%">
+                    <Text text="{i18n>footer}" />
+                </HBox>
+            </OverflowToolbar>
+        </footer>
     </Page>
 </mvc:View>

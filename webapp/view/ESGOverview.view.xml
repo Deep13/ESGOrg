@@ -20,17 +20,62 @@
             </OverflowToolbar>
         </customHeader>
         <content>
-            <object:ObjectPageLayout>
-                <object:ObjectPageSection titleUppercase="false" title="Overview">
+            <object:ObjectPageLayout alwaysShowContentHeader="true" class="overview">
+                <object:headerContent>
+                    <VBox>
+                        <HBox id="graphFilters" wrap="Wrap" class="graphFilters-css"></HBox>
+                    </VBox>
+                </object:headerContent>
+                <object:ObjectPageSection titleUppercase="false" title="Environment">
                     <object:subSections>
                         <object:ObjectPageSubSection titleUppercase="false">
                             <object:blocks>
-                                <VBox>
-                                    <HBox id="graphFilters" wrap="Wrap" class="graphFilters-css"></HBox>
-                                    <HBox id="KPIData" wrap="Wrap">
+                                <HBox wrap="Wrap">
+                                    <VBox id="KPIData" wrap="Wrap">
+                                    </VBox>
+                                    <HBox id="chartData" justifyContent="Center">
+                                        <layoutData>
+                                            <FlexItemData growFactor="1" />
+                                        </layoutData>
                                     </HBox>
-                                    <HBox id="chartData"></HBox>
-                                </VBox>
+
+                                </HBox>
+                            </object:blocks>
+                        </object:ObjectPageSubSection>
+                    </object:subSections>
+                </object:ObjectPageSection>
+                <object:ObjectPageSection titleUppercase="false" title="Social">
+                    <object:subSections>
+                        <object:ObjectPageSubSection titleUppercase="false">
+                            <object:blocks>
+                                <HBox>
+
+                                    <VBox id="KPIDataSocial" wrap="Wrap">
+                                    </VBox>
+                                    <HBox id="chartDataSocial" justifyContent="Center">
+                                        <layoutData>
+                                            <FlexItemData growFactor="1" />
+                                        </layoutData>
+                                    </HBox>
+                                </HBox>
+                            </object:blocks>
+                        </object:ObjectPageSubSection>
+                    </object:subSections>
+                </object:ObjectPageSection>
+                <object:ObjectPageSection titleUppercase="false" title="Governance">
+                    <object:subSections>
+                        <object:ObjectPageSubSection titleUppercase="false">
+                            <object:blocks>
+                                <HBox>
+
+                                    <VBox id="KPIDataGovernance" wrap="Wrap">
+                                    </VBox>
+                                    <HBox id="chartDataGovernance" justifyContent="Center">
+                                        <layoutData>
+                                            <FlexItemData growFactor="1" />
+                                        </layoutData>
+                                    </HBox>
+                                </HBox>
                             </object:blocks>
                         </object:ObjectPageSubSection>
                     </object:subSections>
@@ -41,7 +86,7 @@
             <OverflowToolbar>
                 <HBox alignItems="Center" alignContent="Center" justifyContent="Center"
                     width="100%">
-                    <Text text="Sustrack Sustainable Solutions Pvt.Ltd © 2024" />
+                    <Text text="{i18n>footer}" />
                 </HBox>
             </OverflowToolbar>
         </footer>

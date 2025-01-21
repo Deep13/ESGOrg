@@ -46,7 +46,7 @@ const viewContent = `<mvc:View controllerName="ESGOrg.ESGOrg.controller.${client
         <OverflowToolbar>
             <HBox alignItems="Center" alignContent="Center" justifyContent="Center"
                 width="100%">
-                <Text text="Sustrack Sustainable Solutions Pvt.Ltd © 2024" />
+                <Text text="{i18n>footer}" />
             </HBox>
         </OverflowToolbar>
     </footer>

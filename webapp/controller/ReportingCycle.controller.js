@@ -171,7 +171,7 @@ sap.ui.define(
 
                     });
                     var restructred = that.groupSubmittedModulesByBranch(rData, data);
-                    firebase.firestore().collection(user.domain).doc("AnalyticsData").collection("Reporting Cycle").doc(closedData.month + "-" + closedData.year).set({ "data": restructred })
+                    firebase.firestore().collection(user.domain).doc("AnalyticsData").collection("Reporting Cycle").doc(closedData.month + "-" + closedData.year).set({ "data": restructred, year: closedData.year })
                         .then(() => {
                             // MessageBox.success("Incident Report sent");
                             sap.ui.core.BusyIndicator.hide();
