@@ -26,16 +26,16 @@ sap.ui.define([
                 var monthYear = masterData.currentReportingCycle;
                 const docRef = firebase.firestore().collection(user.domain).doc("TransactionData").collection(monthYear.month + "-" + monthYear.year).doc("Statistics");
                 docRef.get().then((doc) => {
-                    if (doc.exists) {
-                        var docData = doc.data();
-                        var { result, fullTotalPercentage, avgEmissionsPercentage, avgSocialPercentage, avgGovernancePercentage } = that.calculateCompletion(docData, data, branches);
-                    } else {
-                        var result = [];
-                        var fullTotalPercentage = 0;
-                        var avgEmissionsPercentage = 0;
-                        var avgSocialPercentage = 0;
-                        var avgGovernancePercentage = 0
-                    }
+                    // if (doc.exists) {
+                    //     var docData = doc.data();
+                    //     var { result, fullTotalPercentage, avgEmissionsPercentage, avgSocialPercentage, avgGovernancePercentage } = that.calculateCompletion(docData, data, branches);
+                    // } else {
+                    //     var result = [];
+                    //     var fullTotalPercentage = 0;
+                    //     var avgEmissionsPercentage = 0;
+                    //     var avgSocialPercentage = 0;
+                    //     var avgGovernancePercentage = 0
+                    // }
                     // var oData = {
                     //     overall: {
                     //         Overview: fullTotalPercentage,
